@@ -1,0 +1,2303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kenya County Budget Implementation Analysis</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <!-- Load external GeoJSON data -->
+    <script src="data.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        #mapContainer {
+            width: 70%;
+            height: 100vh;
+            border: 2px solid #ddd;
+            border-radius: 8px 0 0 8px;
+            position: relative;
+        }
+
+        #countyMap {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px 0 0 8px;
+        }
+
+        #dashboard {
+            width: 30%;
+            padding: 15px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 0 8px 8px 0;
+            overflow-y: auto;
+        }
+
+        h1, h2, h3 {
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 24px;
+        }
+
+        h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #1e5799;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #1e5799;
+        }
+
+        button, select {
+            margin: 5px 0;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        select {
+            background-color: #f8f9fa;
+            border: 1px solid #ced4da;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        select:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .card {
+            background: white;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-container {
+            height: 200px;
+            position: relative;
+        }
+
+        .filters {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 15px;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 8px 15px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            background-color: #f5f7fa;
+        }
+
+        .tab.active {
+            border-bottom: 3px solid #007bff;
+            color: #007bff;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .insights {
+            background: #e8f4fd;
+            border-left: 4px solid #007bff;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .insights h3 {
+            color: #007bff;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .insights ul {
+            padding-left: 20px;
+        }
+
+        .insights li {
+            margin-bottom: 5px;
+        }
+
+        .data-table-container {
+            overflow-x: auto;
+            margin-top: 15px;
+            max-height: 300px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .data-table th, .data-table td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .data-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        .data-table tr:hover {
+            background-color: #f1f5f9;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 8px;
+            border-radius: 5px;
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 1000;
+            font-size: 13px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .export-buttons button {
+            width: auto;
+            flex: 1;
+        }
+
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .comparison-chart {
+            height: 180px;
+        }
+
+        .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 5px;
+        }
+
+        .trend-up {
+            color: #1a9641;
+        }
+
+        .trend-down {
+            color: #d7191c;
+        }
+
+        .performance-meter {
+            height: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            margin: 5px 0;
+            overflow: hidden;
+        }
+
+        .performance-fill {
+            height: 100%;
+            border-radius: 5px;
+        }
+
+        .layer-control {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background:transparent;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        .layer-control label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin: 5px 0;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            #mapContainer {
+                width: 100%;
+                height: 50vh;
+            }
+
+            #dashboard {
+                width: 100%;
+                height: 50vh;
+                overflow-y: auto;
+            }
+
+            button, select {
+                font-size: 14px;
+                padding: 6px 12px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container {
+                height: 150px;
+            }
+
+            .comparison-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="mapContainer">
+        <div id="countyMap"></div>
+        <div class="legend" id="mapLegend"></div>
+        <div class="layer-control">
+            <h4 style="margin: 0 0 8px 0; font-size: 9px;">Layers</h4>
+            <label>
+                <input type="checkbox" id="togglePolygons" checked>Kenya Counties
+            </label>
+            <label>
+                <input type="checkbox" id="toggleMarkers" checked>Markers
+            </label>
+        </div>
+    </div>
+    
+    <div id="dashboard">
+        <h1>Kenya County Budget Analysis</h1>
+        <p style="text-align: center; margin-bottom: 15px; color: #666; font-size: 14px;">Financial Year 2023/24 - Office of the Controller of Budget</p>
+        <a href="https://patricksang.github.io/" data-gall="portfolioDetailsGallery" data-vbtype="iframe" class="venobox" title="Project Details"><i class="btn btn-primary">Home</i></a>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total County Budget</div>
+                <div class="stat-value">Kshs. 562.75B</div>
+                <div class="performance-meter">
+                    <div class="performance-fill" style="width: 100%; background: #1e5799;"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Overall Absorption Rate</div>
+                <div class="stat-value">79.5%</div>
+                <div class="performance-meter">
+                    <div class="performance-fill" style="width: 79.5%; background: #1a9641;"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Pending Bills</div>
+                <div class="stat-value">Kshs. 181.98B</div>
+                <div class="performance-meter">
+                    <div class="performance-fill" style="width: 32.3%; background: #d7191c;"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Revenue Available</div>
+                <div class="stat-value">Kshs. 492.47B</div>
+                <div class="performance-meter">
+                    <div class="performance-fill" style="width: 87.5%; background: #2c7bb6;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="filters">
+            <select id="metricSelector">
+                <option value="overall_absorption">Overall Absorption Rate</option>
+                <option value="dev_absorption">Development Absorption Rate</option>
+                <option value="revenue_performance">Revenue Performance</option>
+                <option value="wage_bill">Wage Bill % of Revenue</option>
+                <option value="pending_bills">Pending Bills (Kshs. Billion)</option>
+                <option value="budget">Total Budget (Kshs. Billion)</option>
+            </select>
+            <select id="countySelector">
+                <option value="all">All Counties</option>
+                <!-- Counties will be populated by JavaScript -->
+            </select>
+            <select id="regionSelector">
+                <option value="all">All Regions</option>
+                <option value="nairobi">Nairobi Region</option>
+                <option value="central">Central Region</option>
+                <option value="coast">Coast Region</option>
+                <option value="eastern">Eastern Region</option>
+                <option value="north_eastern">North Eastern Region</option>
+                <option value="nyanza">Nyanza Region</option>
+                <option value="rift_valley">Rift Valley Region</option>
+                <option value="western">Western Region</option>
+            </select>
+            <select id="yearSelector">
+                <option value="2024">2023/24</option>
+                <option value="2023">2022/23</option>
+                <option value="2022">2021/22</option>
+            </select>
+            <button id="resetView">Reset View</button>
+            <button id="exportData">Export Data</button>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="performance">Performance</div>
+            <div class="tab" data-tab="comparison">Comparison</div>
+            <div class="tab" data-tab="trends">Trends</div>
+            <div class="tab" data-tab="revenue">Revenue Analysis</div>
+            <div class="tab" data-tab="efficiency">Efficiency Metrics</div>
+      
+        </div>
+        
+        <div class="tab-content active" id="performance">
+            <div class="card">
+                <h2>County Performance Rankings</h2>
+                <div class="chart-container">
+                    <canvas id="topPerformersChart"></canvas>
+                </div>
+                <div class="insights">
+                    <h3>Performance Insights</h3>
+                    <p>Wajir, Narok, and Mandera counties achieved the highest overall absorption rates (above 90%). Kisumu, Garissa, and Kisii recorded the lowest absorption rates (below 70%).</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Budget Allocation vs Expenditure</h2>
+                <div class="chart-container">
+                    <canvas id="budgetChart"></canvas>
+                </div>
+                <div class="insights">
+                    <h3>Expenditure Analysis</h3>
+                    <p>Recurrent expenditure accounts for 75.6% of total spending, while development expenditure represents only 24.4%. This highlights the challenge counties face in prioritizing development projects.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="comparison">
+            <div class="card">
+                <h2>County Comparison</h2>
+                <div class="comparison-container">
+                    <div>
+                        <h3>Select County 1</h3>
+                        <select id="county1Selector">
+                            <option value="Nairobi">Nairobi</option>
+                        </select>
+                        <div class="comparison-chart">
+                            <canvas id="county1Chart"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <h3>Select County 2</h3>
+                        <select id="county2Selector">
+                            <option value="Kisumu">Kisumu</option>
+                        </select>
+                        <div class="comparison-chart">
+                            <canvas id="county2Chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Performance vs Wage Bill</h2>
+                <div class="chart-container">
+                    <canvas id="wageBillChart"></canvas>
+                </div>
+                <div class="insights">
+                    <h3>Wage Bill Impact</h3>
+                    <p>Counties with wage bills exceeding 35% of revenue (the legal limit) tend to have lower development absorption rates, as seen with Elgeyo Marakwet (97.4% wage bill, 49.3% dev absorption).</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="trends">
+            <div class="card">
+                <h2>Absorption Rate Trends</h2>
+                <div class="chart-container">
+                    <canvas id="trendsChart"></canvas>
+                </div>
+                <div class="insights">
+                    <h3>Trend Analysis</h3>
+                    <p>Overall absorption rates have improved by 4.2% compared to the previous financial year. Development absorption remains a challenge, with only marginal improvements.</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Regional Performance Trends</h2>
+                <div class="chart-container">
+                    <canvas id="regionalTrendsChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="revenue">
+            <div class="card">
+                <h2>Revenue Sources</h2>
+                <div class="chart-container">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+                <div class="insights">
+                    <h3>Revenue Insights</h3>
+                    <p>Equitable share from national government constitutes 72% of county revenues, indicating heavy dependency on central government transfers rather than local revenue generation.</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Own-Source Revenue Performance</h2>
+                <div class="chart-container">
+                    <canvas id="ownRevenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="efficiency">
+            <div class="card">
+                <h2>County Efficiency Matrix</h2>
+                <div class="chart-container">
+                    <canvas id="efficiencyMatrixChart"></canvas>
+                </div>
+                <div class="insights">
+                    <h3>Efficiency Analysis</h3>
+                    <p>Counties in the top-right quadrant demonstrate both high absorption rates and efficient revenue collection. Those in the bottom-left need improvement in both areas.</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Debt-to-Revenue Ratio</h2>
+                <div class="chart-container">
+                    <canvas id="debtRatioChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>County Budget Details</h2>
+            <div class="data-table-container">
+                <table class="data-table" id="countyDataTable">
+                    <thead>
+                        <tr>
+                            <th>County</th>
+                            <th>Budget (B)</th>
+                            <th>Absorption (%)</th>
+                            <th>Dev (%)</th>
+                            <th>Revenue (%)</th>
+                            <th>Wage Bill (%)</th>
+                            <th>Pending Bills (B)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="export-buttons">
+                <button id="exportTable">Export Table as CSV</button>
+                <button id="exportChart">Export Chart as PNG</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // County data extracted from the report
+        const countyData = [
+            {
+                name: "Baringo",
+                budget: 8.89,
+                overall_absorption: 86.3,
+                dev_absorption: 64.4,
+                revenue_performance: 84.0,
+                wage_bill: 47.6,
+                pending_bills: 0.37,
+                lat: 0.69,
+                lng: 35.95,
+                region: "rift_valley",
+                own_revenue: 0.89,
+                debt_ratio: 4.2
+            },
+            {
+                name: "Bomet",
+                budget: 8.52,
+                overall_absorption: 87.4,
+                dev_absorption: 76.2,
+                revenue_performance: 72.0,
+                wage_bill: 47.2,
+                pending_bills: 0.45,
+                lat: -0.78,
+                lng: 35.34,
+                region: "rift_valley",
+                own_revenue: 0.65,
+                debt_ratio: 5.3
+            },
+            {
+                name: "Bungoma",
+                budget: 15.24,
+                overall_absorption: 72.5,
+                dev_absorption: 58.9,
+                revenue_performance: 55.8,
+                wage_bill: 79.7,
+                pending_bills: 3.52,
+                lat: 0.57,
+                lng: 34.56,
+                region: "western",
+                own_revenue: 1.52,
+                debt_ratio: 23.1
+            },
+            {
+                name: "Busia",
+                budget: 10.20,
+                overall_absorption: 73.0,
+                dev_absorption: 59.6,
+                revenue_performance: 56.9,
+                wage_bill: 79.6,
+                pending_bills: 1.42,
+                lat: 0.46,
+                lng: 34.11,
+                region: "western",
+                own_revenue: 0.92,
+                debt_ratio: 13.9
+            },
+            {
+                name: "Elgeyo",
+                budget: 6.79,
+                overall_absorption: 79.4,
+                dev_absorption: 49.3,
+                revenue_performance: 95.3,
+                wage_bill: 97.4,
+                pending_bills: 0.0015,
+                lat: 0.82,
+                lng: 35.51,
+                region: "rift_valley",
+                own_revenue: 0.41,
+                debt_ratio: 0.02
+            },
+            {
+                name: "Embu",
+                budget: 7.95,
+                overall_absorption: 83.5,
+                dev_absorption: 60.3,
+                revenue_performance: 99.5,
+                wage_bill: 95.0,
+                pending_bills: 1.82,
+                lat: -0.54,
+                lng: 37.46,
+                region: "eastern",
+                own_revenue: 0.68,
+                debt_ratio: 22.9
+            },
+            {
+                name: "Garissa",
+                budget: 10.70,
+                overall_absorption: 67.2,
+                dev_absorption: 44.8,
+                revenue_performance: 108.2,
+                wage_bill: 82.4,
+                pending_bills: 0.38,
+                lat: -0.45,
+                lng: 39.64,
+                region: "north_eastern",
+                own_revenue: 0.53,
+                debt_ratio: 3.6
+            },
+            {
+                name: "Homa Bay",
+                budget: 11.17,
+                overall_absorption: 81.3,
+                dev_absorption: 86.3,
+                revenue_performance: 86.2,
+                wage_bill: 79.0,
+                pending_bills: 0.74,
+                lat: -0.53,
+                lng: 34.46,
+                region: "nyanza",
+                own_revenue: 0.98,
+                debt_ratio: 6.6
+            },
+            {
+                name: "Isiolo",
+                budget: 5.80,
+                overall_absorption: 73.3,
+                dev_absorption: 55.5,
+                revenue_performance: 80.1,
+                wage_bill: 81.0,
+                pending_bills: 1.12,
+                lat: 0.35,
+                lng: 37.58,
+                region: "eastern",
+                own_revenue: 0.32,
+                debt_ratio: 19.3
+            },
+            {
+                name: "Kajiado",
+                budget: 11.59,
+                overall_absorption: 75.8,
+                dev_absorption: 57.5,
+                revenue_performance: 56.1,
+                wage_bill: 83.9,
+                pending_bills: 2.44,
+                lat: -1.85,
+                lng: 36.78,
+                region: "rift_valley",
+                own_revenue: 1.85,
+                debt_ratio: 21.1
+            },
+            {
+                name: "Kakamega",
+                budget: 16.79,
+                overall_absorption: 82.6,
+                dev_absorption: 57.3,
+                revenue_performance: 61.3,
+                wage_bill: 92.9,
+                pending_bills: 1.82,
+                lat: 0.28,
+                lng: 34.75,
+                region: "western",
+                own_revenue: 1.45,
+                debt_ratio: 10.8
+            },
+            {
+                name: "Kericho",
+                budget: 8.48,
+                overall_absorption: 82.0,
+                dev_absorption: 61.7,
+                revenue_performance: 78.9,
+                wage_bill: 91.6,
+                pending_bills: 1.13,
+                lat: -0.37,
+                lng: 35.28,
+                region: "rift_valley",
+                own_revenue: 0.72,
+                debt_ratio: 13.3
+            },
+            {
+                name: "Kiambu",
+                budget: 23.21,
+                overall_absorption: 76.6,
+                dev_absorption: 49.5,
+                revenue_performance: 65.4,
+                wage_bill: 88.2,
+                pending_bills: 6.49,
+                lat: -1.03,
+                lng: 36.82,
+                region: "central",
+                own_revenue: 4.12,
+                debt_ratio: 28.0
+            },
+            {
+                name: "Kilifi",
+                budget: 20.04,
+                overall_absorption: 76.8,
+                dev_absorption: 55.8,
+                revenue_performance: 67.6,
+                wage_bill: 92.1,
+                pending_bills: 1.22,
+                lat: -3.51,
+                lng: 39.91,
+                region: "coast",
+                own_revenue: 1.78,
+                debt_ratio: 6.1
+            },
+            {
+                name: "Kirinyaga",
+                budget: 7.24,
+                overall_absorption: 83.4,
+                dev_absorption: 53.5,
+                revenue_performance: 118.4,
+                wage_bill: 98.6,
+                pending_bills: 0.58,
+                lat: -0.50,
+                lng: 37.28,
+                region: "central",
+                own_revenue: 0.65,
+                debt_ratio: 8.0
+            },
+            {
+                name: "Kisii",
+                budget: 13.26,
+                overall_absorption: 69.6,
+                dev_absorption: 29.2,
+                revenue_performance: 64.0,
+                wage_bill: 89.3,
+                pending_bills: 2.37,
+                lat: -0.68,
+                lng: 34.77,
+                region: "nyanza",
+                own_revenue: 1.12,
+                debt_ratio: 17.9
+            },
+            {
+                name: "Kisumu",
+                budget: 13.70,
+                overall_absorption: 64.7,
+                dev_absorption: 37.0,
+                revenue_performance: 63.2,
+                wage_bill: 76.9,
+                pending_bills: 3.15,
+                lat: -0.10,
+                lng: 34.75,
+                region: "nyanza",
+                own_revenue: 1.85,
+                debt_ratio: 23.0
+            },
+            {
+                name: "Kitui",
+                budget: 14.26,
+                overall_absorption: 87.1,
+                dev_absorption: 71.3,
+                revenue_performance: 88.4,
+                wage_bill: 96.7,
+                pending_bills: 0.39,
+                lat: -1.37,
+                lng: 38.01,
+                region: "eastern",
+                own_revenue: 1.28,
+                debt_ratio: 2.7
+            },
+            {
+                name: "Kwale",
+                budget: 14.26,
+                overall_absorption: 71.1,
+                dev_absorption: 48.3,
+                revenue_performance: 71.2,
+                wage_bill: 88.2,
+                pending_bills: 2.13,
+                lat: -4.18,
+                lng: 39.46,
+                region: "coast",
+                own_revenue: 1.05,
+                debt_ratio: 14.9
+            },
+            {
+                name: "Laikipia",
+                budget: 7.73,
+                overall_absorption: 78.4,
+                dev_absorption: 48.7,
+                revenue_performance: 73.4,
+                wage_bill: 95.0,
+                pending_bills: 1.65,
+                lat: 0.20,
+                lng: 36.78,
+                region: "rift_valley",
+                own_revenue: 0.58,
+                debt_ratio: 21.3
+            },
+            {
+                name: "Lamu",
+                budget: 4.54,
+                overall_absorption: 80.7,
+                dev_absorption: 52.2,
+                revenue_performance: 116.2,
+                wage_bill: 95.4,
+                pending_bills: 0.04,
+                lat: -2.27,
+                lng: 40.90,
+                region: "coast",
+                own_revenue: 0.28,
+                debt_ratio: 0.9
+            },
+            {
+                name: "Machakos",
+                budget: 15.81,
+                overall_absorption: 79.3,
+                dev_absorption: 58.6,
+                revenue_performance: 46.5,
+                wage_bill: 88.9,
+                pending_bills: 4.20,
+                lat: -1.52,
+                lng: 37.26,
+                region: "eastern",
+                own_revenue: 1.42,
+                debt_ratio: 26.6
+            },
+            {
+                name: "Makueni",
+                budget: 11.18,
+                overall_absorption: 80.9,
+                dev_absorption: 62.2,
+                revenue_performance: 84.2,
+                wage_bill: 88.9,
+                pending_bills: 0.67,
+                lat: -1.80,
+                lng: 37.62,
+                region: "eastern",
+                own_revenue: 0.95,
+                debt_ratio: 6.0
+            },
+            {
+                name: "Mandera",
+                budget: 13.00,
+                overall_absorption: 90.0,
+                dev_absorption: 82.6,
+                revenue_performance: 50.8,
+                wage_bill: 94.3,
+                pending_bills: 2.23,
+                lat: 3.94,
+                lng: 41.86,
+                region: "north_eastern",
+                own_revenue: 0.52,
+                debt_ratio: 17.2
+            },
+            {
+                name: "Marsabit",
+                budget: 9.42,
+                overall_absorption: 81.2,
+                dev_absorption: 68.3,
+                revenue_performance: 76.4,
+                wage_bill: 92.1,
+                pending_bills: 1.13,
+                lat: 2.33,
+                lng: 37.99,
+                region: "eastern",
+                own_revenue: 0.45,
+                debt_ratio: 12.0
+            },
+            {
+                name: "Meru",
+                budget: 12.23,
+                overall_absorption: 89.6,
+                dev_absorption: 79.3,
+                revenue_performance: 91.6,
+                wage_bill: 94.1,
+                pending_bills: 0.59,
+                lat: 0.06,
+                lng: 37.65,
+                region: "eastern",
+                own_revenue: 1.15,
+                debt_ratio: 4.8
+            },
+            {
+                name: "Migori",
+                budget: 11.47,
+                overall_absorption: 77.5,
+                dev_absorption: 47.3,
+                revenue_performance: 81.9,
+                wage_bill: 94.6,
+                pending_bills: 0.86,
+                lat: -1.07,
+                lng: 34.47,
+                region: "nyanza",
+                own_revenue: 0.92,
+                debt_ratio: 7.5
+            },
+            {
+                name: "Mombasa",
+                budget: 15.99,
+                overall_absorption: 80.2,
+                dev_absorption: 43.4,
+                revenue_performance: 75.7,
+                wage_bill: 95.9,
+                pending_bills: 4.44,
+                lat: -4.05,
+                lng: 39.67,
+                region: "coast",
+                own_revenue: 3.85,
+                debt_ratio: 27.8
+            },
+            {
+                name: "Murang'a",
+                budget: 10.41,
+                overall_absorption: 83.6,
+                dev_absorption: 65.6,
+                revenue_performance: 100.2,
+                wage_bill: 91.4,
+                pending_bills: 1.46,
+                lat: -0.72,
+                lng: 37.15,
+                region: "central",
+                own_revenue: 1.12,
+                debt_ratio: 14.0
+            },
+            {
+                name: "Nairobi",
+                budget: 42.29,
+                overall_absorption: 75.2,
+                dev_absorption: 38.7,
+                revenue_performance: 63.7,
+                wage_bill: 84.3,
+                pending_bills: 118.44,
+                lat: -1.29,
+                lng: 36.82,
+                region: "nairobi",
+                own_revenue: 12.85,
+                debt_ratio: 280.0
+            },
+            {
+                name: "Nakuru",
+                budget: 23.31,
+                overall_absorption: 70.5,
+                dev_absorption: 46.0,
+                revenue_performance: 81.0,
+                wage_bill: 87.9,
+                pending_bills: 1.10,
+                lat: -0.30,
+                lng: 36.07,
+                region: "rift_valley",
+                own_revenue: 2.45,
+                debt_ratio: 4.7
+            },
+            {
+                name: "Nandi",
+                budget: 9.85,
+                overall_absorption: 84.4,
+                dev_absorption: 49.8,
+                revenue_performance: 113.0,
+                wage_bill: 104.3,
+                pending_bills: 0.18,
+                lat: 0.20,
+                lng: 35.11,
+                region: "rift_valley",
+                own_revenue: 0.78,
+                debt_ratio: 1.8
+            },
+            {
+                name: "Narok",
+                budget: 14.99,
+                overall_absorption: 90.3,
+                dev_absorption: 90.3,
+                revenue_performance: 95.5,
+                wage_bill: 90.3,
+                pending_bills: 0.76,
+                lat: -1.08,
+                lng: 35.87,
+                region: "rift_valley",
+                own_revenue: 1.35,
+                debt_ratio: 5.1
+            },
+            {
+                name: "Nyamira",
+                budget: 7.28,
+                overall_absorption: 84.7,
+                dev_absorption: 61.2,
+                revenue_performance: 53.8,
+                wage_bill: 94.6,
+                pending_bills: 0.14,
+                lat: -0.65,
+                lng: 34.95,
+                region: "nyanza",
+                own_revenue: 0.52,
+                debt_ratio: 1.9
+            },
+            {
+                name: "Nyandarua",
+                budget: 8.75,
+                overall_absorption: 75.9,
+                dev_absorption: 45.9,
+                revenue_performance: 42.1,
+                wage_bill: 93.0,
+                pending_bills: 0.30,
+                lat: -0.42,
+                lng: 36.47,
+                region: "central",
+                own_revenue: 0.48,
+                debt_ratio: 3.4
+            },
+            {
+                name: "Nyeri",
+                budget: 8.98,
+                overall_absorption: 88.4,
+                dev_absorption: 72.4,
+                revenue_performance: 106.1,
+                wage_bill: 95.6,
+                pending_bills: 0.007,
+                lat: -0.42,
+                lng: 36.95,
+                region: "central",
+                own_revenue: 0.85,
+                debt_ratio: 0.08
+            },
+            {
+                name: "Samburu",
+                budget: 7.52,
+                overall_absorption: 82.3,
+                dev_absorption: 60.8,
+                revenue_performance: 104.1,
+                wage_bill: 92.8,
+                pending_bills: 0.21,
+                lat: 1.10,
+                lng: 36.70,
+                region: "rift_valley",
+                own_revenue: 0.38,
+                debt_ratio: 2.8
+            },
+            {
+                name: "Siaya",
+                budget: 9.76,
+                overall_absorption: 78.1,
+                dev_absorption: 64.6,
+                revenue_performance: 80.4,
+                wage_bill: 87.0,
+                pending_bills: 0.30,
+                lat: 0.06,
+                lng: 34.29,
+                region: "nyanza",
+                own_revenue: 0.68,
+                debt_ratio: 3.1
+            },
+            {
+                name: "Taita Taveta",
+                budget: 7.50,
+                overall_absorption: 78.3,
+                dev_absorption: 46.9,
+                revenue_performance: 73.4,
+                wage_bill: 92.5,
+                pending_bills: 1.76,
+                lat: -3.40,
+                lng: 38.37,
+                region: "coast",
+                own_revenue: 0.45,
+                debt_ratio: 23.5
+            },
+            {
+                name: "Tana River",
+                budget: 8.87,
+                overall_absorption: 81.6,
+                dev_absorption: 57.8,
+                revenue_performance: 95.8,
+                wage_bill: 97.5,
+                pending_bills: 2.13,
+                lat: -1.50,
+                lng: 40.00,
+                region: "coast",
+                own_revenue: 0.42,
+                debt_ratio: 24.0
+            },
+            {
+                name: "Tharaka-Nithi",
+                budget: 6.52,
+                overall_absorption: 78.1,
+                dev_absorption: 54.5,
+                revenue_performance: 92.6,
+                wage_bill: 89.7,
+                pending_bills: 0.74,
+                lat: -0.33,
+                lng: 37.95,
+                region: "eastern",
+                own_revenue: 0.48,
+                debt_ratio: 11.3
+            },
+            {
+                name: "Trans Nzoia",
+                budget: 10.19,
+                overall_absorption: 82.5,
+                dev_absorption: 59.8,
+                revenue_performance: 74.0,
+                wage_bill: 99.4,
+                pending_bills: 1.28,
+                lat: 1.05,
+                lng: 34.95,
+                region: "rift_valley",
+                own_revenue: 0.72,
+                debt_ratio: 12.6
+            },
+            {
+                name: "Turkana",
+                budget: 17.22,
+                overall_absorption: 84.5,
+                dev_absorption: 63.1,
+                revenue_performance: 241.2,
+                wage_bill: 99.4,
+                pending_bills: 0.75,
+                lat: 3.12,
+                lng: 35.60,
+                region: "rift_valley",
+                own_revenue: 0.95,
+                debt_ratio: 4.4
+            },
+            {
+                name: "Uasin Gishu",
+                budget: 13.29,
+                overall_absorption: 77.2,
+                dev_absorption: 48.9,
+                revenue_performance: 90.1,
+                wage_bill: 95.2,
+                pending_bills: 0.75,
+                lat: 0.52,
+                lng: 35.27,
+                region: "rift_valley",
+                own_revenue: 1.25,
+                debt_ratio: 5.6
+            },
+            {
+                name: "Vihiga",
+                budget: 6.68,
+                overall_absorption: 78.9,
+                dev_absorption: 50.9,
+                revenue_performance: 136.3,
+                wage_bill: 92.7,
+                pending_bills: 1.47,
+                lat: 0.08,
+                lng: 34.72,
+                region: "western",
+                own_revenue: 0.42,
+                debt_ratio: 22.0
+            },
+            {
+                name: "Wajir",
+                budget: 12.14,
+                overall_absorption: 90.8,
+                dev_absorption: 83.4,
+                revenue_performance: 110.0,
+                wage_bill: 94.2,
+                pending_bills: 2.33,
+                lat: 1.75,
+                lng: 40.06,
+                region: "north_eastern",
+                own_revenue: 0.58,
+                debt_ratio: 19.2
+            },
+            {
+                name: "West Pokot",
+                budget: 7.71,
+                overall_absorption: 87.3,
+                dev_absorption: 67.3,
+                revenue_performance: 80.6,
+                wage_bill: 95.7,
+                pending_bills: 0.52,
+                lat: 1.50,
+                lng: 35.39,
+                region: "rift_valley",
+                own_revenue: 0.38,
+                debt_ratio: 6.7
+            }
+        ];
+
+        // Initialize the map
+        const map = L.map('countyMap').setView([0.0236, 37.9062], 6);
+        
+        // Add base map layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap,Viz by:Patrick Sang,Data Source:Controler Of Budget(Kenya)</a> contributors'
+        }).addTo(map);
+
+        // Color scale function
+        function getColor(value, metric) {
+            if (metric === 'overall_absorption' || metric === 'dev_absorption' || metric === 'revenue_performance') {
+                return value > 85 ? '#1a9641' :
+                       value > 70 ? '#a6d96a' :
+                       value > 55 ? '#ffffbf' :
+                       value > 40 ? '#fdae61' :
+                                    '#d7191c';
+            } else if (metric === 'wage_bill') {
+                return value > 95 ? '#d7191c' :
+                       value > 85 ? '#fdae61' :
+                       value > 75 ? '#ffffbf' :
+                       value > 65 ? '#a6d96a' :
+                                    '#1a9641';
+            } else if (metric === 'pending_bills') {
+                return value > 5 ? '#d7191c' :
+                       value > 1 ? '#fdae61' :
+                       value > 0.5 ? '#ffffbf' :
+                       value > 0.1 ? '#a6d96a' :
+                                     '#1a9641';
+            } else if (metric === 'budget') {
+                return value > 20 ? '#1a9641' :
+                       value > 10 ? '#a6d96a' :
+                       value > 5 ? '#ffffbf' :
+                       value > 2 ? '#fdae61' :
+                                   '#d7191c';
+            }
+        }
+
+        // Function to load GeoJSON and create choropleth using multipolygons
+        function loadGeoJSON(metric, region = 'all') {
+            // Remove existing layers
+            if (window.geoJsonLayer) {
+                map.removeLayer(window.geoJsonLayer);
+            }
+            if (window.markerLayer) {
+                map.removeLayer(window.markerLayer);
+            }
+            
+            // Use the GeoJSON data from the external data.js file
+            // The data should be available as a global variable from data.js
+            if (typeof kenyaCountiesGeoJSON === 'undefined') {
+                console.error('GeoJSON data not found. Please ensure data.js is loaded correctly.');
+                loadFallbackMarkers(metric, region);
+                return;
+            }
+            
+            const data = kenyaCountiesGeoJSON;
+            
+            // Create a mapping between county names in our data and GeoJSON
+            const countyNameMapping = {
+                'Baringo': 'Baringo',
+                'Bomet': 'Bomet',
+                'Bungoma': 'Bungoma',
+                'Busia': 'Busia',
+                'Elgeyo': 'Elgeyo',
+                'Embu': 'Embu',
+                'Garissa': 'Garissa',
+                'Homa Bay': 'Homa Bay',
+                'Isiolo': 'Isiolo',
+                'Kajiado': 'Kajiado',
+                'Kakamega': 'Kakamega',
+                'Kericho': 'Kericho',
+                'Kiambu': 'Kiambu',
+                'Kilifi': 'Kilifi',
+                'Kirinyaga': 'Kirinyaga',
+                'Kisii': 'Kisii',
+                'Kisumu': 'Kisumu',
+                'Kitui': 'Kitui',
+                'Kwale': 'Kwale',
+                'Laikipia': 'Laikipia',
+                'Lamu': 'Lamu',
+                'Machakos': 'Machakos',
+                'Makueni': 'Makueni',
+                'Mandera': 'Mandera',
+                'Marsabit': 'Marsabit',
+                'Meru': 'Meru',
+                'Migori': 'Migori',
+                'Mombasa': 'Mombasa',
+                'Murang\'a': 'Murang\'a',
+                'Nairobi': 'Nairobi',
+                'Nakuru': 'Nakuru',
+                'Nandi': 'Nandi',
+                'Narok': 'Narok',
+                'Nyamira': 'Nyamira',
+                'Nyandarua': 'Nyandarua',
+                'Nyeri': 'Nyeri',
+                'Samburu': 'Samburu',
+                'Siaya': 'Siaya',
+                'Taita Taveta': 'Taita Taveta',
+                'Tana River': 'Tana River',
+                'Tharaka-Nithi': 'Tharaka-Nithi',
+                'Trans Nzoia': 'Trans Nzoia',
+                'Turkana': 'Turkana',
+                'Uasin Gishu': 'Uasin Gishu',
+                'Vihiga': 'Vihiga',
+                'Wajir': 'Wajir',
+                'West Pokot': 'West Pokot'
+            };
+            
+            // Filter counties by region if needed
+            const filteredCounties = region === 'all' ? countyData : countyData.filter(county => county.region === region);
+            
+            // Create a GeoJSON layer with styling based on the selected metric (POLYGONS)
+            if (document.getElementById('togglePolygons').checked) {
+                window.geoJsonLayer = L.geoJSON(data, {
+                    style: function(feature) {
+                        // Find the county data for this feature
+                        const countyName = feature.properties.COUNTY;
+                        const mappedName = countyNameMapping[countyName];
+                        const county = filteredCounties.find(c => c.name === mappedName);
+                        
+                        if (county) {
+                            const value = county[metric];
+                            return {
+                                fillColor: getColor(value, metric),
+                                weight: 1,
+                                opacity: 1,
+                                color: 'white',
+                                fillOpacity: 0.7
+                            };
+                        } else {
+                            return {
+                                fillColor: '#ccc',
+                                weight: 1,
+                                opacity: 1,
+                                color: 'white',
+                                fillOpacity: 0.3
+                            };
+                        }
+                    },
+                    onEachFeature: function(feature, layer) {
+                        // Find the county data for this feature
+                        const countyName = feature.properties.COUNTY;
+                        const mappedName = countyNameMapping[countyName];
+                        const county = countyData.find(c => c.name === mappedName);
+                        
+                        if (county) {
+                            const value = county[metric];
+                            layer.bindPopup(`
+                                <div style="min-width: 250px;">
+                                    <h3 style="margin: 0 0 10px 0; color: #1e5799;">${county.name} County</h3>
+                                    <table style="width: 100%; border-collapse: collapse;">
+                                        <tr>
+                                            <td style="padding: 4px 0; border-bottom: 1px solid #eee;"><strong>${getMetricLabel(metric)}:</strong></td>
+                                            <td style="padding: 4px 0; border-bottom: 1px solid #eee; text-align: right;">${value}${metric === 'pending_bills' || metric === 'budget' ? 'B' : '%'}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 4px 0; border-bottom: 1px solid #eee;"><strong>Total Budget:</strong></td>
+                                            <td style="padding: 4px 0; border-bottom: 1px solid #eee; text-align: right;">Kshs. ${county.budget}B</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 4px 0; border-bottom: 1px solid #eee;"><strong>Overall Absorption:</strong></td>
+                                            <td style="padding: 4px 0; border-bottom: 1px solid #eee; text-align: right;">${county.overall_absorption}%</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 4px 0; border-bottom: 1px solid #eee;"><strong>Development Absorption:</strong></td>
+                                            <td style="padding: 4px 0; border-bottom: 1px solid #eee; text-align: right;">${county.dev_absorption}%</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 4px 0; border-bottom: 1px solid #eee;"><strong>Revenue Performance:</strong></td>
+                                            <td style="padding: 4px 0; border-bottom: 1px solid #eee; text-align: right;">${county.revenue_performance}%</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 4px 0; border-bottom: 1px solid #eee;"><strong>Wage Bill:</strong></td>
+                                            <td style="padding: 4px 0; border-bottom: 1px solid #eee; text-align: right;">${county.wage_bill}%</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 4px 0;"><strong>Pending Bills:</strong></td>
+                                            <td style="padding: 4px 0; text-align: right;">Kshs. ${county.pending_bills}B</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            `);
+                        } else {
+                            layer.bindPopup(`<div>No data available for ${countyName} County</div>`);
+                        }
+                    }
+                }).addTo(map);
+            }
+            
+            // Create circle markers for each county (POINTS)
+            if (document.getElementById('toggleMarkers').checked) {
+                window.markerLayer = L.layerGroup().addTo(map);
+                
+                filteredCounties.forEach(county => {
+                    const value = county[metric];
+                    const color = getColor(value, metric);
+                    
+                    const marker = L.circleMarker([county.lat, county.lng], {
+                        color: 'white',
+                        weight: 2,
+                        fillColor: color,
+                        fillOpacity: 0.8,
+                        radius: 4
+                    }).addTo(window.markerLayer);
+                    
+                    marker.bindPopup(`
+                        <div style="min-width: 250px;">
+                            <h3 style="margin: 0 0 10px 0; color: #1e5799;">${county.name} County</h3>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr>
+                                    <td style="padding: 4px 0; border-bottom: 1px solid #eee;"><strong>${getMetricLabel(metric)}:</strong></td>
+                                    <td style="padding: 4px 0; border-bottom: 1px solid #eee; text-align: right;">${value}${metric === 'pending_bills' || metric === 'budget' ? 'B' : '%'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 4px 0; border-bottom: 1px solid #eee;"><strong>Total Budget:</strong></td>
+                                    <td style="padding: 4px 0; border-bottom: 1px solid #eee; text-align: right;">Kshs. ${county.budget}B</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 4px 0; border-bottom: 1px solid #eee;"><strong>Overall Absorption:</strong></td>
+                                    <td style="padding: 4px 0; border-bottom: 1px solid #eee; text-align: right;">${county.overall_absorption}%</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 4px 0; border-bottom: 1px solid #eee;"><strong>Development Absorption:</strong></td>
+                                    <td style="padding: 4px 0; border-bottom: 1px solid #eee; text-align: right;">${county.dev_absorption}%</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 4px 0; border-bottom: 1px solid #eee;"><strong>Revenue Performance:</strong></td>
+                                    <td style="padding: 4px 0; border-bottom: 1px solid #eee; text-align: right;">${county.revenue_performance}%</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 4px 0; border-bottom: 1px solid #eee;"><strong>Wage Bill:</strong></td>
+                                    <td style="padding: 4px 0; border-bottom: 1px solid #eee; text-align: right;">${county.wage_bill}%</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 4px 0;"><strong>Pending Bills:</strong></td>
+                                    <td style="padding: 4px 0; text-align: right;">Kshs. ${county.pending_bills}B</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 4px 0;"><strong>Coordinates:</strong></td>
+                                    <td style="padding: 4px 0; text-align: right;">${county.lat.toFixed(4)}, ${county.lng.toFixed(4)}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    `);
+                });
+            }
+            
+            updateLegend(metric);
+        }
+
+        // Fallback function using only circle markers
+        function loadFallbackMarkers(metric, region = 'all') {
+            // Remove existing markers
+            if (window.markerLayer) {
+                map.removeLayer(window.markerLayer);
+            }
+            
+            // Filter counties by region if needed
+            const filteredCounties = region === 'all' ? countyData : countyData.filter(county => county.region === region);
+            
+            // Create a layer group for markers
+            window.markerLayer = L.layerGroup().addTo(map);
+            
+            // Add circle markers for each county
+            filteredCounties.forEach(county => {
+                const value = county[metric];
+                const color = getColor(value, metric);
+                
+                const marker = L.circleMarker([county.lat, county.lng], {
+                    color: 'white',
+                    weight: 2,
+                    fillColor: color,
+                    fillOpacity: 0.8,
+                    radius: 8
+                }).addTo(window.markerLayer);
+                
+                marker.bindPopup(`
+                    <div style="min-width: 250px;">
+                        <h3 style="margin: 0 0 10px 0; color: #1e5799;">${county.name} County</h3>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 4px 0; border-bottom: 1px solid #eee;"><strong>${getMetricLabel(metric)}:</strong></td>
+                                <td style="padding: 4px 0; border-bottom: 1px solid #eee; text-align: right;">${value}${metric === 'pending_bills' || metric === 'budget' ? 'B' : '%'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 4px 0; border-bottom: 1px solid #eee;"><strong>Total Budget:</strong></td>
+                                <td style="padding: 4px 0; border-bottom: 1px solid #eee; text-align: right;">Kshs. ${county.budget}B</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 4px 0; border-bottom: 1px solid #eee;"><strong>Overall Absorption:</strong></td>
+                                <td style="padding: 4px 0; border-bottom: 1px solid #eee; text-align: right;">${county.overall_absorption}%</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 4px 0; border-bottom: 1px solid #eee;"><strong>Development Absorption:</strong></td>
+                                <td style="padding: 4px 0; border-bottom: 1px solid #eee; text-align: right;">${county.dev_absorption}%</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 4px 0; border-bottom: 1px solid #eee;"><strong>Revenue Performance:</strong></td>
+                                <td style="padding: 4px 0; border-bottom: 1px solid #eee; text-align: right;">${county.revenue_performance}%</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 4px 0; border-bottom: 1px solid #eee;"><strong>Wage Bill:</strong></td>
+                                <td style="padding: 4px 0; border-bottom: 1px solid #eee; text-align: right;">${county.wage_bill}%</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 4px 0;"><strong>Pending Bills:</strong></td>
+                                <td style="padding: 4px 0; text-align: right;">Kshs. ${county.pending_bills}B</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 4px 0;"><strong>Coordinates:</strong></td>
+                                <td style="padding: 4px 0; text-align: right;">${county.lat.toFixed(4)}, ${county.lng.toFixed(4)}</td>
+                            </tr>
+                        </table>
+                    </div>
+                `);
+            });
+            
+            updateLegend(metric);
+        }
+
+        function getMetricLabel(metric) {
+            const labels = {
+                'overall_absorption': 'Overall Absorption Rate',
+                'dev_absorption': 'Development Absorption Rate',
+                'revenue_performance': 'Revenue Performance',
+                'wage_bill': 'Wage Bill % of Revenue',
+                'pending_bills': 'Pending Bills',
+                'budget': 'Total Budget'
+            };
+            return labels[metric] || metric;
+        }
+
+        function updateLegend(metric) {
+            const legend = document.getElementById('mapLegend');
+            legend.innerHTML = '<strong>Legend:</strong>';
+            
+            let ranges = [];
+            
+            if (metric === 'overall_absorption' || metric === 'dev_absorption' || metric === 'revenue_performance') {
+                ranges = [
+                    { min: 85, max: 100, color: '#1a9641', label: '85% - 100%' },
+                    { min: 70, max: 85, color: '#a6d96a', label: '70% - 85%' },
+                    { min: 55, max: 70, color: '#ffffbf', label: '55% - 70%' },
+                    { min: 40, max: 55, color: '#fdae61', label: '40% - 55%' },
+                    { min: 0, max: 40, color: '#d7191c', label: '0% - 40%' }
+                ];
+            } else if (metric === 'wage_bill') {
+                ranges = [
+                    { min: 95, max: 110, color: '#d7191c', label: '95% - 110%' },
+                    { min: 85, max: 95, color: '#fdae61', label: '85% - 95%' },
+                    { min: 75, max: 85, color: '#ffffbf', label: '75% - 85%' },
+                    { min: 65, max: 75, color: '#a6d96a', label: '65% - 75%' },
+                    { min: 0, max: 65, color: '#1a9641', label: '0% - 65%' }
+                ];
+            } else if (metric === 'pending_bills') {
+                ranges = [
+                    { min: 5, max: 120, color: '#d7191c', label: '> 5B' },
+                    { min: 1, max: 5, color: '#fdae61', label: '1B - 5B' },
+                    { min: 0.5, max: 1, color: '#ffffbf', label: '0.5B - 1B' },
+                    { min: 0.1, max: 0.5, color: '#a6d96a', label: '0.1B - 0.5B' },
+                    { min: 0, max: 0.1, color: '#1a9641', label: '< 0.1B' }
+                ];
+            } else if (metric === 'budget') {
+                ranges = [
+                    { min: 20, max: 50, color: '#1a9641', label: '> 20B' },
+                    { min: 10, max: 20, color: '#a6d96a', label: '10B - 20B' },
+                    { min: 5, max: 10, color: '#ffffbf', label: '5B - 10B' },
+                    { min: 2, max: 5, color: '#fdae61', label: '2B - 5B' },
+                    { min: 0, max: 2, color: '#d7191c', label: '< 2B' }
+                ];
+            }
+            
+            ranges.forEach(range => {
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                item.innerHTML = `
+                    <div class="legend-color" style="background-color: ${range.color};"></div>
+                    <div>${range.label}</div>
+                `;
+                legend.appendChild(item);
+            });
+        }
+
+        // Initialize charts
+        function initCharts() {
+            // Top performers chart
+            const topPerformers = [...countyData]
+                .sort((a, b) => b.overall_absorption - a.overall_absorption)
+                .slice(0, 10);
+            
+            const topPerformersCtx = document.getElementById('topPerformersChart').getContext('2d');
+            new Chart(topPerformersCtx, {
+                type: 'bar',
+                data: {
+                    labels: topPerformers.map(c => c.name),
+                    datasets: [{
+                        label: 'Overall Absorption Rate (%)',
+                        data: topPerformers.map(c => c.overall_absorption),
+                        backgroundColor: '#1e5799',
+                        borderColor: '#15427a',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Absorption Rate (%)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Budget allocation vs expenditure chart
+            const budgetCtx = document.getElementById('budgetChart').getContext('2d');
+            new Chart(budgetCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Development Expenditure', 'Recurrent Expenditure'],
+                    datasets: [{
+                        data: [109.23, 337.53],
+                        backgroundColor: ['#1a9641', '#2c7bb6'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: Kshs. ${value}B (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Wage bill vs performance chart
+            const wageBillCtx = document.getElementById('wageBillChart').getContext('2d');
+            new Chart(wageBillCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Counties',
+                        data: countyData.map(county => ({
+                            x: county.wage_bill,
+                            y: county.dev_absorption,
+                            county: county.name
+                        })),
+                        backgroundColor: '#1e5799',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Wage Bill (% of Revenue)'
+                            },
+                            min: 40,
+                            max: 110
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Development Absorption Rate (%)'
+                            },
+                            min: 0,
+                            max: 100
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const county = countyData.find(c => c.name === context.raw.county);
+                                    return [
+                                        `County: ${county.name}`,
+                                        `Wage Bill: ${county.wage_bill}%`,
+                                        `Dev Absorption: ${county.dev_absorption}%`
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Revenue sources chart
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            new Chart(revenueCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Equitable Share', 'Own-Source Revenue', 'Conditional Grants', 'Balance B/F'],
+                    datasets: [{
+                        data: [354.59, 58.95, 35.97, 42.96],
+                        backgroundColor: ['#1a9641', '#2c7bb6', '#fdae61', '#d7191c'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: Kshs. ${value}B (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Trends chart
+            const trendsCtx = document.getElementById('trendsChart').getContext('2d');
+            new Chart(trendsCtx, {
+                type: 'line',
+                data: {
+                    labels: ['2019/20', '2020/21', '2021/22', '2022/23', '2023/24'],
+                    datasets: [
+                        {
+                            label: 'Overall Absorption Rate',
+                            data: [72.1, 74.5, 76.8, 78.2, 79.5],
+                            borderColor: '#1e5799',
+                            backgroundColor: 'rgba(30, 87, 153, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Development Absorption Rate',
+                            data: [48.2, 50.1, 52.7, 54.3, 57.5],
+                            borderColor: '#1a9641',
+                            backgroundColor: 'rgba(26, 150, 65, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Absorption Rate (%)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Regional trends chart
+            const regionalTrendsCtx = document.getElementById('regionalTrendsChart').getContext('2d');
+            const regions = [...new Set(countyData.map(c => c.region))];
+            new Chart(regionalTrendsCtx, {
+                type: 'bar',
+                data: {
+                    labels: regions.map(r => r.replace('_', ' ').toUpperCase()),
+                    datasets: [{
+                        label: 'Average Absorption Rate (%)',
+                        data: regions.map(region => {
+                            const regionCounties = countyData.filter(c => c.region === region);
+                            return regionCounties.reduce((sum, county) => sum + county.overall_absorption, 0) / regionCounties.length;
+                        }),
+                        backgroundColor: '#1e5799',
+                        borderColor: '#15427a',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Absorption Rate (%)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Own revenue chart
+            const ownRevenueCtx = document.getElementById('ownRevenueChart').getContext('2d');
+            const ownRevenueLeaders = [...countyData]
+                .sort((a, b) => b.own_revenue - a.own_revenue)
+                .slice(0, 10);
+            
+            new Chart(ownRevenueCtx, {
+                type: 'bar',
+                data: {
+                    labels: ownRevenueLeaders.map(c => c.name),
+                    datasets: [{
+                        label: 'Own-Source Revenue (Kshs. Billion)',
+                        data: ownRevenueLeaders.map(c => c.own_revenue),
+                        backgroundColor: '#2c7bb6',
+                        borderColor: '#1e5799',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Revenue (Kshs. Billion)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Efficiency matrix chart
+            const efficiencyCtx = document.getElementById('efficiencyMatrixChart').getContext('2d');
+            new Chart(efficiencyCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Counties',
+                        data: countyData.map(county => ({
+                            x: county.revenue_performance,
+                            y: county.overall_absorption,
+                            county: county.name
+                        })),
+                        backgroundColor: '#1e5799',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Revenue Performance (%)'
+                            },
+                            min: 0,
+                            max: 250
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Overall Absorption Rate (%)'
+                            },
+                            min: 0,
+                            max: 100
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const county = countyData.find(c => c.name === context.raw.county);
+                                    return [
+                                        `County: ${county.name}`,
+                                        `Revenue Performance: ${county.revenue_performance}%`,
+                                        `Absorption: ${county.overall_absorption}%`
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Debt ratio chart
+            const debtRatioCtx = document.getElementById('debtRatioChart').getContext('2d');
+            const highDebtCounties = [...countyData]
+                .sort((a, b) => b.debt_ratio - a.debt_ratio)
+                .slice(0, 10);
+            
+            new Chart(debtRatioCtx, {
+                type: 'bar',
+                data: {
+                    labels: highDebtCounties.map(c => c.name),
+                    datasets: [{
+                        label: 'Debt-to-Revenue Ratio (%)',
+                        data: highDebtCounties.map(c => c.debt_ratio),
+                        backgroundColor: '#d7191c',
+                        borderColor: '#a50f15',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Debt-to-Revenue Ratio (%)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Initialize comparison charts
+            updateComparisonCharts();
+        }
+
+        // Update comparison charts
+        function updateComparisonCharts() {
+            const county1 = document.getElementById('county1Selector').value;
+            const county2 = document.getElementById('county2Selector').value;
+            
+            const county1Data = countyData.find(c => c.name === county1);
+            const county2Data = countyData.find(c => c.name === county2);
+            
+            if (county1Data) {
+                const ctx1 = document.getElementById('county1Chart').getContext('2d');
+                
+                // Clear existing chart
+                if (window.county1ChartInstance) {
+                    window.county1ChartInstance.destroy();
+                }
+                
+                window.county1ChartInstance = new Chart(ctx1, {
+                    type: 'radar',
+                    data: {
+                        labels: ['Budget (B)', 'Overall Absorption', 'Dev Absorption', 'Revenue Performance', 'Wage Bill'],
+                        datasets: [{
+                            label: county1,
+                            data: [
+                                county1Data.budget,
+                                county1Data.overall_absorption,
+                                county1Data.dev_absorption,
+                                county1Data.revenue_performance,
+                                county1Data.wage_bill
+                            ],
+                            backgroundColor: 'rgba(30, 87, 153, 0.2)',
+                            borderColor: 'rgba(30, 87, 153, 1)',
+                            pointBackgroundColor: 'rgba(30, 87, 153, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(30, 87, 153, 1)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                angleLines: {
+                                    display: true
+                                },
+                                suggestedMin: 0,
+                                suggestedMax: 100
+                            }
+                        }
+                    }
+                });
+            }
+            
+            if (county2Data) {
+                const ctx2 = document.getElementById('county2Chart').getContext('2d');
+                
+                // Clear existing chart
+                if (window.county2ChartInstance) {
+                    window.county2ChartInstance.destroy();
+                }
+                
+                window.county2ChartInstance = new Chart(ctx2, {
+                    type: 'radar',
+                    data: {
+                        labels: ['Budget (B)', 'Overall Absorption', 'Dev Absorption', 'Revenue Performance', 'Wage Bill'],
+                        datasets: [{
+                            label: county2,
+                            data: [
+                                county2Data.budget,
+                                county2Data.overall_absorption,
+                                county2Data.dev_absorption,
+                                county2Data.revenue_performance,
+                                county2Data.wage_bill
+                            ],
+                            backgroundColor: 'rgba(215, 25, 28, 0.2)',
+                            borderColor: 'rgba(215, 25, 28, 1)',
+                            pointBackgroundColor: 'rgba(215, 25, 28, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(215, 25, 28, 1)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                angleLines: {
+                                    display: true
+                                },
+                                suggestedMin: 0,
+                                suggestedMax: 100
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Populate county selectors
+        function populateCountySelectors() {
+            const selectors = [
+                document.getElementById('countySelector'),
+                document.getElementById('county1Selector'),
+                document.getElementById('county2Selector')
+            ];
+            
+            selectors.forEach(selector => {
+                // Clear existing options except the first one
+                while (selector.options.length > 1) {
+                    selector.remove(1);
+                }
+                
+                countyData.forEach(county => {
+                    const option = document.createElement('option');
+                    option.value = county.name;
+                    option.textContent = county.name;
+                    selector.appendChild(option);
+                });
+            });
+            
+            // Set default values for comparison
+            document.getElementById('county1Selector').value = 'Nairobi';
+            document.getElementById('county2Selector').value = 'Kisumu';
+        }
+
+        // Populate data table
+        function populateDataTable() {
+            const tableBody = document.querySelector('#countyDataTable tbody');
+            tableBody.innerHTML = '';
+            
+            countyData.forEach(county => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${county.name}</td>
+                    <td>${county.budget}</td>
+                    <td>${county.overall_absorption}</td>
+                    <td>${county.dev_absorption}</td>
+                    <td>${county.revenue_performance}</td>
+                    <td>${county.wage_bill}</td>
+                    <td>${county.pending_bills}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Export functionality
+        function exportTableToCSV() {
+            const rows = [];
+            const headers = [
+                'County',
+                'Total Budget (Kshs. B)',
+                'Overall Absorption (%)',
+                'Development Absorption (%)',
+                'Revenue Performance (%)',
+                'Wage Bill (%)',
+                'Pending Bills (Kshs. B)',
+                'Latitude',
+                'Longitude'
+            ];
+            
+            rows.push(headers.join(','));
+            
+            countyData.forEach(county => {
+                const row = [
+                    county.name,
+                    county.budget,
+                    county.overall_absorption,
+                    county.dev_absorption,
+                    county.revenue_performance,
+                    county.wage_bill,
+                    county.pending_bills,
+                    county.lat,
+                    county.lng
+                ];
+                rows.push(row.join(','));
+            });
+            
+            const csvContent = "data:text/csv;charset=utf-8," + rows.join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "kenya_county_budget_data.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Event listeners
+        document.getElementById('metricSelector').addEventListener('change', function() {
+            currentMetric = this.value;
+            loadGeoJSON(this.value, currentRegion);
+        });
+
+        document.getElementById('countySelector').addEventListener('change', function() {
+            if (this.value !== 'all') {
+                const county = countyData.find(c => c.name === this.value);
+                if (county) {
+                    map.setView([county.lat, county.lng], 9);
+                }
+            } else {
+                map.setView([0.0236, 37.9062], 6);
+            }
+        });
+
+        document.getElementById('regionSelector').addEventListener('change', function() {
+            currentRegion = this.value;
+            loadGeoJSON(currentMetric, this.value);
+        });
+
+        document.getElementById('resetView').addEventListener('click', function() {
+            map.setView([0.0236, 37.9062], 6);
+            document.getElementById('countySelector').value = 'all';
+            document.getElementById('regionSelector').value = 'all';
+            document.getElementById('yearSelector').value = '2024';
+            currentRegion = 'all';
+            loadGeoJSON('overall_absorption', 'all');
+        });
+
+        document.getElementById('exportData').addEventListener('click', function() {
+            exportTableToCSV();
+        });
+
+        document.getElementById('exportTable').addEventListener('click', function() {
+            exportTableToCSV();
+        });
+
+        document.getElementById('exportChart').addEventListener('click', function() {
+            alert('');
+        });
+
+        document.getElementById('county1Selector').addEventListener('change', updateComparisonCharts);
+        document.getElementById('county2Selector').addEventListener('change', updateComparisonCharts);
+
+        // Layer control event listeners
+        document.getElementById('togglePolygons').addEventListener('change', function() {
+            loadGeoJSON(currentMetric, currentRegion);
+        });
+
+        document.getElementById('toggleMarkers').addEventListener('change', function() {
+            loadGeoJSON(currentMetric, currentRegion);
+        });
+
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Remove active class from all tabs and contents
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding content
+                this.classList.add('active');
+                const tabId = this.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // Initialize the application
+        function init() {
+            loadGeoJSON('overall_absorption');
+            initCharts();
+            populateCountySelectors();
+            populateDataTable();
+        }
+
+        // Run initialization when page loads
+        window.addEventListener('DOMContentLoaded', init);
+        
+        // Global variables for tracking current state
+        let currentMetric = 'overall_absorption';
+        let currentRegion = 'all';
+    </script>
+</body>
+</html>

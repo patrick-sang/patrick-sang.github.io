@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Diaspora Remittance</title>
+  
+  <!-- Leaflet + Turf -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+  
+  <!-- Chart.js for trend visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --primary-color: #007bff;
+      --primary-dark: #0056b3;
+      --secondary-color: #6c757d;
+      --success-color: #28a745;
+      --danger-color: #dc3545;
+      --warning-color: #ffc107;
+      --info-color: #17a2b8;
+      --light-color: #f8f9fa;
+      --dark-color: #343a40;
+      --border-radius: 8px;
+      --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      --transition: all 0.3s ease;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f4f9;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      color: #333;
+    }
+
+    #map {
+      width: 70%;
+      height: 100vh;
+      border-radius: var(--border-radius) 0 0 var(--border-radius);
+      box-shadow: var(--box-shadow);
+      z-index: 1;
+    }
+
+    #controls {
+      width: 30%;
+      padding: 20px;
+      background-color: #ffffff;
+      box-shadow: var(--box-shadow);
+      border-radius: 0 var(--border-radius) var(--border-radius) 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    h2 {
+      text-align: center;
+      margin: 0 0 20px 0;
+      color: var(--dark-color);
+      font-size: 24px;
+      font-weight: 600;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-weight: 600;
+      color: var(--dark-color);
+      font-size: 14px;
+    }
+
+    button, select {
+      margin: 0;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    button {
+      background-color: var(--primary-color);
+      color: white;
+      width: 100%;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius:50px;
+    }
+
+    button:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    select {
+      background-color: var(--light-color);
+      border: 1px solid #ced4da;
+      width: 100%;
+      box-sizing: border-box;
+      color: var(--dark-color);
+    }
+
+    select:focus {
+      border-color: var(--primary-color);
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    }
+
+    .panel {
+      padding: 15px;
+      background-color: #ffffff;
+      box-shadow: var(--box-shadow);
+      border-radius: var(--border-radius);
+      font-size: 14px;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--dark-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-icon {
+      color: var(--primary-color);
+    }
+
+    .statsTable {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .statsTable td, .statsTable th {
+      padding: 8px 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .statsTable th {
+      text-align: left;
+      font-weight: 600;
+      color: var(--secondary-color);
+      font-size: 13px;
+    }
+
+    .statsTable td:last-child, .statsTable th:last-child {
+      text-align: right;
+    }
+
+    #globalTotal {
+      color: var(--primary-color);
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    /* Animated stroke styles for Leaflet SVG paths */
+    .flow-line {
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-opacity: 0.7;
+      stroke-dasharray: 12 8;
+      animation-name: flow-pulse, flow-move;
+      animation-iteration-count: infinite;
+      animation-timing-function: linear;
+      filter: drop-shadow(0 0 2px rgba(0,0,0,0.2));
+    }
+
+    @keyframes flow-pulse {
+      0%   { stroke-opacity: 0.4; }
+      50%  { stroke-opacity: 1.0; }
+      100% { stroke-opacity: 0.4; }
+    }
+
+    @keyframes flow-move {
+      from { stroke-dashoffset: 0; }
+      to   { stroke-dashoffset: -200; }
+    }
+
+    .reg-North_America { stroke: #377eb8; }
+    .reg-Europe        { stroke: #4daf4a; }
+    .reg-Middle_East   { stroke: #984ea3; }
+    .reg-Africa        { stroke: #ff7f00; }
+    .reg-Asia_Pacific  { stroke: #e41a1c; }
+    .reg-Rest_of_World { stroke: #999999; }
+
+    .flow-line:hover { 
+      filter: drop-shadow(0 0 8px rgba(0,0,0,0.3)); 
+      stroke-opacity: 1; 
+      cursor: pointer; 
+    }
+
+    /* Analysis Panel Styles */
+    .analysis-chart-container {
+      width: 100%;
+      height: 200px;
+      margin-bottom: 15px;
+    }
+
+    .analysis-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .analysis-table td, .analysis-table th {
+      padding: 6px 8px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .analysis-table th {
+      text-align: left;
+      font-weight: 600;
+      color: var(--secondary-color);
+    }
+
+    .positive-growth {
+      color: var(--success-color);
+      font-weight: 600;
+    }
+
+    .negative-growth {
+      color: var(--danger-color);
+      font-weight: 600;
+    }
+
+    /* Data Management Panel */
+    .data-management-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .data-management-buttons button {
+      flex: 1;
+    }
+
+    .export-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .export-buttons button {
+      flex: 1;
+      min-width: 120px;
+    }
+
+    #exportGeoJSON {
+      background-color: var(--info-color);
+    }
+
+    #exportGeoJSON:hover {
+      background-color: #138496;
+    }
+
+    #exportCSV {
+      background-color: var(--success-color);
+    }
+
+    #exportCSV:hover {
+      background-color: #218838;
+    }
+
+    #exportAnalysis {
+      background-color: #6f42c1;
+    }
+
+    #exportAnalysis:hover {
+      background-color: #5a2d91;
+    }
+
+    #toggleAnim {
+      background-color: var(--warning-color);
+      color: var(--dark-color);
+    }
+
+    #toggleAnim:hover {
+      background-color: #e0a800;
+    }
+
+    #manageData {
+      background-color: var(--secondary-color);
+    }
+
+    #manageData:hover {
+      background-color: #5a6268;
+    }
+
+    #loadData {
+      background-color: var(--info-color);
+    }
+
+    #loadData:hover {
+      background-color: #138496;
+    }
+
+    .legend {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: white;
+      padding: 10px 15px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      z-index: 1000;
+      font-size: 12px;
+    }
+
+    .legend-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--dark-color);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    .legend-color {
+      width: 15px;
+      height: 15px;
+      margin-right: 8px;
+      border-radius: 2px;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+
+      #map {
+        width: 100%;
+        height: 50vh;
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
+      }
+
+      #controls {
+        width: 100%;
+        height: 50vh;
+        overflow-y: auto;
+        border-radius: 0 0 var(--border-radius) var(--border-radius);
+      }
+
+      button, select {
+        font-size: 14px;
+        padding: 8px 12px;
+      }
+
+      .panel {
+        font-size: 14px;
+      }
+      
+      .legend {
+        bottom: 10px;
+        right: 10px;
+        font-size: 10px;
+      }
+      
+      .export-buttons button {
+        min-width: 100px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+  
+  <div id="controls">
+    <h2>Kenya Diaspora Remitance</h2>
+    
+    <!-- Year Selection -->
+    <div class="control-group">
+      <label for="yearSelect">Select Year:</label>
+      <select id="yearSelect">
+        <option value="2024">2024</option>
+        <option value="2023">2023</option>
+        <option value="2022">2022</option>
+         <option value="2025">2025</option>
+      </select>
+    </div>
+    
+    <!-- Region Filter -->
+    <div class="control-group">
+      <label for="regionFilter">Filter by Region:</label>
+      <select id="regionFilter">
+        <option value="All"> All Regions</option>
+        <option value="North America">North America</option>
+        <option value="Europe">Europe</option>
+        <option value="Middle East">Middle East</option>
+        <option value="Africa">Africa</option>
+        <option value="Asia-Pacific">Asia-Pacific</option>
+        <option value="Rest of World">Rest of World</option>
+      </select>
+    </div>
+    
+    <!-- Animation Control -->
+    <button id="toggleAnim">
+      <span class="icon">
+    </button>
+    
+    <!-- Export Controls -->
+    <div class="export-buttons">
+      <button id="exportGeoJSON">Export GeoJSON</button>
+      <button id="exportCSV">Export CSV</button>
+      <button id="exportAnalysis">Export Analysis</button>
+    </div>
+    
+    <!-- Statistics Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <h3 class="panel-title">
+          <span class="panel-icon"></span> Remittance Summary
+        </h3>
+      </div>
+      <table class="statsTable">
+        <thead>
+          <tr>
+            <th>Region</th>
+            <th>Total $B</th>
+            <th>Avg Dist (km)</th>
+          </tr>
+        </thead>
+        <tbody id="statsTableBody"></tbody>
+      </table>
+      <div style="margin-top: 15px; font-size: 14px; color: #444; text-align: center;">
+        Total (all regions): <strong id="globalTotal"></strong>
+      </div>
+    </div>
+    
+    <!-- Analysis Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <h3 class="panel-title">
+          <span class="panel-icon"></span> Trend Analysis
+        </h3>
+      </div>
+      <div class="analysis-chart-container">
+        <canvas id="trendChart"></canvas>
+      </div>
+      <table class="analysis-table">
+        <thead>
+          <tr>
+            <th>Region</th>
+            <th>Market Share</th>
+            <th>Growth (YoY)</th>
+          </tr>
+        </thead>
+        <tbody id="analysisTableBody"></tbody>
+      </table>
+    </div>
+    
+    <!-- Data Management Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <h3 class="panel-title">
+          <span class="panel-icon"></span> 
+        </h3>
+      </div>
+      <div class="data-management-buttons">
+        <button id="manageData" onclick="window.open('kenya-remittance-data.html', '_blank')"></button>
+        <button id="loadData">Reload Data</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-title">Regions</div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #377eb8;"></div>
+      <span>North America</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #4daf4a;"></div>
+      <span>Europe</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #984ea3;"></div>
+      <span>Middle East</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #ff7f00;"></div>
+      <span>Africa</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #e41a1c;"></div>
+      <span>Asia-Pacific</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #999999;"></div>
+      <span>Rest of World</span>
+    </div>
+  </div>
+
+  <script>
+    // --- Initialize map ---
+    var map = L.map('map', {
+      minZoom: 2,
+      maxZoom: 8,
+      maxBounds: [[-60, -180], [80, 180]],
+      maxBoundsViscosity: 1.0
+    }).setView([0, 37], 3);
+    
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 8,
+      attribution: '&copy; CARTO | Kenya Diaspora Remittance Analysis'
+    }).addTo(map);
+
+    // --- Default flow data (regions only) ---
+    var defaultFlows = {
+      "2024": {
+        "type": "FeatureCollection",
+        "features": [
+          { "type": "Feature", "properties": { "region": "North America", "remittance_usd_billion": 3.9 },
+            "geometry": { "type": "LineString", "coordinates": [[-98.35, 39.5], [36.8219, -1.2921]] } },
+          { "type": "Feature", "properties": { "region": "Europe", "remittance_usd_billion": 1.35 },
+            "geometry": { "type": "LineString", "coordinates": [[-1.5, 52.35], [36.8219, -1.2921]] } },
+          { "type": "Feature", "properties": { "region": "Middle East", "remittance_usd_billion": 0.8 },
+            "geometry": { "type": "LineString", "coordinates": [[45.0, 23.8], [36.8219, -1.2921]] } },
+          { "type": "Feature", "properties": { "region": "Africa", "remittance_usd_billion": 0.15 },
+            "geometry": { "type": "LineString", "coordinates": [[28.0473, -26.2041], [36.8219, -1.2921]] } },
+          { "type": "Feature", "properties": { "region": "Asia-Pacific", "remittance_usd_billion": 0.32 },
+            "geometry": { "type": "LineString", "coordinates": [[78.9629, 20.5937], [36.8219, -1.2921]] } },
+          { "type": "Feature", "properties": { "region": "Rest of World", "remittance_usd_billion": 0.38 },
+            "geometry": { "type": "LineString", "coordinates": [[12.5, 41.9], [36.8219, -1.2921]] } }
+        ]
+      },
+      "2023": {
+        "type": "FeatureCollection",
+        "features": [
+          { "type": "Feature", "properties": { "region": "North America", "remittance_usd_billion": 3.7 },
+            "geometry": { "type": "LineString", "coordinates": [[-98.35, 39.5], [36.8219, -1.2921]] } },
+          { "type": "Feature", "properties": { "region": "Europe", "remittance_usd_billion": 1.22 },
+            "geometry": { "type": "LineString", "coordinates": [[-1.5, 52.35], [36.8219, -1.2921]] } },
+          { "type": "Feature", "properties": { "region": "Middle East", "remittance_usd_billion": 0.74 },
+            "geometry": { "type": "LineString", "coordinates": [[45.0, 23.8], [36.8219, -1.2921]] } },
+          { "type": "Feature", "properties": { "region": "Africa", "remittance_usd_billion": 0.14 },
+            "geometry": { "type": "LineString", "coordinates": [[28.0473, -26.2041], [36.8219, -1.2921]] } },
+          { "type": "Feature", "properties": { "region": "Asia-Pacific", "remittance_usd_billion": 0.29 },
+            "geometry": { "type": "LineString", "coordinates": [[78.9629, 20.5937], [36.8219, -1.2921]] } },
+          { "type": "Feature", "properties": { "region": "Rest of World", "remittance_usd_billion": 0.35 },
+            "geometry": { "type": "LineString", "coordinates": [[12.5, 41.9], [36.8219, -1.2921]] } }
+        ]
+      },
+      "2022": {
+        "type": "FeatureCollection",
+        "features": [
+          { "type": "Feature", "properties": { "region": "North America", "remittance_usd_billion": 3.5 },
+            "geometry": { "type": "LineString", "coordinates": [[-98.35, 39.5], [36.8219, -1.2921]] } },
+          { "type": "Feature", "properties": { "region": "Europe", "remittance_usd_billion": 1.1 },
+            "geometry": { "type": "LineString", "coordinates": [[-1.5, 52.35], [36.8219, -1.2921]] } },
+          { "type": "Feature", "properties": { "region": "Middle East", "remittance_usd_billion": 0.7 },
+            "geometry": { "type": "LineString", "coordinates": [[45.0, 23.8], [36.8219, -1.2921]] } },
+          { "type": "Feature", "properties": { "region": "Africa", "remittance_usd_billion": 0.13 },
+            "geometry": { "type": "LineString", "coordinates": [[28.0473, -26.2041], [36.8219, -1.2921]] } },
+          { "type": "Feature", "properties": { "region": "Asia-Pacific", "remittance_usd_billion": 0.26 },
+            "geometry": { "type": "LineString", "coordinates": [[78.9629, 20.5937], [36.8219, -1.2921]] } },
+          { "type": "Feature", "properties": { "region": "Rest of World", "remittance_usd_billion": 0.32 },
+            "geometry": { "type": "LineString", "coordinates": [[12.5, 41.9], [36.8219, -1.2921]] } }
+        ]
+      }
+    };
+
+    // --- Global variables ---
+    var flowLayer = null;
+    var allFlows = {};
+    var trendChart = null;
+
+    // --- Create geodesic curved lines ---
+    function createGeodesicLine(start, end, steps) {
+      const coordinates = [];
+      const startLatLng = L.latLng(start[1], start[0]);
+      const endLatLng = L.latLng(end[1], end[0]);
+      
+      // Calculate intermediate points along a great circle
+      for (let i = 0; i <= steps; i++) {
+        const fraction = i / steps;
+        const interpolated = L.GeometryUtil.interpolateOnLine(
+          map, 
+          [startLatLng, endLatLng], 
+          fraction
+        );
+        
+        if (interpolated) {
+          coordinates.push([interpolated.latLng.lng, interpolated.latLng.lat]);
+        }
+      }
+      
+      return coordinates;
+    }
+
+    // --- Initialize with default data or loaded data ---
+    function initializeData() {
+      // Try to load data from localStorage first
+      const savedData = localStorage.getItem('kenyaRemittanceData');
+      
+      if (savedData) {
+        allFlows = JSON.parse(savedData);
+      } else {
+        // Use default data with geodesic lines
+        allFlows = JSON.parse(JSON.stringify(defaultFlows));
+        
+        // Convert straight lines to geodesic curves
+        Object.keys(allFlows).forEach(year => {
+          allFlows[year].features.forEach(feature => {
+            const start = feature.geometry.coordinates[0];
+            const end = feature.geometry.coordinates[1];
+            const curvedCoords = createGeodesicLine(start, end, 20);
+            feature.geometry.coordinates = curvedCoords;
+          });
+        });
+        
+        saveDataToStorage();
+      }
+      
+      // Initialize map with current year
+      updateMap('2024');
+      updateAnalysis();
+      updateYearSelector();
+    }
+
+    // --- Save data to localStorage ---
+    function saveDataToStorage() {
+      localStorage.setItem('kenyaRemittanceData', JSON.stringify(allFlows));
+    }
+
+    // --- Load data from Mavo storage ---
+    function loadDataFromMavo() {
+      // This would typically fetch from Mavo backend
+      // For now, we'll reload from localStorage
+      const savedData = localStorage.getItem('kenyaRemittanceData');
+      if (savedData) {
+        allFlows = JSON.parse(savedData);
+        updateMap(document.getElementById('yearSelect').value);
+        updateAnalysis();
+        updateYearSelector();
+        alert('Data reloaded successfully!');
+      }
+    }
+
+    // --- Update year selector with available years ---
+    function updateYearSelector() {
+      const yearSelect = document.getElementById('yearSelect');
+      yearSelect.innerHTML = '';
+      
+      const years = Object.keys(allFlows).sort().reverse();
+      years.forEach(year => {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        yearSelect.appendChild(option);
+      });
+    }
+
+    // --- helpers for safe CSS class names ---
+    function toClassName(s){
+      if(!s) return '';
+      return s.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_\-]/g,'');
+    }
+
+    // --- color mapping (keeps parity with CSS) ---
+    function getColor(region) {
+      switch(region){
+        case 'North America': return '#377eb8';
+        case 'Europe': return '#4daf4a';
+        case 'Middle East': return '#984ea3';
+        case 'Africa': return '#ff7f00';
+        case 'Asia-Pacific': return '#e41a1c';
+        default: return '#999999';
+      }
+    }
+
+    // --- Calculate line width based on remittance size ---
+    function calculateLineWidth(remittance) {
+      // Define min and max line widths
+      const minWidth = 1;
+      const maxWidth = 10;
+      
+      // Define min and max remittance values for scaling
+      const minRemittance = 0.1;
+      const maxRemittance = 4.0;
+      
+      // Calculate width using logarithmic scale for better visual distinction
+      const normalized = (Math.log(remittance) - Math.log(minRemittance)) / 
+                        (Math.log(maxRemittance) - Math.log(minRemittance));
+      
+      // Ensure value is within bounds
+      const clamped = Math.max(0, Math.min(1, normalized));
+      
+      // Return calculated width
+      return minWidth + clamped * (maxWidth - minWidth);
+    }
+
+    // --- style function returns className per feature for CSS animation & stroke color via classes ---
+    function style(feature){
+      var regionClass = 'reg-' + toClassName(feature.properties.region).replace(/-/g,'_');
+      var weight = calculateLineWidth(feature.properties.remittance_usd_billion);
+      
+      return {
+        className: 'flow-line ' + regionClass,
+        weight: weight,
+        opacity: 0.8,
+        color: getColor(feature.properties.region)
+      };
+    }
+
+    // --- Update map with data for selected year ---
+    function updateMap(year) {
+      // Remove existing flow layer
+      if (flowLayer) {
+        map.removeLayer(flowLayer);
+      }
+      
+      const flows = allFlows[year] || { type: "FeatureCollection", features: [] };
+      
+      // Place flows on map and create midpoint markers/popups; also set per-feature animation durations
+      flowLayer = L.geoJSON(flows, {
+        style: style,
+        onEachFeature: function(feature, layer){
+          // distance using Turf
+          var distance = turf.length(feature, { units: 'kilometers' });
+          var distRound = Math.round(distance);
+          var midpoint = turf.midpoint(
+            feature.geometry.coordinates[0], 
+            feature.geometry.coordinates[feature.geometry.coordinates.length - 1]
+          );
+          // midpoint marker
+          L.circleMarker([midpoint.geometry.coordinates[1], midpoint.geometry.coordinates[0]], {
+            radius: 4, color: "#000", fillColor: getColor(feature.properties.region), fillOpacity: 0.9
+          }).addTo(map).bindPopup(`<b>${feature.properties.region}</b><br>Remittance: $${feature.properties.remittance_usd_billion}B<br>Distance: ${distRound} km`);
+          layer.bindTooltip(`${feature.properties.region}<br>$${feature.properties.remittance_usd_billion}B — ${distRound} km`);
+          // after layer added to map, adjust animation speed based on remittance size
+          layer.on('add', function(){
+            // Leaflet creates an SVG path node; find and set animation-duration
+            setTimeout(function(){ // delay until path exists in DOM
+              var path = layer.getElement ? layer.getElement() : null;
+              if(path){
+                // Determine duration: larger remittance -> slightly faster pulse (shorter duration)
+                // Map remittance (0.12 .. 3.9) to duration (6s .. 1.8s)
+                var r = feature.properties.remittance_usd_billion;
+                var minR = 0.12, maxR = 3.9;
+                var minDur = 1.8, maxDur = 6;
+                var dur = maxDur - ( (r - minR) / (maxR - minR) ) * (maxDur - minDur);
+                if(!isFinite(dur) || dur<=0) dur = 4;
+                path.style.animationDuration = dur.toFixed(2) + 's, ' + (dur*0.8).toFixed(2) + 's';
+                // stroke color is also set, but ensure CSS class color doesn't override our region color:
+                path.style.stroke = getColor(feature.properties.region);
+              }
+            }, 10);
+          });
+        }
+      }).addTo(map);
+
+      // Add Kenya marker
+      L.circleMarker([-1.2921, 36.8219], { 
+        radius: 10, 
+        color: "darkgreen", 
+        fillColor: "lime", 
+        fillOpacity: 0.9,
+        weight: 2
+      }).addTo(map)
+        .bindPopup("<b>Kenya (Nairobi)</b><br>Remittance inflow hub")
+        .bindTooltip("Kenya - Remittance Destination");
+
+      // --- Turf global analysis and bounding box ---
+      var totalRemittance = flows.features.reduce((s,f)=>s + f.properties.remittance_usd_billion, 0);
+      var bbox = turf.bbox(flows);
+      var bboxPolygon = turf.bboxPolygon(bbox);
+      L.geoJSON(bboxPolygon, { color: "black", weight: 1, dashArray: "5,3", fillOpacity: 0 }).addTo(map)
+        .bindPopup(`Bounding box of flows<br>Total: $${totalRemittance.toFixed(2)}B`);
+
+      // Update stats panel
+      renderStatsPanel(flows);
+    }
+
+    // --- Aggregation by region: total remittance and average distance (km) ---
+    function aggregateByRegion(fc){
+      var agg = {};
+      fc.features.forEach(function(f){
+        var region = f.properties.region;
+        var dist = turf.length(f, { units: 'kilometers' });
+        if(!agg[region]) agg[region] = { total: 0, dists: [] };
+        agg[region].total += f.properties.remittance_usd_billion;
+        agg[region].dists.push(dist);
+      });
+      // compute averages
+      Object.keys(agg).forEach(function(r){
+        var arr = agg[r].dists;
+        agg[r].avgDist = arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length) : 0;
+        agg[r].total = Number(agg[r].total.toFixed(2));
+      });
+      return agg;
+    }
+
+    // --- render stats panel ---
+    function renderStatsPanel(filteredFc){
+      var agg = aggregateByRegion(filteredFc);
+      var tbody = document.getElementById('statsTableBody');
+      tbody.innerHTML = '';
+      var keys = Object.keys(agg).sort();
+      keys.forEach(function(k){
+        var tr = document.createElement('tr');
+        var tdRegion = document.createElement('td'); tdRegion.textContent = k;
+        var tdTotal = document.createElement('td'); tdTotal.textContent = agg[k].total.toFixed(2);
+        var tdAvg = document.createElement('td'); tdAvg.textContent = agg[k].avgDist;
+        tr.appendChild(tdRegion); tr.appendChild(tdTotal); tr.appendChild(tdAvg);
+        tbody.appendChild(tr);
+      });
+      
+      var totalRemittance = filteredFc.features.reduce((s,f)=>s + f.properties.remittance_usd_billion, 0);
+      document.getElementById('globalTotal').textContent = '$' + totalRemittance.toFixed(2) + 'B';
+    }
+
+    // --- Update trend analysis ---
+    function updateAnalysis() {
+      const years = Object.keys(allFlows).sort();
+      const regions = ['North America', 'Europe', 'Middle East', 'Africa', 'Asia-Pacific', 'Rest of World'];
+      
+      // Prepare data for trend chart
+      const regionData = {};
+      regions.forEach(region => {
+        regionData[region] = years.map(year => {
+          const flows = allFlows[year];
+          const regionFlows = flows.features.filter(f => f.properties.region === region);
+          return regionFlows.reduce((sum, f) => sum + f.properties.remittance_usd_billion, 0);
+        });
+      });
+      
+      // Update trend chart
+      const ctx = document.getElementById('trendChart').getContext('2d');
+      
+      if (trendChart) {
+        trendChart.destroy();
+      }
+      
+      trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: years,
+          datasets: regions.map((region, i) => ({
+            label: region,
+            data: regionData[region],
+            borderColor: getColor(region),
+            backgroundColor: getColor(region) + '20',
+            tension: 0.3,
+            fill: false
+          }))
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Remittance (USD Billion)'
+              }
+            }
+          }
+        }
+      });
+      
+      // Update analysis table with market share and growth
+      const currentYear = document.getElementById('yearSelect').value;
+      const prevYear = (parseInt(currentYear) - 1).toString();
+      
+      const currentFlows = allFlows[currentYear] || { features: [] };
+      const prevFlows = allFlows[prevYear] || { features: [] };
+      
+      const currentTotal = currentFlows.features.reduce((sum, f) => sum + f.properties.remittance_usd_billion, 0);
+      const prevTotal = prevFlows.features.reduce((sum, f) => sum + f.properties.remittance_usd_billion, 0);
+      
+      const tbody = document.getElementById('analysisTableBody');
+      tbody.innerHTML = '';
+      
+      regions.forEach(region => {
+        const currentRegionFlows = currentFlows.features.filter(f => f.properties.region === region);
+        const prevRegionFlows = prevFlows.features.filter(f => f.properties.region === region);
+        
+        const currentRegionTotal = currentRegionFlows.reduce((sum, f) => sum + f.properties.remittance_usd_billion, 0);
+        const prevRegionTotal = prevRegionFlows.reduce((sum, f) => sum + f.properties.remittance_usd_billion, 0);
+        
+        const marketShare = currentTotal > 0 ? (currentRegionTotal / currentTotal * 100).toFixed(1) + '%' : '0%';
+        const growth = prevRegionTotal > 0 ? 
+          ((currentRegionTotal - prevRegionTotal) / prevRegionTotal * 100).toFixed(1) + '%' : 
+          'N/A';
+        
+        const tr = document.createElement('tr');
+        const tdRegion = document.createElement('td'); 
+        tdRegion.textContent = region;
+        
+        const tdMarketShare = document.createElement('td'); 
+        tdMarketShare.textContent = marketShare;
+        
+        const tdGrowth = document.createElement('td'); 
+        tdGrowth.textContent = growth;
+        
+        if (growth !== 'N/A') {
+          const growthValue = parseFloat(growth);
+          if (growthValue > 0) {
+            tdGrowth.className = 'positive-growth';
+          } else if (growthValue < 0) {
+            tdGrowth.className = 'negative-growth';
+          }
+        }
+        
+        tr.appendChild(tdRegion);
+        tr.appendChild(tdMarketShare);
+        tr.appendChild(tdGrowth);
+        tbody.appendChild(tr);
+      });
+    }
+
+    // --- Export Analysis Function ---
+    function exportAnalysis() {
+      const years = Object.keys(allFlows).sort();
+      const regions = ['North America', 'Europe', 'Middle East', 'Africa', 'Asia-Pacific', 'Rest of World'];
+      
+      // Prepare comprehensive analysis data
+      let analysisData = "Kenya Diaspora Remittance Analysis Report\n";
+      analysisData += "Generated on: " + new Date().toLocaleDateString() + "\n\n";
+      
+      // Overall summary
+      analysisData += "OVERALL SUMMARY\n";
+      analysisData += "===============\n";
+      
+      years.forEach(year => {
+        const flows = allFlows[year];
+        const totalRemittance = flows.features.reduce((sum, f) => sum + f.properties.remittance_usd_billion, 0);
+        analysisData += `${year}: Total Remittance: $${totalRemittance.toFixed(2)}B\n`;
+      });
+      
+      analysisData += "\n";
+      
+      // Year-by-year breakdown
+      analysisData += "YEAR-BY-YEAR BREAKDOWN\n";
+      analysisData += "=====================\n";
+      
+      years.forEach(year => {
+        analysisData += `\n${year}:\n`;
+        analysisData += "Region,Remittance ($B),Market Share,Distance (km)\n";
+        
+        const flows = allFlows[year];
+        const totalRemittance = flows.features.reduce((sum, f) => sum + f.properties.remittance_usd_billion, 0);
+        
+        flows.features.forEach(feature => {
+          const distance = turf.length(feature, { units: 'kilometers' });
+          const distRound = Math.round(distance);
+          const marketShare = totalRemittance > 0 ? 
+            ((feature.properties.remittance_usd_billion / totalRemittance) * 100).toFixed(1) + '%' : '0%';
+          
+          analysisData += `${feature.properties.region},${feature.properties.remittance_usd_billion},${marketShare},${distRound}\n`;
+        });
+      });
+      
+      analysisData += "\n";
+      
+      // Trend analysis
+      analysisData += "TREND ANALYSIS\n";
+      analysisData += "==============\n";
+      analysisData += "Region," + years.join(",") + ",3-Year CAGR\n";
+      
+      regions.forEach(region => {
+        const regionData = years.map(year => {
+          const flows = allFlows[year];
+          const regionFlows = flows.features.filter(f => f.properties.region === region);
+          return regionFlows.reduce((sum, f) => sum + f.properties.remittance_usd_billion, 0);
+        });
+        
+        // Calculate CAGR if we have at least 2 years of data
+        let cagr = "N/A";
+        if (regionData.length >= 2 && regionData[0] > 0) {
+          const startValue = regionData[0];
+          const endValue = regionData[regionData.length - 1];
+          const periods = regionData.length - 1;
+          cagr = ((Math.pow(endValue / startValue, 1 / periods) - 1) * 100).toFixed(1) + '%';
+        }
+        
+        analysisData += `${region},${regionData.join(",")},${cagr}\n`;
+      });
+      
+      analysisData += "\n";
+      
+      // Year-over-Year Growth
+      analysisData += "YEAR-OVER-YEAR GROWTH\n";
+      analysisData += "=====================\n";
+      analysisData += "Region";
+      
+      for (let i = 1; i < years.length; i++) {
+        analysisData += `,${years[i-1]}-${years[i]}`;
+      }
+      analysisData += "\n";
+      
+      regions.forEach(region => {
+        analysisData += `${region}`;
+        
+        for (let i = 1; i < years.length; i++) {
+          const prevYear = years[i-1];
+          const currYear = years[i];
+          
+          const prevFlows = allFlows[prevYear];
+          const currFlows = allFlows[currYear];
+          
+          const prevRegionTotal = prevFlows.features
+            .filter(f => f.properties.region === region)
+            .reduce((sum, f) => sum + f.properties.remittance_usd_billion, 0);
+            
+          const currRegionTotal = currFlows.features
+            .filter(f => f.properties.region === region)
+            .reduce((sum, f) => sum + f.properties.remittance_usd_billion, 0);
+          
+          const growth = prevRegionTotal > 0 ? 
+            ((currRegionTotal - prevRegionTotal) / prevRegionTotal * 100).toFixed(1) + '%' : 
+            'N/A';
+            
+          analysisData += `,${growth}`;
+        }
+        
+        analysisData += "\n";
+      });
+      
+      // Create and download the file
+      const blob = new Blob([analysisData], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'kenya_remittance_analysis_' + new Date().toISOString().split('T')[0] + '.txt';
+      a.click();
+    }
+
+    // --- Event Listeners ---
+    
+    // Year selection change
+    document.getElementById('yearSelect').addEventListener('change', function(e) {
+      updateMap(e.target.value);
+      updateAnalysis();
+    });
+    
+    // Region filter change
+    document.getElementById('regionFilter').addEventListener('change', function(e){
+      var sel = e.target.value;
+      var year = document.getElementById('yearSelect').value;
+      var flows = allFlows[year] || { type: "FeatureCollection", features: [] };
+      
+      // remove flowLayer and re-add filtered
+      if(flowLayer) map.removeLayer(flowLayer);
+      var filtered = (sel === 'All') ? flows : {
+        type: "FeatureCollection",
+        features: flows.features.filter(f => f.properties.region === sel)
+      };
+      flowLayer = L.geoJSON(filtered, {
+        style: style,
+        onEachFeature: function(feature, layer){
+          var distance = turf.length(feature, { units: 'kilometers' });
+          var distRound = Math.round(distance);
+          var midpoint = turf.midpoint(
+            feature.geometry.coordinates[0], 
+            feature.geometry.coordinates[feature.geometry.coordinates.length - 1]
+          );
+          L.circleMarker([midpoint.geometry.coordinates[1], midpoint.geometry.coordinates[0]], {
+            radius: 4, color: "#000", fillColor: getColor(feature.properties.region), fillOpacity: 0.9
+          }).addTo(map).bindPopup(`<b>${feature.properties.region}</b><br>Remittance: $${feature.properties.remittance_usd_billion}B<br>Distance: ${distRound} km`);
+          layer.bindTooltip(`${feature.properties.region}<br>$${feature.properties.remittance_usd_billion}B — ${distRound} km`);
+          layer.on('add', function(){
+            setTimeout(function(){
+              var path = layer.getElement ? layer.getElement() : null;
+              if(path){
+                var r = feature.properties.remittance_usd_billion;
+                var minR = 0.12, maxR = 3.9;
+                var minDur = 1.8, maxDur = 6;
+                var dur = maxDur - ( (r - minR) / (maxR - minR) ) * (maxDur - minDur);
+                if(!isFinite(dur) || dur<=0) dur = 4;
+                path.style.animationDuration = dur.toFixed(2) + 's, ' + (dur*0.8).toFixed(2) + 's';
+                path.style.stroke = getColor(feature.properties.region);
+              }
+            }, 10);
+          });
+        }
+      }).addTo(map);
+
+      // update stats panel for filtered set
+      renderStatsPanel(filtered);
+    });
+
+    // --- Toggle animation on/off ---
+    var animOn = true;
+    document.getElementById('toggleAnim').addEventListener('click', function(){
+      animOn = !animOn;
+      var btn = this;
+      btn.innerHTML = animOn ? '<span class="icon">⏸️</span> Pause Animation' : '<span class="icon">▶️</span> Resume Animation';
+      // toggle animation-play-state on all path elements
+      var svgPaths = document.querySelectorAll('path.flow-line');
+      svgPaths.forEach(function(p){
+        p.style.animationPlayState = animOn ? 'running' : 'paused';
+      });
+    });
+
+    // --- Export GeoJSON & CSV ---
+    document.getElementById('exportGeoJSON').addEventListener('click', function(){
+      var year = document.getElementById('yearSelect').value;
+      var flows = allFlows[year] || { type: "FeatureCollection", features: [] };
+      var blob = new Blob([JSON.stringify(flows, null, 2)], { type: 'application/json' });
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'kenya_remittance_flows_' + year + '.geojson'; a.click();
+    });
+    
+    document.getElementById('exportCSV').addEventListener('click', function(){
+      var year = document.getElementById('yearSelect').value;
+      var flows = allFlows[year] || { type: "FeatureCollection", features: [] };
+      var csv = "Region,Remittance_USD_Billion\n";
+      flows.features.forEach(function(f){
+        csv += `${f.properties.region},${f.properties.remittance_usd_billion}\n`;
+      });
+      var blob = new Blob([csv], { type: 'text/csv' });
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'kenya_remittance_flows_' + year + '.csv'; a.click();
+    });
+    
+    // --- Export Analysis ---
+    document.getElementById('exportAnalysis').addEventListener('click', exportAnalysis);
+
+    // --- Load data button ---
+    document.getElementById('loadData').addEventListener('click', loadDataFromMavo);
+
+    // Ensure animation durations are set once initial layer is present
+    // small delay so DOM paths exist
+    setTimeout(function(){
+      var svgPaths = document.querySelectorAll('path.flow-line');
+      svgPaths.forEach(function(p){
+        // if already set via layer logic, keep it; otherwise set default
+        if(!p.style.animationDuration){
+          p.style.animationDuration = '4s, 3.2s';
+        }
+      });
+    }, 250);
+
+    // Initialize the application
+    initializeData();
+  </script>
+</body>
+</html>

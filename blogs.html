@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title></title>
+  
+  <!-- HTML -->
+  
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+  <p></p>
+  <!-- Project -->
+  <script src="main.js"></script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en"
+      mv-app="geoBlog"
+      mv-storage="https://github.com/patrick-sang"
+      mv-path="posts"
+      mv-source="https://github.com/patrick-sang/"
+      mv-plugins="github"
+      mv-auth="github"
+      mv-unauthenticated="readonly">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title> Blog </title>
+
+  <!-- Mavo -->
+  <script src="https://get.mavo.io/mavo.js"></script>
+  <link rel="stylesheet" href="https://get.mavo.io/mavo.css">
+
+  <style>
+  /* ---------- THEME VARIABLES ---------- */
+  :root{
+    --primary:#003049; --secondary:#0077b6; --accent:#ffb703;
+    --light:#f1faee; --bg:#ffffff; --text:#222; --radius:12px;
+  }
+  body{font-family:; margin:0; background:var(--bg); color:var(--text); transition:background .3s,color .3s;}
+  body.dark-mode{--primary:#90e0ef;--secondary:#00b4d8;--accent:#fcbf49;--light:#1d3557;--bg:#071026;--text:#e6eef6;}
+
+  /* ---------- HEADER ---------- */
+  .site-header{background:var(--primary); color:#fff; padding:1rem;}
+  .header-inner{max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;}
+  .logo-title h1{margin:0;color:var(--accent); font-size:1.3rem;}
+  .controls{display:flex; gap:.5rem; align-items:center;}
+
+  .btn{background:var(--accent); color:#041223; border:0; padding:.5rem .8rem; border-radius:10px; cursor:pointer; font-weight:600;}
+  .btn.secondary{background:var(--secondary); color:white;}
+  .btn.ghost{background:transparent; color:white; border:1px solid rgba(255,255,255,0.15);}
+
+  /* theme toggle */
+  .theme-toggle{display:flex; align-items:center;}
+  .theme-toggle input{display:none;}
+  .toggle-label{width:48px;height:26px;border-radius:999px; background:var(--secondary); display:flex; padding:0 6px; align-items:center; position:relative; cursor:pointer;}
+  .toggle-label::after{content:''; position:absolute; top:3px; left:4px; width:20px; height:20px; background:var(--light); border-radius:50%; transition:transform .25s, background .25s;}
+  input:checked + .toggle-label::after{transform:translateX(22px); background:var(--accent);}
+  input:checked + .toggle-label{background:var(--primary);}
+
+  /* ---------- SEARCH / FILTER BAR ---------- */
+  .filter-bar{max-width:1200px; margin:1.25rem auto; display:flex; gap:.6rem; padding:0 1rem; flex-wrap:wrap; align-items:center; justify-content:center;}
+  .filter-bar .search{flex:1 1 320px; min-width:200px; padding:.6rem .8rem; border-radius:10px; border:1px solid #ddd;}
+  .filter-bar select{padding:.6rem .8rem; border-radius:10px; border:1px solid #ddd;}
+  .chips{display:flex; gap:.4rem; flex-wrap:wrap;}
+
+  .chip{padding:.35rem .6rem; border-radius:999px; background:#eee; cursor:pointer; font-size:.85rem; border:1px solid rgba(0,0,0,0.06);}
+  .chip.active{background:var(--secondary); color:white; border-color:transparent; transform:translateY(-2px); box-shadow:0 6px 18px rgba(0,0,0,0.08);}
+
+  /* ---------- STATS PANEL ---------- */
+  .stats{max-width:1200px; margin:0 auto 1rem; display:flex; gap:1rem; padding:0 1rem; flex-wrap:wrap; justify-content:center;}
+  .stat-card{flex:1 1 180px; min-width:140px; background:var(--light); padding:1rem; border-radius:12px; text-align:center; box-shadow:0 6px 14px rgba(0,0,0,0.06);}
+  .stat-number{font-size:1.6rem; font-weight:800; color:var(--primary);}
+  .stat-label{font-size:.85rem; opacity:.8;}
+
+  /* ---------- BLOG GRID ---------- */
+  .blog-grid{max-width:1200px; margin:1rem auto; padding:0 1rem; display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(280px,1fr));}
+  .post-card{background:var(--light); border-radius:12px; overflow:hidden; box-shadow:0 6px 18px rgba(0,0,0,0.06); transition:transform .22s, box-shadow .22s;}
+  .post-card:hover{transform:translateY(-6px); box-shadow:0 14px 40px rgba(0,0,0,0.12);}
+  .post-thumb{width:100%; height:170px; object-fit:cover;}
+  .post-body{padding:1rem;}
+  .post-title{margin:.2rem 0; color:var(--primary); font-size:1.05rem;}
+  .meta-row{display:flex; gap:.5rem; align-items:center; justify-content:space-between; margin-top:.6rem; font-size:.85rem; opacity:.8;}
+  .category{background:var(--accent); padding:.25rem .5rem; border-radius:8px; font-weight:700; font-size:.78rem;}
+
+  /* ---------- CONTACT & SUBSCRIBE ---------- */
+  .forms{max-width:1200px; margin:2rem auto; padding:0 1rem; display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(300px,1fr));}
+  .card{background:var(--light); padding:1rem; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.06);}
+  .field{display:flex; flex-direction:column; gap:.3rem; margin-bottom:.6rem;}
+  .field input, .field textarea{padding:.6rem .7rem; border-radius:8px; border:1px solid #ddd; resize:vertical; min-height:40px;}
+  .small{font-size:.85rem; opacity:.8}
+
+  /* ---------- FOOTER ---------- */
+  .site-footer{max-width:1200px; margin:2rem auto; padding:1rem; text-align:center; color:rgba(0,0,0,0.6);}
+
+  /* ---------- Mavo bar hidden ---------- */
+  .mv-bar{display:none!important;}
+
+  /* responsive tweaks */
+  @media(max-width:720px){ .header-inner{gap:.6rem;} .stats{flex-direction:column; align-items:stretch;} }
+  </style>
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo-title">
+        <h1></h1>
+        <section class="py-20 container mx-auto px-6">
+          <div class="max-w-3xl mx-auto">
+             <a href="index.html" class="text-accent font-semibold hover:underline mb-8 inline-block"><h1>← Home</h1></a></h1>
+        <div class="small" style="color:rgba(255,255,255,0.9);font-size:.82rem"> • Data • Stories</div>
+      </div>
+
+      <div class="controls">
+        <button id="login-btn" class="btn" mv-if="!user">Admin</button>
+        <div mv-if="user" style="display:flex; gap:.4rem; align-items:center;">
+          <button id="profile-btn" class="btn ghost"> Profile</button>
+          <button id="logout-btn" class="btn ghost">Logout</button>
+        </div>
+        <div class="theme-toggle" title="Toggle theme">
+          <input type="checkbox" id="theme-switch"><label for="theme-switch" class="toggle-label"></label>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- STATS PANEL -->
+  <section class="stats" aria-hidden="false">
+    <div class="stat-card">
+      <div class="stat-number" id="stat-total">0</div>
+      <div class="stat-label">Total posts</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="stat-cats">0</div>
+      <div class="stat-label">Categories</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="stat-subs">0</div>
+      <div class="stat-label">Subscribers</div>
+    </div>
+  </section>
+
+  <!-- SEARCH / FILTER -->
+  <section class="filter-bar" role="search" aria-label="Search and filters">
+    <input class="search" id="search-input" placeholder="🔍 Search title, excerpt, author..." />
+    <select id="category-select" aria-label="Filter by category">
+      <option value=""> All Categories</option>
+    </select>
+
+    <div style="display:flex; gap:.6rem; align-items:center;">
+      <select id="sort-select" title="Sort posts">
+        <option value="desc">Recent</option>
+        <option value="asc"> Old </option>
+      </select>
+    </div>
+  </section>
+
+  <!-- TAG CHIPS (dynamic) -->
+  <section style="max-width:1200px;margin:0 auto;padding:0 1rem;">
+    <div class="chips" id="tag-chips" aria-label="Filter by tags"></div>
+  </section>
+
+  <!-- BLOG GRID (Mavo generates posts from posts/* in repo) -->
+  <main class="blog-grid" id="grid">
+    <!-- Mavo controlled repeated element -->
+    <article mv-multiple="post"
+             class="post-card"
+             data-id="[id]">
+      <a href="post.html?id=[id]" style="text-decoration:none;color:inherit;display:block;">
+        <img class="post-thumb" property="thumbnail" src="" mv-default="">
+        <div class="post-body">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="category" property="category" mv-default="Geography">Web GIS</span>
+            <div style="opacity:.8;font-size:.85rem;" property="tags">[tags]</div>
+          </div>
+          <h3 class="post-title" property="title">Post title</h3>
+          <div class="post-excerpt" property="excerpt">r5vbiynjmk,aeljnejmk,ldqceb78rnh90-ikfyol=.ds;f,mbnameA short summary to entice the reader.</div>
+          <div class="meta-row">
+            <div class="small">By <span property="author">Author</span></div>
+            <div class="small"><time property="date">2025-10-28</time></div>
+          </div>
+        </div>
+      </a>
+    </article>
+  </main>
+
+  <!-- CONTACT & SUBSCRIBE FORMS (Separate Mavo apps saved to repo) -->
+  <!-- Contact messages app -->
+  <section class="forms" aria-label="Contact and subscribe">
+    <div class="card">
+      <h3>Contact Us</h3>
+      <p class="small">Send a message </p>
+
+      <!-- Mavo app for messages -->
+      <div mv-app="messagesApp" mv-storage="github" mv-path="messages" mv-source="https://github.com/patrick-sang/YOUR_REPO-messages">
+        <form onsubmit="this.reset(); return false;"
+              mv-action="add(message, {name: newName, email: newEmail, message: newMessage, date: now()})">
+          <div class="field">
+            <label class="small">Name</label>
+            <input mv-value="newName" required>
+          </div>
+          <div class="field">
+            <label class="small">Email</label>
+            <input type="email" mv-value="newEmail" required>
+          </div>
+          <div class="field">
+            <label class="small">Message</label>
+            <textarea mv-value="newMessage" required></textarea>
+          </div>
+          <button class="btn secondary" type="submit">Send Message</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Subscribe by email</h3>
+      <p class="small">Get occasional email updates. Subscribers are saved to `subscribers/` in your repo.</p>
+
+      <!-- Mavo app for subscribers -->
+      <div mv-app="subApp" mv-storage="github" mv-path="subscribers" mv-source="https://github.com/patrick-sang/YOUR_REPO-subscribers">
+        <!-- We will attempt a client-side duplicate check by reading existing subscribers (if available via Mavo) -->
+        <form id="subForm" onsubmit="return false;">
+          <div class="field">
+            <label class="small">Email</label>
+            <input type="email" id="sub-email" placeholder="you@domain.com" required>
+          </div>
+          <div class="field">
+            <label class="small">Name (optional)</label>
+            <input id="sub-name" placeholder="Your name">
+          </div>
+          <button class="btn secondary" id="sub-btn">Subscribe</button>
+          <div id="sub-msg" class="small" style="margin-top:.6rem; color:green; display:none;">Thanks — you're subscribed!</div>
+        </form>
+
+        <!-- Hidden list of existing subscribers (Mavo will populate) -->
+        <div mv-multiple="subscriber" style="display:none;">
+          <div property="email">[email]</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+   
+
+  <!-- ======= SCRIPTS: UI logic, chips, filtering, stats, subscribe ======= -->
+  <script>
+  // ===== Utilities =====
+  const qs = s => document.querySelector(s);
+  const qsa = s => Array.from(document.querySelectorAll(s));
+
+  // Hide Mavo bar (in case)
+  document.addEventListener("DOMContentLoaded", ()=>{ qsa(".mv-bar").forEach(e=>e.style.display="none"); });
+
+  // ===== THEME (persist + system detection) =====
+  (function themeInit(){
+    const switchInput = qs("#theme-switch");
+    const saved = localStorage.getItem("geoTheme");
+    const apply = t => document.body.classList.toggle("dark-mode", t==="dark");
+    if(saved) apply(saved);
+    else if(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) apply("dark");
+    else apply("light");
+    if(switchInput) switchInput.checked = document.body.classList.contains("dark-mode");
+    switchInput?.addEventListener("change", ()=>{
+      const t = switchInput.checked ? "dark" : "light";
+      apply(t); localStorage.setItem("geoTheme", t);
+    });
+  })();
+
+  // ===== DYNAMIC UI: populate categories & tags list after Mavo loads =====
+  document.addEventListener("mv-load", () => {
+    // Wait a short time to let Mavo render post instances
+    setTimeout(initDynamic, 200);
+  });
+
+  function initDynamic(){
+    const postEls = qsa("[mv-multiple='post']");
+    // Build set of categories & tags & total posts
+    const categories = new Set();
+    const tagsSet = new Set();
+    postEls.forEach(el=>{
+      const cat = el.querySelector("[property='category']")?.textContent?.trim();
+      if(cat) categories.add(cat);
+      // tags may be stored as comma-separated or JSON; attempt to parse
+      const tagsText = el.querySelector("[property='tags']")?.textContent || "";
+      tagsText.split(",").map(t=>t.trim()).filter(Boolean).forEach(t=>tagsSet.add(t));
+    });
+
+    // Populate category select
+    const select = qs("#category-select");
+    categories.forEach(cat => {
+      const opt = document.createElement("option");
+      opt.value = cat; opt.textContent = cat;
+      select.appendChild(opt);
+    });
+
+    // Populate tag chips
+    const chips = qs("#tag-chips");
+    chips.innerHTML = "";
+    Array.from(tagsSet).sort().forEach(tag=>{
+      const c = document.createElement("div");
+      c.className = "chip"; c.textContent = tag;
+      c.dataset.tag = tag;
+      c.onclick = () => { c.classList.toggle("active"); applyFilters(); };
+      chips.appendChild(c);
+    });
+
+    // init filters/search/sort listeners
+    qs("#search-input").addEventListener("input", applyFilters);
+    qs("#category-select").addEventListener("change", applyFilters);
+    qs("#sort-select").addEventListener("change", applyFilters);
+
+    // initial render and stats
+    applyFilters();
+    animateStats();
+  }
+
+  // ===== Filtering logic (client-side) =====
+  function applyFilters(){
+    const term = qs("#search-input").value.trim().toLowerCase();
+    const chosenCategory = qs("#category-select").value;
+    const chosenTags = qsa("#tag-chips .chip.active").map(c=>c.dataset.tag);
+    const sort = qs("#sort-select").value;
+
+    // All posts
+    const cards = qsa(".post-card");
+    let items = cards.map(c => {
+      const title = (c.querySelector("[property='title']")?.textContent||"").toLowerCase();
+      const excerpt = (c.querySelector("[property='excerpt']")?.textContent||"").toLowerCase();
+      const author = (c.querySelector("[property='author']")?.textContent||"").toLowerCase();
+      const category = (c.querySelector("[property='category']")?.textContent||"");
+      const tagsText = (c.querySelector("[property='tags']")?.textContent||"");
+      const dateText = (c.querySelector("[property='date']")?.textContent||"");
+      const id = c.getAttribute("data-id");
+      return {el:c, title, excerpt, author, category, tagsText, dateText, id};
+    });
+
+    // Filter by search
+    if(term) items = items.filter(i => i.title.includes(term) || i.excerpt.includes(term) || i.author.includes(term));
+
+    // Filter by category
+    if(chosenCategory) items = items.filter(i => i.category === chosenCategory);
+
+    // Filter by tags: require at least one chosen tag (OR). If none chosen -> pass all
+    if(chosenTags.length){
+      items = items.filter(i => {
+        const tags = i.tagsText.split(",").map(t=>t.trim()).filter(Boolean);
+        return chosenTags.some(t => tags.includes(t));
+      });
+    }
+
+    // Sort by date (descending by default)
+    items.sort((a,b)=>{
+      const da = new Date(a.dateText || 0).getTime();
+      const db = new Date(b.dateText || 0).getTime();
+      return (sort === "asc") ? (da - db) : (db - da);
+    });
+
+    // Hide all and re-insert in order to respect sort
+    const grid = qs("#grid");
+    // hide all first
+    qsa(".post-card").forEach(p => { p.style.display = "none"; });
+    // append visible in order
+    items.forEach(i => {
+      i.el.style.display = "block";
+      grid.appendChild(i.el); // moves element into correct order visually
+    });
+
+    // update stats animation counts (counts by category)
+    animateStats();
+  }
+
+  // ===== Animated stats (reads DOM counts) =====
+  function animateNumber(el, to){
+    const start = parseInt(el.textContent || "0", 10) || 0;
+    const duration = 750;
+    const startTime = performance.now();
+    function tick(now){
+      const t = Math.min(1, (now - startTime)/duration);
+      const val = Math.round(start + (to - start) * easeOutCubic(t));
+      el.textContent = val;
+      if(t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+  function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
+
+  function animateStats(){
+    const total = qsa(".post-card").filter(el => el.style.display !== "none").length;
+    const cats = new Set();
+    qsa(".post-card").forEach(el => {
+      if(el.style.display === "none") return;
+      const c = el.querySelector("[property='category']")?.textContent?.trim();
+      if(c) cats.add(c);
+    });
+    // subscribers count: try to read Mavo subscribers app (if present)
+    let subsCount = 0;
+    try {
+      // Mavo renders subscriber nodes if app is present; count those
+      subsCount = qsa("[mv-app='subApp'] [mv-multiple='subscriber']").length || qsa("[mv-app='subApp'] [property='email']").length || 0;
+    } catch(e){ subsCount = 0; }
+
+    animateNumber(qs("#stat-total"), total);
+    animateNumber(qs("#stat-cats"), cats.size);
+    animateNumber(qs("#stat-subs"), subsCount);
+  }
+
+  // ===== SUBSCRIBE FORM LOGIC =====
+  document.addEventListener("mv-load", () => { // wait for Mavo to load subscriber collection if available
+    // attach handler
+    const subBtn = qs("#sub-btn");
+    if(!subBtn) return;
+    subBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const email = (qs("#sub-email").value || "").trim().toLowerCase();
+      const name = (qs("#sub-name").value || "").trim();
+      if(!email) { alert("Please enter an email."); return; }
+
+      // Attempt to check duplicates by reading rendered subscribers (if Mavo loaded them)
+      const existing = qsa("[mv-app='subApp'] [property='email']").map(n => n.textContent.trim().toLowerCase());
+      if(existing.includes(email)){
+        alert("You're already subscribed with that email.");
+        return;
+      }
+
+      // Use Mavo action to add a subscriber to the subscribers repo
+      try {
+        // find the subApp Mavo instance
+        const subAppNode = document.querySelector("[mv-app='subApp']");
+        if(!subAppNode){
+          alert("Subscriber app not configured correctly — subscribers are saved to a separate repo. Check mv-app attribute.");
+          return;
+        }
+        // call Mavo action
+        await Mavo.Functions.exec(null, `add(subscriber, {email: "${email}", name: "${name}", date: now()})`, subAppNode);
+        qs("#sub-msg").style.display = "block";
+        setTimeout(()=>qs("#sub-msg").style.display = "none",3000);
+        qs("#subForm").reset();
+        setTimeout(animateStats, 600);
+      } catch(err){
+        console.error(err);
+        alert("Subscription failed — check console for details.");
+      }
+    });
+  });
+
+  // ===== CONTACT FORM: Mavo handles save via messagesApp form (no JS required) =====
+
+  // ===== PROFILE MODAL & AUTH UI =====
+  document.addEventListener("DOMContentLoaded", () => {
+    const login = qs("#login-btn");
+    const logout = qs("#logout-btn");
+    const profileBtn = qs("#profile-btn");
+
+    if(login) login.onclick = () => Mavo.authenticate("github");
+    if(logout) logout.onclick = () => Mavo.logout();
+    if(profileBtn) profileBtn.onclick = () => {
+      // show basic profile modal using Mavo events (we keep it simple here)
+      alert("Profile: when logged in Mavo show)
