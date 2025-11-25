@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<base target="_top">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<title>Kenya Population per County</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+	<script src="https://unpkg.com/leaflet-control-search/dist/leaflet-search.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+	
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		
+		body {
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+			background-color: #f4f4f9;
+			display: flex;
+			height: 100vh;
+			overflow: hidden;
+		}
+
+		.container {
+			display: flex;
+			width: 100%;
+			height: 100%;
+		}
+		
+		.map-container {
+			width: 70%;
+			height: 100vh;
+			border: 2px solid #ddd;
+			border-radius: 8px 0 0 8px;
+		}
+		
+		#map {
+			width: 100%;
+			height: 100%;
+		}
+		
+		.sidebar {
+			width: 30%;
+			padding: 15px;
+			background-color: #ffffff;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+			border-radius: 0 8px 8px 0;
+			overflow-y: auto;
+		}
+		
+		.header {
+			text-align: center;
+			margin: 20px 0;
+			color: #333;
+			font-size: 24px;
+			border-bottom: 1px solid #eee;
+			padding-bottom: 15px;
+		}
+		
+		.header h1 {
+			font-size: 1.5em;
+			margin-bottom: 5px;
+		}
+		
+		.header p {
+			font-size: 0.9em;
+			color: #666;
+		}
+		
+		.controls {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+			margin-bottom: 15px;
+		}
+		
+		.btn {
+			flex: 1;
+			min-width: 120px;
+			padding: 8px 15px;
+			border: none;
+			border-radius: 5px;
+			font-size: 14px;
+			cursor: pointer;
+			transition: background-color 0.3s, color 0.3s;
+			background-color: #007bff;
+			color: white;
+		}
+		
+		.btn:hover {
+			background-color: #0056b3;
+		}
+		
+		.btn.active {
+			background-color: #0056b3;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+		}
+		
+		.analysis-section {
+			margin-bottom: 20px;
+			padding: 15px;
+			background-color: #ffffff;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+			border-radius: 8px;
+			border-left: 4px solid #3498db;
+		}
+		
+		.analysis-section h3 {
+			margin-top: 0;
+			color: #2c3e50;
+			border-bottom: 1px solid #eee;
+			padding-bottom: 8px;
+			font-size: 1.1em;
+		}
+		
+		.chart-container {
+			height: 200px;
+			position: relative;
+		}
+		
+		.chart-container-large {
+			height: 250px;
+			position: relative;
+		}
+		
+		.stats-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 10px;
+			margin-top: 10px;
+		}
+		
+		.stat-card {
+			padding: 12px;
+			background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+			border-radius: 6px;
+			text-align: center;
+			border-left: 3px solid #3498db;
+		}
+		
+		.stat-value {
+			font-size: 1.3em;
+			font-weight: bold;
+			color: #2c3e50;
+		}
+		
+		.stat-label {
+			font-size: 0.8em;
+			color: #7f8c8d;
+			margin-top: 5px;
+		}
+		
+		.info { 
+			padding: 8px 10px; 
+			font: 14px/16px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+			background: white; 
+			background: rgba(255,255,255,0.95); 
+			box-shadow: 0 0 15px rgba(0,0,0,0.2); 
+			border-radius: 5px; 
+			border-left: 4px solid #3498db;
+		} 
+		
+		.info h4 { 
+			margin: 0 0 5px; 
+			color: #333; 
+		}
+		
+		.legend { 
+			text-align: left; 
+			line-height: 18px; 
+			color: #555; 
+			background: white;
+			padding: 10px;
+			border-radius: 5px;
+			box-shadow: 0 0 15px rgba(0,0,0,0.2);
+		} 
+		
+		.legend i { 
+			width: 18px; 
+			height: 18px; 
+			float: left; 
+			margin-right: 8px; 
+			opacity: 0.9; 
+		}
+		
+		.county-list {
+			max-height: 200px;
+			overflow-y: auto;
+			border: 1px solid #eee;
+			border-radius: 4px;
+			padding: 5px;
+		}
+		
+		.county-item {
+			padding: 8px;
+			border-bottom: 1px solid #f0f0f0;
+			cursor: pointer;
+			transition: background-color 0.2s;
+			display: flex;
+			justify-content: space-between;
+		}
+		
+		.county-item:hover {
+			background-color: #f0f8ff;
+		}
+		
+		.county-name {
+			font-weight: bold;
+		}
+		
+		.county-population {
+			color: #7f8c8d;
+		}
+		
+		.tab-container {
+			margin-top: 10px;
+		}
+		
+		.tab-buttons {
+			display: flex;
+			border-bottom: 1px solid #dee2e6;
+			margin-bottom: 10px;
+		}
+		
+		.tab-button {
+			flex: 1;
+			padding: 8px 15px;
+			background: none;
+			border: none;
+			cursor: pointer;
+			font-size: 0.9em;
+			color: #6c757d;
+			border-bottom: 2px solid transparent;
+		}
+		
+		.tab-button.active {
+			color: #3498db;
+			border-bottom: 2px solid #3498db;
+			font-weight: bold;
+		}
+		
+		.tab-content {
+			display: none;
+		}
+		
+		.tab-content.active {
+			display: block;
+		}
+		
+		.comparison-controls {
+			display: flex;
+			gap: 10px;
+			margin-bottom: 15px;
+		}
+		
+		.select-county {
+			flex: 1;
+			padding: 8px;
+			border: 1px solid #ced4da;
+			border-radius: 4px;
+			background-color: #f8f9fa;
+		}
+		
+		.comparison-results {
+			background-color: #f8f9fa;
+			padding: 10px;
+			border-radius: 4px;
+			font-size: 0.9em;
+		}
+		
+		.comparison-row {
+			display: flex;
+			justify-content: space-between;
+			padding: 5px 0;
+			border-bottom: 1px solid #e9ecef;
+		}
+		
+		.region-highlight {
+			background-color: #fff3cd;
+			border-left: 4px solid #ffc107;
+		}
+		
+		.region-highlight h3 {
+			color: #856404;
+		}
+		
+		.region-stats {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 8px;
+			margin-top: 10px;
+		}
+		
+		.region-stat {
+			text-align: center;
+			padding: 8px;
+			background-color: #f8f9fa;
+			border-radius: 4px;
+		}
+		
+		.region-value {
+			font-weight: bold;
+			color: #2c3e50;
+		}
+		
+		.region-label {
+			font-size: 0.8em;
+			color: #6c757d;
+		}
+		
+		.progress-bar {
+			height: 8px;
+			background-color: #e9ecef;
+			border-radius: 4px;
+			overflow: hidden;
+			margin-top: 5px;
+		}
+		
+		.progress-fill {
+			height: 100%;
+			background: linear-gradient(90deg, #3498db, #2980b9);
+			border-radius: 4px;
+		}
+		
+		.ranking-table {
+			width: 100%;
+			border-collapse: collapse;
+			font-size: 0.9em;
+		}
+		
+		.ranking-table th, .ranking-table td {
+			padding: 8px;
+			text-align: left;
+			border-bottom: 1px solid #dee2e6;
+		}
+		
+		.ranking-table th {
+			background-color: #f8f9fa;
+			font-weight: bold;
+			color: #495057;
+		}
+		
+		.ranking-table tr:hover {
+			background-color: #f8f9fa;
+		}
+		
+		.rank {
+			width: 30px;
+			text-align: center;
+			font-weight: bold;
+		}
+		
+		.rank-1, .rank-2, .rank-3 {
+			color: #e74c3c;
+		}
+		
+		#county-search {
+			width: 100%;
+			padding: 8px;
+			margin-bottom: 10px;
+			border: 1px solid #ced4da;
+			border-radius: 4px;
+			background-color: #f8f9fa;
+		}
+		
+		.insights-section {
+			background-color: #e8f4fd;
+			border-left: 4px solid #3498db;
+		}
+		
+		.insight-item {
+			padding: 8px;
+			margin-bottom: 8px;
+			background-color: white;
+			border-radius: 4px;
+			font-size: 0.9em;
+		}
+		
+		.insight-highlight {
+			font-weight: bold;
+			color: #e74c3c;
+		}
+		
+		.correlation-matrix {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 5px;
+			margin-top: 10px;
+		}
+		
+		.correlation-cell {
+			padding: 5px;
+			text-align: center;
+			font-size: 0.8em;
+			border-radius: 3px;
+		}
+		
+		.correlation-header {
+			font-weight: bold;
+			background-color: #f8f9fa;
+		}
+		
+		.forecast-controls {
+			display: flex;
+			gap: 10px;
+			margin-bottom: 10px;
+		}
+		
+		.forecast-slider {
+			flex: 1;
+		}
+		
+		.forecast-value {
+			min-width: 60px;
+			text-align: center;
+			font-weight: bold;
+		}
+		
+		@media (max-width: 768px) {
+			body {
+				flex-direction: column;
+			}
+			
+			.container {
+				flex-direction: column;
+			}
+			
+			.map-container {
+				width: 100%;
+				height: 50vh;
+				border-radius: 8px 8px 0 0;
+			}
+			
+			.sidebar {
+				width: 100%;
+				height: 50vh;
+				overflow-y: auto;
+				border-radius: 0 0 8px 8px;
+			}
+			
+			.btn {
+				font-size: 12px;
+				padding: 6px 12px;
+			}
+			
+			.correlation-matrix {
+				grid-template-columns: repeat(3, 1fr);
+			}
+		}
+	</style>
+</head>
+<body>
+
+<div class="container">
+	<div class="map-container">
+		<div id="map"></div>
+	</div>
+	
+	<div class="sidebar">
+		<div class="header">
+			<h1>Kenya Population Dashboard</h1>
+			<p>Kenya Population per County - 2019 Census Data</p>
+<a href="https://patricksang.github.io/" data-gall="portfolioDetailsGallery" data-vbtype="iframe" class="venobox" title="Project Details"><i class="btn btn-primary">Home</i></a>
+		</div>
+		
+		<div class="controls">
+			<button id="btn-population" class="btn active">Population</button>
+			<button id="btn-density" class="btn">Density</button>
+			<button id="btn-household" class="btn">Household Size</button>
+			<button id="btn-growth" class="btn">Growth Rate</button>
+		</div>
+		
+		<div class="analysis-section">
+			<h3>County Statistics</h3>
+			<div id="county-stats">
+				<p>Hover over a county to see detailed statistics</p>
+			</div>
+		</div>
+		
+		<div class="tab-container">
+			<div class="tab-buttons">
+				<button class="tab-button active" data-tab="top-counties">Overview</button>
+				<button class="tab-button" data-tab="population-dist">Distribution</button>
+				<button class="tab-button" data-tab="regional-analysis">Regional</button>
+				<button class="tab-button" data-tab="advanced-analysis">Advanced</button>
+			</div>
+			
+			<div class="tab-content active" id="top-counties-tab">
+				<div class="analysis-section">
+					<h3>Top 10 Counties by Population</h3>
+					<div class="chart-container">
+						<canvas id="top-counties-chart"></canvas>
+					</div>
+				</div>
+				
+				<div class="analysis-section">
+					<h3>County Rankings</h3>
+					<div style="max-height: 200px; overflow-y: auto;">
+						<table class="ranking-table">
+							<thead>
+								<tr>
+									<th class="rank">Rank</th>
+									<th>County</th>
+									<th>Population</th>
+									<th>Density</th>
+								</tr>
+							</thead>
+							<tbody id="ranking-table-body">
+								<!-- Rankings will be populated here -->
+							</tbody>
+						</table>
+					</div>
+				</div>
+				
+				<div class="analysis-section insights-section">
+					<h3>Key Insights</h3>
+					<div id="key-insights">
+						<!-- Insights will be populated here -->
+					</div>
+				</div>
+			</div>
+			
+			<div class="tab-content" id="population-dist-tab">
+				<div class="analysis-section">
+					<h3>Population Distribution</h3>
+					<div class="stats-grid">
+						<div class="stat-card">
+							<div class="stat-value" id="total-population">-</div>
+							<div class="stat-label">Total Population</div>
+						</div>
+						<div class="stat-card">
+							<div class="stat-value" id="avg-density">-</div>
+							<div class="stat-label">Avg. Density (per km²)</div>
+						</div>
+						<div class="stat-card">
+							<div class="stat-value" id="avg-household">-</div>
+							<div class="stat-label">Avg. Household Size</div>
+						</div>
+						<div class="stat-card">
+							<div class="stat-value" id="county-count">-</div>
+							<div class="stat-label">Number of Counties</div>
+						</div>
+					</div>
+				</div>
+				
+				<div class="analysis-section">
+					<h3>Population by Category</h3>
+					<div class="chart-container">
+						<canvas id="population-categories-chart"></canvas>
+					</div>
+				</div>
+				
+				<div class="analysis-section">
+					<h3>Urban vs Rural Distribution</h3>
+					<div class="chart-container">
+						<canvas id="urban-rural-chart"></canvas>
+					</div>
+				</div>
+			</div>
+			
+			<div class="tab-content" id="regional-analysis-tab">
+				<div class="analysis-section region-highlight">
+					<h3>Regional Analysis</h3>
+					<div class="region-stats">
+						<div class="region-stat">
+							<div class="region-value" id="region-population">-</div>
+							<div class="region-label">Total Population</div>
+						</div>
+						<div class="region-stat">
+							<div class="region-value" id="region-density">-</div>
+							<div class="region-label">Avg. Density</div>
+						</div>
+						<div class="region-stat">
+							<div class="region-value" id="region-area">-</div>
+							<div class="region-label">Total Area (km²)</div>
+						</div>
+						<div class="region-stat">
+							<div class="region-value" id="region-counties">-</div>
+							<div class="region-label">No. of Counties</div>
+						</div>
+					</div>
+					<div style="margin-top: 10px;">
+						<label for="region-select">Select Region:</label>
+						<select id="region-select" class="select-county">
+							<option value="all">All Kenya</option>
+							<!-- Regions will be populated here -->
+						</select>
+					</div>
+				</div>
+				
+				<div class="analysis-section">
+					<h3>County Comparison</h3>
+					<div class="comparison-controls">
+						<select id="county1-select" class="select-county">
+							<option value="">Select first county</option>
+						</select>
+						<select id="county2-select" class="select-county">
+							<option value="">Select second county</option>
+						</select>
+					</div>
+					<div id="comparison-results" class="comparison-results">
+						<p>Select two counties to compare</p>
+					</div>
+				</div>
+				
+				<div class="analysis-section">
+					<h3>Regional Performance</h3>
+					<div class="chart-container">
+						<canvas id="regional-performance-chart"></canvas>
+					</div>
+				</div>
+			</div>
+			
+			<div class="tab-content" id="advanced-analysis-tab">
+				<div class="analysis-section">
+					<h3>Correlation Analysis</h3>
+					<p>Explore relationships between different demographic metrics:</p>
+					<div class="correlation-matrix">
+						<div class="correlation-cell correlation-header"></div>
+						<div class="correlation-cell correlation-header">Population</div>
+						<div class="correlation-cell correlation-header">Density</div>
+						<div class="correlation-cell correlation-header">Household</div>
+						<div class="correlation-cell correlation-header">Population</div>
+						<div class="correlation-cell" id="corr-pop-pop">1.00</div>
+						<div class="correlation-cell" id="corr-pop-den">-</div>
+						<div class="correlation-cell" id="corr-pop-hh">-</div>
+						<div class="correlation-cell correlation-header">Density</div>
+						<div class="correlation-cell" id="corr-den-pop">-</div>
+						<div class="correlation-cell" id="corr-den-den">1.00</div>
+						<div class="correlation-cell" id="corr-den-hh">-</div>
+						<div class="correlation-cell correlation-header">Household</div>
+						<div class="correlation-cell" id="corr-hh-pop">-</div>
+						<div class="correlation-cell" id="corr-hh-den">-</div>
+						<div class="correlation-cell" id="corr-hh-hh">1.00</div>
+					</div>
+				</div>
+				
+				<div class="analysis-section">
+					<h3>Population Projections</h3>
+					<div class="forecast-controls">
+						<label for="forecast-years">Years to project:</label>
+						<input type="range" id="forecast-years" class="forecast-slider" min="5" max="30" step="5" value="10">
+						<div id="forecast-value" class="forecast-value">10 years</div>
+					</div>
+					<div class="chart-container">
+						<canvas id="population-forecast-chart"></canvas>
+					</div>
+				</div>
+				
+				<div class="analysis-section">
+					<h3>Demographic Clusters</h3>
+					<div class="chart-container-large">
+						<canvas id="clustering-chart"></canvas>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<div class="analysis-section">
+			<h3>County Search</h3>
+			<input type="text" id="county-search" placeholder="Search for a county...">
+			<div id="county-results" class="county-list">
+				<!-- County list will be populated here -->
+			</div>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript" src="index.js"></script>
+
+<script type="text/javascript">
+	// Initialize the map
+	const map = L.map('map').setView([-0.13898534186844463, 37.30026122655195], 6);
+
+	const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+		attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+	}).addTo(map);
+
+	// Control that shows state info on hover
+	const info = L.control();
+
+	info.onAdd = function (map) {
+		this._div = L.DomUtil.create('div', 'info');
+		this.update();
+		return this._div;
+	};
+
+	info.update = function (props) {
+		if (props) {
+			const countyName = `<b>${props.ADM1_EN}</b>`;
+			
+			const Household = props.Av_HH_Size ? `<br /><i>Average Household size:</i> ${props.Av_HH_Size}` : '<br /><i>No data</i>';
+			const totalPop = props.Total_Popu ? `<br /><i>Total Population:</i> ${props.Total_Popu.toLocaleString()}` : '<br /><i>No data</i>';
+			const PopDen = props.Population ? `<br /><i>Population Density:</i> ${props.Population.toLocaleString()} per km²` : '<br /><i>No data</i>';
+			const area = props.Area ? `<br /><i>Area:</i> ${props.Area.toLocaleString()} km²` : '<br /><i>No data</i>';
+			const growth = props.Growth_Rate ? `<br /><i>Growth Rate:</i> ${props.Growth_Rate}%` : '<br /><i>No data</i>';
+			
+			this._div.innerHTML = `<h4>Population Distribution Across Counties in Kenya</h4>${countyName}<br />${totalPop}${PopDen}${area}${Household}${growth}`;
+		} else {
+			this._div.innerHTML = '<h4>Kenya Population per County</h4>Hover over a county';
+		}
+	};
+
+	info.addTo(map);
+
+	// Get color depending on total population value
+	function getColor(d) {
+		return d > 4400000  ? '#67000d' :
+			d > 2420000  ? '#a50f15' :
+			d > 1454000  ? '#cb181d' :
+			d > 993000  ? '#ef3b2c' :
+			d > 667000  ? '#fb6a4a' :
+			d > 393000  ? '#fc9272' :
+			d > 143000  ? '#fcbba1' :
+			d > 0  ? '#fee0d2' : '#fff5f0';
+	}
+	
+	// Get color for population density
+	function getDensityColor(d) {
+		return d > 5000  ? '#08306b' :
+			d > 2000  ? '#08519c' :
+			d > 1000  ? '#2171b5' :
+			d > 500   ? '#4292c6' :
+			d > 200   ? '#6baed6' :
+			d > 100   ? '#9ecae1' :
+			d > 50    ? '#c6dbef' :
+			d > 0     ? '#deebf7' : '#f7fbff';
+	}
+	
+	// Get color for household size
+	function getHouseholdColor(d) {
+		return d > 5.0  ? '#006d2c' :
+			d > 4.5  ? '#238b45' :
+			d > 4.0  ? '#41ab5d' :
+			d > 3.5  ? '#74c476' :
+			d > 3.0  ? '#a1d99b' :
+			d > 2.5  ? '#c7e9c0' :
+			d > 2.0  ? '#e5f5e0' :
+			d > 0    ? '#f7fcf5' : '#ffffff';
+	}
+	
+	// Get color for growth rate
+	function getGrowthColor(d) {
+		return d > 4.0  ? '#7a0177' :
+			d > 3.0  ? '#ae017e' :
+			d > 2.5  ? '#dd3497' :
+			d > 2.0  ? '#f768a1' :
+			d > 1.5  ? '#fa9fb5' :
+			d > 1.0  ? '#fcc5c0' :
+			d > 0    ? '#feebe2' : '#fff7f3';
+	}
+
+	let currentStyle = 'population';
+
+	function style(feature) {
+		let value;
+		switch(currentStyle) {
+			case 'population':
+				value = feature.properties.Total_Popu;
+				break;
+			case 'density':
+				value = feature.properties.Population;
+				break;
+			case 'household':
+				value = feature.properties.Av_HH_Size;
+				break;
+			case 'growth':
+				value = feature.properties.Growth_Rate || 0;
+				break;
+			default:
+				value = feature.properties.Total_Popu;
+		}
+		
+		return {
+			weight: 2,
+			opacity: 1,
+			color: 'white',
+			dashArray: '3',
+			fillOpacity: 0.9,
+			fillColor: currentStyle === 'population' ? getColor(value) : 
+					   currentStyle === 'density' ? getDensityColor(value) : 
+					   currentStyle === 'household' ? getHouseholdColor(value) :
+					   getGrowthColor(value)
+		};
+	}
+
+	function highlightFeature(e) {
+		const layer = e.target;
+
+		layer.setStyle({
+			weight: 5,
+			color: '#666',
+			dashArray: '',
+			fillOpacity: 0.7
+		});
+
+		layer.bringToFront();
+
+		info.update(layer.feature.properties);
+		
+		// Update county stats in sidebar
+		updateCountyStats(layer.feature.properties);
+	}
+
+	/* global Data */
+	const geojson = L.geoJson(popData, {
+		style,
+		onEachFeature
+	}).addTo(map);
+
+	function resetHighlight(e) {
+		geojson.resetStyle(e.target);
+		info.update();
+		
+		// Reset county stats
+		document.getElementById('county-stats').innerHTML = '<p>Hover over a county for a  detailed statistics</p>';
+	}
+
+	function zoomToFeature(e) {
+		map.fitBounds(e.target.getBounds());
+	}
+
+	function onEachFeature(feature, layer) {
+		layer.on({
+			mouseover: highlightFeature,
+			mouseout: resetHighlight,
+			click: zoomToFeature
+		});
+	}
+
+	map.attributionControl.addAttribution('Kenya Population Data from Census Report (2019); <a href="https://www.knbs.or.ke/census/">KNBS</a>');
+
+	// Legend
+	const legend = L.control({position: 'bottomright'});
+
+	legend.onAdd = function (map) {
+		const div = L.DomUtil.create('div', 'info legend');
+		let grades, labels, title;
+		
+		if (currentStyle === 'population') {
+			grades = [0, 143000, 393000, 667000, 993000, 1454000, 2420000, 4400000];
+			title = 'Population';
+		} else if (currentStyle === 'density') {
+			grades = [0, 50, 100, 200, 500, 1000, 2000, 5000];
+			title = 'Density (per km²)';
+		} else if (currentStyle === 'household') {
+			grades = [0, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0];
+			title = 'Household Size';
+		} else {
+			grades = [0, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0];
+			title = 'Growth Rate (%)';
+		}
+		
+		labels = [`<strong>${title}</strong>`];
+		let from, to;
+
+		for (let i = 0; i < grades.length; i++) {
+			from = grades[i];
+			to = grades[i + 1];
+			
+			const colorFunc = currentStyle === 'population' ? getColor : 
+							 currentStyle === 'density' ? getDensityColor : 
+							 currentStyle === 'household' ? getHouseholdColor :
+							 getGrowthColor;
+
+			labels.push(`<i style="background:${colorFunc(from + 1)}"></i> ${from}${to ? `&ndash;${to}` : '+'}`);
+		}
+
+		div.innerHTML = labels.join('<br>');
+		return div;
+	};
+
+	legend.addTo(map);
+	
+	// Update legend when style changes
+	function updateLegend() {
+		map.removeControl(legend);
+		legend.addTo(map);
+	}
+	
+	// Analysis functions
+	function calculateStatistics() {
+		let totalPopulation = 0;
+		let totalDensity = 0;
+		let totalHousehold = 0;
+		let totalArea = 0;
+		let countyCount = 0;
+		
+		const counties = [];
+		const regions = {};
+		
+		popData.features.forEach(feature => {
+			const props = feature.properties;
+			if (props.Total_Popu) {
+				totalPopulation += props.Total_Popu;
+				totalDensity += props.Population || 0;
+				totalHousehold += props.Av_HH_Size || 0;
+				totalArea += props.Area || 0;
+				countyCount++;
+				
+				// Group by region if available
+				const region = props.Region || 'Other';
+				if (!regions[region]) {
+					regions[region] = {
+						population: 0,
+						density: 0,
+						area: 0,
+						counties: 0,
+						household: 0
+					};
+				}
+				
+				regions[region].population += props.Total_Popu;
+				regions[region].density += props.Population || 0;
+				regions[region].area += props.Area || 0;
+				regions[region].household += props.Av_HH_Size || 0;
+				regions[region].counties++;
+				
+				counties.push({
+					name: props.ADM1_EN,
+					population: props.Total_Popu,
+					density: props.Population || 0,
+					household: props.Av_HH_Size || 0,
+					area: props.Area || 0,
+					growth: props.Growth_Rate || 0,
+					region: region
+				});
+			}
+		});
+		
+		// Update summary statistics
+		document.getElementById('total-population').textContent = totalPopulation.toLocaleString();
+		document.getElementById('avg-density').textContent = Math.round(totalDensity / countyCount).toLocaleString();
+		document.getElementById('avg-household').textContent = (totalHousehold / countyCount).toFixed(2);
+		document.getElementById('county-count').textContent = countyCount;
+		
+		// Create charts and visualizations
+		createTopCountiesChart(counties);
+		createPopulationCategoriesChart(counties);
+		createRankingTable(counties);
+		populateRegions(regions, counties);
+		populateCountySearch(counties);
+		populateComparisonSelects(counties);
+		generateKeyInsights(counties);
+		createUrbanRuralChart(counties);
+		createRegionalPerformanceChart(regions);
+		calculateCorrelations(counties);
+		createPopulationForecast(counties);
+		createClusteringChart(counties);
+	}
+	
+	function createTopCountiesChart(counties) {
+		// Sort counties by population (descending)
+		counties.sort((a, b) => b.population - a.population);
+		
+		const topCounties = counties.slice(0, 10);
+		const labels = topCounties.map(county => county.name);
+		const data = topCounties.map(county => county.population);
+		
+		const ctx = document.getElementById('top-counties-chart').getContext('2d');
+		
+		if (window.topCountiesChart) {
+			window.topCountiesChart.destroy();
+		}
+		
+		window.topCountiesChart = new Chart(ctx, {
+			type: 'bar',
+			data: {
+				labels: labels,
+				datasets: [{
+					label: 'Population',
+					data: data,
+					backgroundColor: 'rgba(54, 162, 235, 0.7)',
+					borderColor: 'rgba(54, 162, 235, 1)',
+					borderWidth: 1
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				scales: {
+					y: {
+						beginAtZero: true,
+						ticks: {
+							callback: function(value) {
+								return value.toLocaleString();
+							}
+						}
+					}
+				},
+				plugins: {
+					legend: {
+						display: false
+					},
+					tooltip: {
+						callbacks: {
+							label: function(context) {
+								return context.parsed.y.toLocaleString();
+							}
+						}
+					}
+				}
+			}
+		});
+	}
+	
+	function createPopulationCategoriesChart(counties) {
+		// Categorize counties by population size
+		const categories = {
+			'Under 250K': 0,
+			'250K - 500K': 0,
+			'500K - 1M': 0,
+			'1M - 2M': 0,
+			'Over 2M': 0
+		};
+		
+		counties.forEach(county => {
+			if (county.population < 250000) {
+				categories['Under 250K']++;
+			} else if (county.population < 500000) {
+				categories['250K - 500K']++;
+			} else if (county.population < 1000000) {
+				categories['500K - 1M']++;
+			} else if (county.population < 2000000) {
+				categories['1M - 2M']++;
+			} else {
+				categories['Over 2M']++;
+			}
+		});
+		
+		const ctx = document.getElementById('population-categories-chart').getContext('2d');
+		
+		if (window.populationCategoriesChart) {
+			window.populationCategoriesChart.destroy();
+		}
+		
+		window.populationCategoriesChart = new Chart(ctx, {
+			type: 'doughnut',
+			data: {
+				labels: Object.keys(categories),
+				datasets: [{
+					data: Object.values(categories),
+					backgroundColor: [
+						'rgba(255, 99, 132, 0.7)',
+						'rgba(54, 162, 235, 0.7)',
+						'rgba(255, 206, 86, 0.7)',
+						'rgba(75, 192, 192, 0.7)',
+						'rgba(153, 102, 255, 0.7)'
+					],
+					borderColor: [
+						'rgba(255, 99, 132, 1)',
+						'rgba(54, 162, 235, 1)',
+						'rgba(255, 206, 86, 1)',
+						'rgba(75, 192, 192, 1)',
+						'rgba(153, 102, 255, 1)'
+					],
+					borderWidth: 1
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				plugins: {
+					legend: {
+						position: 'bottom'
+					},
+					tooltip: {
+						callbacks: {
+							label: function(context) {
+								const label = context.label || '';
+								const value = context.parsed;
+								const total = context.dataset.data.reduce((a, b) => a + b, 0);
+								const percentage = Math.round((value / total) * 100);
+								return `${label}: ${value} counties (${percentage}%)`;
+							}
+						}
+					}
+				}
+			}
+		});
+	}
+	
+	function createRankingTable(counties) {
+		// Sort by population
+		counties.sort((a, b) => b.population - a.population);
+		
+		const tableBody = document.getElementById('ranking-table-body');
+		tableBody.innerHTML = '';
+		
+		counties.forEach((county, index) => {
+			const row = document.createElement('tr');
+			const rankClass = index < 3 ? `rank rank-${index+1}` : 'rank';
+			
+			row.innerHTML = `
+				<td class="${rankClass}">${index + 1}</td>
+				<td>${county.name}</td>
+				<td>${county.population.toLocaleString()}</td>
+				<td>${county.density.toLocaleString()}</td>
+			`;
+			
+			row.addEventListener('click', function() {
+				const layer = findCountyLayer(county.name);
+				if (layer) {
+					map.fitBounds(layer.getBounds());
+					highlightFeature({ target: layer });
+				}
+			});
+			
+			row.style.cursor = 'pointer';
+			tableBody.appendChild(row);
+		});
+	}
+	
+	function populateRegions(regions, counties) {
+		const regionSelect = document.getElementById('region-select');
+		
+		// Add all regions to the dropdown
+		Object.keys(regions).forEach(region => {
+			if (region !== 'Other') {
+				const option = document.createElement('option');
+				option.value = region;
+				option.textContent = region;
+				regionSelect.appendChild(option);
+			}
+		});
+		
+		// Set up event listener for region selection
+		regionSelect.addEventListener('change', function() {
+			const selectedRegion = this.value;
+			updateRegionStats(selectedRegion, regions, counties);
+		});
+		
+		// Initialize with all Kenya
+		updateRegionStats('all', regions, counties);
+	}
+	
+	function updateRegionStats(region, regions, counties) {
+		let population = 0;
+		let density = 0;
+		let area = 0;
+		let countyCount = 0;
+		
+		if (region === 'all') {
+			// Calculate for all Kenya
+			counties.forEach(county => {
+				population += county.population;
+				density += county.density;
+				area += county.area;
+				countyCount++;
+			});
+		} else {
+			// Calculate for selected region
+			counties.forEach(county => {
+				if (county.region === region) {
+					population += county.population;
+					density += county.density;
+					area += county.area;
+					countyCount++;
+				}
+			});
+		}
+		
+		// Update region stats
+		document.getElementById('region-population').textContent = population.toLocaleString();
+		document.getElementById('region-density').textContent = Math.round(density / countyCount).toLocaleString();
+		document.getElementById('region-area').textContent = area.toLocaleString();
+		document.getElementById('region-counties').textContent = countyCount;
+	}
+	
+	function populateComparisonSelects(counties) {
+		const county1Select = document.getElementById('county1-select');
+		const county2Select = document.getElementById('county2-select');
+		
+		// Clear existing options (except the first placeholder)
+		while (county1Select.children.length > 1) {
+			county1Select.removeChild(county1Select.lastChild);
+		}
+		while (county2Select.children.length > 1) {
+			county2Select.removeChild(county2Select.lastChild);
+		}
+		
+		// Add counties to both selects
+		counties.forEach(county => {
+			const option1 = document.createElement('option');
+			option1.value = county.name;
+			option1.textContent = county.name;
+			county1Select.appendChild(option1);
+			
+			const option2 = document.createElement('option');
+			option2.value = county.name;
+			option2.textContent = county.name;
+			county2Select.appendChild(option2);
+		});
+		
+		// Set up event listeners for comparison
+		county1Select.addEventListener('change', updateComparison);
+		county2Select.addEventListener('change', updateComparison);
+	}
+	
+	function updateComparison() {
+		const county1Name = document.getElementById('county1-select').value;
+		const county2Name = document.getElementById('county2-select').value;
+		
+		if (!county1Name || !county2Name) {
+			document.getElementById('comparison-results').innerHTML = '<p>Select two counties to compare</p>';
+			return;
+		}
+		
+		// Find county data
+		const counties = [];
+		popData.features.forEach(feature => {
+			if (feature.properties.ADM1_EN === county1Name || feature.properties.ADM1_EN === county2Name) {
+				counties.push(feature.properties);
+			}
+		});
+		
+		if (counties.length !== 2) {
+			document.getElementById('comparison-results').innerHTML = '<p>Error: Could not find county data</p>';
+			return;
+		}
+		
+		const county1 = counties[0];
+		const county2 = counties[1];
+		
+		// Calculate comparison metrics
+		const populationRatio = county1.Total_Popu / county2.Total_Popu;
+		const densityRatio = (county1.Population || 0) / (county2.Population || 0);
+		const areaRatio = (county1.Area || 0) / (county2.Area || 0);
+		
+		// Generate comparison HTML
+		let comparisonHTML = `
+			<div class="comparison-row">
+				<div><strong>Metric</strong></div>
+				<div><strong>${county1.ADM1_EN}</strong></div>
+				<div><strong>${county2.ADM1_EN}</strong></div>
+				<div><strong>Ratio</strong></div>
+			</div>
+			<div class="comparison-row">
+				<div>Population</div>
+				<div>${county1.Total_Popu.toLocaleString()}</div>
+				<div>${county2.Total_Popu.toLocaleString()}</div>
+				<div>${populationRatio.toFixed(2)}:1</div>
+			</div>
+			<div class="comparison-row">
+				<div>Density (per km²)</div>
+				<div>${(county1.Population || 0).toLocaleString()}</div>
+				<div>${(county2.Population || 0).toLocaleString()}</div>
+				<div>${densityRatio.toFixed(2)}:1</div>
+			</div>
+			<div class="comparison-row">
+				<div>Area (km²)</div>
+				<div>${(county1.Area || 0).toLocaleString()}</div>
+				<div>${(county2.Area || 0).toLocaleString()}</div>
+				<div>${areaRatio.toFixed(2)}:1</div>
+			</div>
+			<div class="comparison-row">
+				<div>Household Size</div>
+				<div>${county1.Av_HH_Size || 'N/A'}</div>
+				<div>${county2.Av_HH_Size || 'N/A'}</div>
+				<div>-</div>
+			</div>
+		`;
+		
+		document.getElementById('comparison-results').innerHTML = comparisonHTML;
+	}
+	
+	function populateCountySearch(counties) {
+		const container = document.getElementById('county-results');
+		container.innerHTML = '';
+		
+		counties.forEach(county => {
+			const item = document.createElement('div');
+			item.className = 'county-item';
+			item.innerHTML = `
+				<span class="county-name">${county.name}</span>
+				<span class="county-population">${county.population.toLocaleString()}</span>
+			`;
+			
+			item.addEventListener('click', function() {
+				// Find and highlight the county on the map
+				const layer = findCountyLayer(county.name);
+				if (layer) {
+					map.fitBounds(layer.getBounds());
+					highlightFeature({ target: layer });
+				}
+			});
+			
+			container.appendChild(item);
+		});
+	}
+	
+	function findCountyLayer(countyName) {
+		let targetLayer = null;
+		
+		geojson.eachLayer(function(layer) {
+			if (layer.feature.properties.ADM1_EN === countyName) {
+				targetLayer = layer;
+			}
+		});
+		
+		return targetLayer;
+	}
+	
+	function updateCountyStats(props) {
+		if (!props) return;
+		
+		const statsHtml = `
+			<p><strong>${props.ADM1_EN}</strong></p>
+			<p>Population: ${props.Total_Popu ? props.Total_Popu.toLocaleString() : 'No data'}</p>
+			<p>Density: ${props.Population ? props.Population.toLocaleString() + ' per km²' : 'No data'}</p>
+			<p>Area: ${props.Area ? props.Area.toLocaleString() + ' km²' : 'No data'}</p>
+			<p>Household Size: ${props.Av_HH_Size || 'No data'}</p>
+			${props.Growth_Rate ? `<p>Growth Rate: ${props.Growth_Rate}%</p>` : ''}
+		`;
+		
+		document.getElementById('county-stats').innerHTML = statsHtml;
+	}
+	
+	// NEW ANALYSIS FUNCTIONS
+	
+	function generateKeyInsights(counties) {
+		const insightsContainer = document.getElementById('key-insights');
+		
+		// Sort counties by different metrics
+		const byPopulation = [...counties].sort((a, b) => b.population - a.population);
+		const byDensity = [...counties].sort((a, b) => b.density - a.density);
+		const byHousehold = [...counties].sort((a, b) => b.household - a.household);
+		
+		// Calculate some statistics
+		const totalPopulation = counties.reduce((sum, county) => sum + county.population, 0);
+		const top5Population = byPopulation.slice(0, 5).reduce((sum, county) => sum + county.population, 0);
+		const top5Percentage = ((top5Population / totalPopulation) * 100).toFixed(1);
+		
+		// Generate insights
+		const insights = [
+			`<div class="insight-item"><span class="insight-highlight">${top5Percentage}%</span> of Kenya's population lives in just 5 counties.</div>`,
+			`<div class="insight-item">The most densely populated county is <span class="insight-highlight">${byDensity[0].name}</span> with ${byDensity[0].density.toLocaleString()} people per km².</div>`,
+			`<div class="insight-item">The largest county by population is <span class="insight-highlight">${byPopulation[0].name}</span> with ${byPopulation[0].population.toLocaleString()} residents.</div>`,
+			`<div class="insight-item">Average household size is highest in <span class="insight-highlight">${byHousehold[0].name}</span> at ${byHousehold[0].household} people per household.</div>`
+		];
+		
+		insightsContainer.innerHTML = insights.join('');
+	}
+	
+	function createUrbanRuralChart(counties) {
+		// This is a simplified example - in a real application, you would have actual urban/rural data
+		// For demonstration, we'll create a synthetic distribution
+		const urbanRuralData = {
+			'Primarily Urban': 0,
+			'Mixed Urban-Rural': 0,
+			'Primarily Rural': 0
+		};
+		
+		counties.forEach(county => {
+			// Simple classification based on population density
+			if (county.density > 1000) {
+				urbanRuralData['Primarily Urban']++;
+			} else if (county.density > 200) {
+				urbanRuralData['Mixed Urban-Rural']++;
+			} else {
+				urbanRuralData['Primarily Rural']++;
+			}
+		});
+		
+		const ctx = document.getElementById('urban-rural-chart').getContext('2d');
+		
+		if (window.urbanRuralChart) {
+			window.urbanRuralChart.destroy();
+		}
+		
+		window.urbanRuralChart = new Chart(ctx, {
+			type: 'pie',
+			data: {
+				labels: Object.keys(urbanRuralData),
+				datasets: [{
+					data: Object.values(urbanRuralData),
+					backgroundColor: [
+						'rgba(54, 162, 235, 0.7)',
+						'rgba(255, 206, 86, 0.7)',
+						'rgba(75, 192, 192, 0.7)'
+					],
+					borderColor: [
+						'rgba(54, 162, 235, 1)',
+						'rgba(255, 206, 86, 1)',
+						'rgba(75, 192, 192, 1)'
+					],
+					borderWidth: 1
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				plugins: {
+					legend: {
+						position: 'bottom'
+					}
+				}
+			}
+		});
+	}
+	
+	function createRegionalPerformanceChart(regions) {
+		const regionNames = Object.keys(regions).filter(region => region !== 'Other');
+		const regionPopulations = regionNames.map(region => regions[region].population);
+		const regionDensities = regionNames.map(region => Math.round(regions[region].density / regions[region].counties));
+		
+		const ctx = document.getElementById('regional-performance-chart').getContext('2d');
+		
+		if (window.regionalPerformanceChart) {
+			window.regionalPerformanceChart.destroy();
+		}
+		
+		window.regionalPerformanceChart = new Chart(ctx, {
+			type: 'bar',
+			data: {
+				labels: regionNames,
+				datasets: [
+					{
+						label: 'Population',
+						data: regionPopulations,
+						backgroundColor: 'rgba(54, 162, 235, 0.7)',
+						borderColor: 'rgba(54, 162, 235, 1)',
+						borderWidth: 1,
+						yAxisID: 'y'
+					},
+					{
+						label: 'Avg. Density',
+						data: regionDensities,
+						backgroundColor: 'rgba(255, 99, 132, 0.7)',
+						borderColor: 'rgba(255, 99, 132, 1)',
+						borderWidth: 1,
+						yAxisID: 'y1',
+						type: 'line'
+					}
+				]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				scales: {
+					y: {
+						type: 'linear',
+						display: true,
+						position: 'left',
+						title: {
+							display: true,
+							text: 'Population'
+						},
+						ticks: {
+							callback: function(value) {
+								return value.toLocaleString();
+							}
+						}
+					},
+					y1: {
+						type: 'linear',
+						display: true,
+						position: 'right',
+						title: {
+							display: true,
+							text: 'Density (per km²)'
+						},
+						grid: {
+							drawOnChartArea: false
+						}
+					}
+				}
+			}
+		});
+	}
+	
+	function calculateCorrelations(counties) {
+		// Calculate correlation coefficients between different metrics
+		const populations = counties.map(c => c.population);
+		const densities = counties.map(c => c.density);
+		const households = counties.map(c => c.household);
+		
+		// Simple correlation calculation (Pearson's r)
+		function correlation(x, y) {
+			const n = x.length;
+			const sumX = x.reduce((a, b) => a + b, 0);
+			const sumY = y.reduce((a, b) => a + b, 0);
+			const sumXY = x.reduce((sum, val, i) => sum + val * y[i], 0);
+			const sumX2 = x.reduce((sum, val) => sum + val * val, 0);
+			const sumY2 = y.reduce((sum, val) => sum + val * val, 0);
+			
+			const numerator = n * sumXY - sumX * sumY;
+			const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+			
+			return denominator === 0 ? 0 : numerator / denominator;
+		}
+		
+		const popDenCorr = correlation(populations, densities);
+		const popHhCorr = correlation(populations, households);
+		const denHhCorr = correlation(densities, households);
+		
+		// Update correlation matrix
+		document.getElementById('corr-pop-den').textContent = popDenCorr.toFixed(2);
+		document.getElementById('corr-pop-hh').textContent = popHhCorr.toFixed(2);
+		document.getElementById('corr-den-pop').textContent = popDenCorr.toFixed(2);
+		document.getElementById('corr-den-hh').textContent = denHhCorr.toFixed(2);
+		document.getElementById('corr-hh-pop').textContent = popHhCorr.toFixed(2);
+		document.getElementById('corr-hh-den').textContent = denHhCorr.toFixed(2);
+		
+		// Color code the correlations
+		document.querySelectorAll('.correlation-cell:not(.correlation-header)').forEach(cell => {
+			const value = parseFloat(cell.textContent);
+			if (!isNaN(value)) {
+				const intensity = Math.abs(value);
+				const red = value > 0 ? 0 : Math.round(255 * intensity);
+				const green = value > 0 ? Math.round(255 * intensity) : 0;
+				const blue = 0;
+				cell.style.backgroundColor = `rgba(${red}, ${green}, ${blue}, 0.2)`;
+			}
+		});
+	}
+	
+	function createPopulationForecast(counties) {
+		// Simple population projection based on average growth rate
+		// In a real application, you would use more sophisticated models
+		const currentYear = 2019;
+		const averageGrowthRate = 2.3; // Kenya's average growth rate
+		
+		const forecastYears = document.getElementById('forecast-years');
+		const forecastValue = document.getElementById('forecast-value');
+		
+		function updateForecast() {
+			const years = parseInt(forecastYears.value);
+			forecastValue.textContent = `${years} years`;
+			
+			const totalPopulation = counties.reduce((sum, county) => sum + county.population, 0);
+			const projectedPopulation = totalPopulation * Math.pow(1 + averageGrowthRate/100, years);
+			
+			const ctx = document.getElementById('population-forecast-chart').getContext('2d');
+			
+			if (window.populationForecastChart) {
+				window.populationForecastChart.destroy();
+			}
+			
+			window.populationForecastChart = new Chart(ctx, {
+				type: 'line',
+				data: {
+					labels: ['2019', `2019+${years}`],
+					datasets: [{
+						label: 'Population',
+						data: [totalPopulation, projectedPopulation],
+						borderColor: 'rgba(54, 162, 235, 1)',
+						backgroundColor: 'rgba(54, 162, 235, 0.2)',
+						fill: true,
+						tension: 0.1
+					}]
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					scales: {
+						y: {
+							beginAtZero: false,
+							ticks: {
+								callback: function(value) {
+									return (value / 1000000).toFixed(1) + 'M';
+								}
+							}
+						}
+					},
+					plugins: {
+						tooltip: {
+							callbacks: {
+								label: function(context) {
+									return context.parsed.y.toLocaleString();
+								}
+							}
+						}
+					}
+				}
+			});
+		}
+		
+		forecastYears.addEventListener('input', updateForecast);
+		updateForecast();
+	}
+	
+	function createClusteringChart(counties) {
+		// Simple k-means clustering visualization (2D)
+		// Using population and density as dimensions
+		const populations = counties.map(c => c.population);
+		const densities = counties.map(c => c.density);
+		
+		// Normalize data for clustering visualization
+		const maxPop = Math.max(...populations);
+		const maxDen = Math.max(...densities);
+		
+		const normalizedData = counties.map(county => ({
+			x: county.population / maxPop,
+			y: county.density / maxDen,
+			label: county.name
+		}));
+		
+		const ctx = document.getElementById('clustering-chart').getContext('2d');
+		
+		if (window.clusteringChart) {
+			window.clusteringChart.destroy();
+		}
+		
+		window.clusteringChart = new Chart(ctx, {
+			type: 'scatter',
+			data: {
+				datasets: [{
+					label: 'Counties',
+					data: normalizedData,
+					backgroundColor: 'rgba(54, 162, 235, 0.7)',
+					borderColor: 'rgba(54, 162, 235, 1)',
+					borderWidth: 1,
+					pointRadius: 5
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				scales: {
+					x: {
+						title: {
+							display: true,
+							text: 'Population (normalized)'
+						}
+					},
+					y: {
+						title: {
+							display: true,
+							text: 'Density (normalized)'
+						}
+					}
+				},
+				plugins: {
+					tooltip: {
+						callbacks: {
+							label: function(context) {
+								const county = counties.find(c => c.name === context.raw.label);
+								return [
+									`County: ${county.name}`,
+									`Population: ${county.population.toLocaleString()}`,
+									`Density: ${county.density.toLocaleString()} per km²`
+								];
+							}
+						}
+					}
+				}
+			}
+		});
+	}
+	
+	// Event listeners for style buttons
+	document.getElementById('btn-population').addEventListener('click', function() {
+		currentStyle = 'population';
+		geojson.setStyle(style);
+		updateLegend();
+		updateButtonStates(this);
+	});
+	
+	document.getElementById('btn-density').addEventListener('click', function() {
+		currentStyle = 'density';
+		geojson.setStyle(style);
+		updateLegend();
+		updateButtonStates(this);
+	});
+	
+	document.getElementById('btn-household').addEventListener('click', function() {
+		currentStyle = 'household';
+		geojson.setStyle(style);
+		updateLegend();
+		updateButtonStates(this);
+	});
+	
+	document.getElementById('btn-growth').addEventListener('click', function() {
+		currentStyle = 'growth';
+		geojson.setStyle(style);
+		updateLegend();
+		updateButtonStates(this);
+	});
+	
+	function updateButtonStates(activeButton) {
+		document.querySelectorAll('.btn').forEach(btn => {
+			btn.classList.remove('active');
+		});
+		activeButton.classList.add('active');
+	}
+	
+	// Tab functionality
+	document.querySelectorAll('.tab-button').forEach(button => {
+		button.addEventListener('click', function() {
+			// Remove active class from all tabs and buttons
+			document.querySelectorAll('.tab-button').forEach(btn => {
+				btn.classList.remove('active');
+			});
+			document.querySelectorAll('.tab-content').forEach(content => {
+				content.classList.remove('active');
+			});
+			
+			// Add active class to clicked button and corresponding content
+			this.classList.add('active');
+			const tabId = this.getAttribute('data-tab') + '-tab';
+			document.getElementById(tabId).classList.add('active');
+		});
+	});
+	
+	// County search functionality
+	document.getElementById('county-search').addEventListener('input', function(e) {
+		const searchTerm = e.target.value.toLowerCase();
+		const items = document.querySelectorAll('.county-item');
+		
+		items.forEach(item => {
+			const countyName = item.querySelector('.county-name').textContent.toLowerCase();
+			if (countyName.includes(searchTerm)) {
+				item.style.display = 'flex';
+			} else {
+				item.style.display = 'none';
+			}
+		});
+	});
+	
+	// Initialize analysis when data is loaded
+	window.addEventListener('load', function() {
+		// Wait a moment for the data to be available
+		setTimeout(calculateStatistics, 500);
+	});
+</script>
+
+</body>
+</html>
