@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="google-site-verification" content="o1OgYgd0QtZkbfhM_7ut4PYsNAF-cE5rWYWwPoj0Arc" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Padma Geospatial Solutions Ltd.</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter for a clean, modern look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* CSS Variables for theming */
+        :root {
+            /* Default to light theme variables */
+            --background: #f9fafb; /* gray-50 */
+            --surface: #ffffff; /* white */
+            --primary-text: #111827; /* gray-900 */
+            --secondary-text: #4b5563; /* gray-600 */
+            --accent: #3b82f6; /* blue-500 */
+            --accent-hover: #2563eb; /* blue-600 */
+            --border-color: #e5e7eb; /* gray-200 */
+            --shadow-color: rgba(0, 0, 0, 0.05);
+            --header-bg: rgba(255, 255, 255, 0.8);
+        }
+
+        html.theme-dark {
+            --background: #111827; /* gray-900 */
+            --surface: #1f2937; /* gray-800 */
+            --primary-text: #e5e7eb; /* gray-200 */
+            --secondary-text: #9ca3af; /* gray-400 */
+            --border-color: #374151; /* gray-700 */
+            --shadow-color: rgba(0, 0, 0, 0.2);
+            --header-bg: rgba(17, 24, 39, 0.8);
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+            background-color: var(--background);
+            color: var(--primary-text);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* General element styling using variables */
+        header {
+            background-color: var(--header-bg);
+            box-shadow: 0 4px 6px -1px var(--shadow-color);
+        }
+        .bg-surface { background-color: var(--surface); }
+        .text-primary { color: var(--primary-text); }
+        .text-secondary { color: var(--secondary-text); }
+        .text-accent { color: var(--accent); }
+        .border-custom { border-color: var(--border-color); }
+        
+        /* Smooth transitions for all theme-able properties */
+        .card-hover, .bg-surface, .text-primary, .text-secondary, .filter-btn, .btn-primary, .btn-secondary {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+        }
+
+        /* --- DEDICATED BUTTON STYLES --- */
+        .btn-primary {
+            display: inline-block;
+            text-align: center;
+            background-color: var(--accent);
+            color: white;
+            font-weight: bold;
+        }
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            display: inline-block;
+            text-align: center;
+            background-color: transparent;
+            color: var(--accent);
+            border: 2px solid var(--accent);
+            font-weight: bold;
+        }
+        .btn-secondary:hover {
+            background-color: var(--accent);
+            color: white; /* Using white is safe here for both themes */
+        }
+        
+        /* Navigation link styling */
+        .nav-link {
+            transition: color 0.3s ease;
+            position: relative;
+            padding-bottom: 4px;
+            color: var(--secondary-text);
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background-color: var(--accent);
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--primary-text);
+        }
+        .nav-link.active::after {
+            width: 100%;
+        }
+        
+        /* Hide all page sections by default */
+        .page-section { display: none; }
+        .page-section.active { display: block; }
+        
+        /* Hero Section Styling */
+        .hero-gradient {
+            background: linear-gradient(135deg, var(--background) 0%, var(--surface) 100%);
+        }
+        html.theme-dark .hero-gradient {
+             background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+        }
+
+        /* General Section Styling */
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--primary-text);
+        }
+        .section-subtitle {
+            font-size: 1.125rem;
+            color: var(--secondary-text);
+            max-width: 600px;
+            margin: 0 auto 3rem auto;
+        }
+
+        /* Card Hover Effect */
+        .card-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 10px 20px var(--shadow-color);
+        }
+
+        /* Scroll-triggered animation */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Blog Filter Button Styles */
+        .filter-btn {
+            background-color: var(--surface);
+            color: var(--secondary-text);
+            border: 1px solid var(--border-color);
+        }
+        .filter-btn:hover {
+            background-color: var(--border-color);
+            color: var(--primary-text);
+        }
+        .filter-btn.active {
+            background-color: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        
+        /* --- ANIMATED THEME TOGGLE --- */
+        #theme-toggle {
+            position: relative;
+            width: 56px;
+            height: 32px;
+            border: none;
+            background: none;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        .toggle-track {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #dbeafe; /* blue-100 */
+            border-radius: 30px;
+            transition: background-color 0.4s;
+        }
+
+        .toggle-thumb {
+            position: absolute;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            left: 4px;
+            bottom: 4px;
+            background-color: #f59e0b; /* amber-500 */
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            box-shadow: 0 0 5px #f59e0b;
+        }
+
+        html.theme-dark .toggle-track {
+            background-color: #374151; /* gray-700 */
+        }
+
+        html.theme-dark .toggle-thumb {
+            transform: translateX(24px);
+            background-color: #e5e7eb; /* gray-200 */
+            box-shadow: inset -3px -2px 5px -2px rgba(255,255,255,0.2), inset -8px -3px 0 0 #dbeafe;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <header class="backdrop-blur-sm sticky top-0 z-50">
+        <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <a href="#home" class="flex items-center space-x-3">
+                 <img src="https://raw.githubusercontent.com/AmanullahRefat/PadmaGeospatial/3777122a3f7d96876d53a005ab42caeceed8f4f1/images/PGeo%20Solutions.png" alt="Padma Geospatial Logo" class="h-12 w-auto">
+                 <span class="text-xl font-bold text-primary">Padma GeoSpatial</span>
+            </a>
+            <div class="flex items-center space-x-8">
+                <nav class="hidden md:flex items-center space-x-8 font-medium">
+                    <a href="#home" class="nav-link">Home</a>
+                    <a href="#about" class="nav-link">About</a>
+                    <a href="#services" class="nav-link">Services</a>
+                    <a href="#projects" class="nav-link">Work</a>
+                    <a href="#blog" class="nav-link">Blog</a>
+                    <a href="#contact" class="nav-link">Contact</a>
+                </nav>
+                <!-- Theme Toggle Button -->
+                <button id="theme-toggle" title="Toggle theme">
+                    <div class="toggle-track">
+                        <div class="toggle-thumb"></div>
+                    </div>
+                </button>
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-primary focus:outline-none">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-surface shadow-lg">
+            <a href="#home" class="block py-3 px-6 text-secondary hover:bg-border-color mobile-nav-link">Home</a>
+            <a href="#about" class="block py-3 px-6 text-secondary hover:bg-border-color mobile-nav-link">About</a>
+            <a href="#services" class="block py-3 px-6 text-secondary hover:bg-border-color mobile-nav-link">Services</a>
+            <a href="#projects" class="block py-3 px-6 text-secondary hover:bg-border-color mobile-nav-link">Work</a>
+            <a href="#blog" class="block py-3 px-6 text-secondary hover:bg-border-color mobile-nav-link">Blog</a>
+            <a href="#contact" class="block py-3 px-6 text-secondary hover:bg-border-color mobile-nav-link">Contact</a>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main>
+
+        <!-- HOME PAGE CONTENT -->
+        <div id="home" class="page-section active">
+             <section class="hero-gradient py-24">
+                <div class="container mx-auto px-6 text-center">
+                    <h1 class="text-4xl md:text-6xl font-extrabold mb-4 reveal text-primary">Your Trusted Partner in Geospatial Excellence</h1>
+                    <p class="text-lg md:text-xl max-w-3xl mx-auto text-secondary mb-8 reveal" style="transition-delay: 0.2s;">Leveraging advanced GIS, remote sensing, and data analytics to provide innovative solutions for real-world challenges.</p>
+                    <div class="flex flex-wrap justify-center gap-4 reveal" style="transition-delay: 0.4s;">
+                        <a href="#contact" class="btn-primary py-3 px-8 rounded-full transform hover:scale-105">
+                            Get in Touch
+                        </a>
+                        <a href="#services" class="bg-surface text-primary border border-custom font-bold py-3 px-8 rounded-full hover:bg-border-color transition-all duration-300 transform hover:scale-105">
+                            Our Services
+                        </a>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="py-20 container mx-auto px-6">
+                <div class="text-center">
+                    <h2 class="section-title reveal">Our Core Services</h2>
+                    <p class="section-subtitle reveal">We integrate diverse expertise to solve complex challenges and create lasting impact.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div class="bg-surface p-8 rounded-lg text-center card-hover reveal shadow-lg">
+                        <div class="text-5xl text-accent mb-4"><i class="fas fa-map-marked-alt"></i></div>
+                        <h3 class="text-xl font-bold text-primary mb-2">GIS & Analysis</h3>
+                        <p class="text-secondary">Precision mapping and spatial analysis for informed decision-making.</p>
+                    </div>
+                    <div class="bg-surface p-8 rounded-lg text-center card-hover reveal shadow-lg" style="transition-delay: 0.1s;">
+                        <div class="text-5xl text-accent mb-4"><i class="fas fa-satellite"></i></div>
+                        <h3 class="text-xl font-bold text-primary mb-2">Remote Sensing</h3>
+                        <p class="text-secondary">Imagery analysis for environmental monitoring and resource management.</p>
+                    </div>
+                    <div class="bg-surface p-8 rounded-lg text-center card-hover reveal shadow-lg" style="transition-delay: 0.2s;">
+                        <div class="text-5xl text-accent mb-4"><i class="fas fa-drafting-compass"></i></div>
+                        <h3 class="text-xl font-bold text-primary mb-2">Survey & Data</h3>
+                        <p class="text-secondary">High-quality field data collection using modern technologies.</p>
+                    </div>
+                    <div class="bg-surface p-8 rounded-lg text-center card-hover reveal shadow-lg" style="transition-delay: 0.3s;">
+                        <div class="text-5xl text-accent mb-4"><i class="fas fa-laptop-code"></i></div>
+                        <h3 class="text-xl font-bold text-primary mb-2">Web & Development</h3>
+                        <p class="text-secondary">Custom platforms for interactive spatial data visualization.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ABOUT US PAGE CONTENT -->
+        <div id="about" class="page-section">
+            <section class="py-20 container mx-auto px-6">
+                <div class="grid lg:grid-cols-3 gap-12 items-start">
+                    <div class="lg:col-span-2">
+                        <h2 class="section-title reveal mb-8">About Our Company</h2>
+                        <div class="bg-surface rounded-lg shadow-lg p-8 md:p-12 reveal" style="transition-delay: 0.1s;">
+                            <p class="text-lg text-secondary leading-relaxed mb-6">
+                                Padma Geospatial Solutions Ltd. is a leading consulting firm established in 2022, dedicated to delivering high-quality geospatial surveys and analytical services. We specialize in physical, human, and urban geography, leveraging cutting-edge GIS and remote sensing technologies to provide accurate, data-driven insights that empower decision-making across sectors.
+                            </p>
+                            <p class="text-lg text-secondary leading-relaxed mb-6">
+                                Our strength lies in our agile and expert-driven approach. With a core team of three full-time professionals and a dynamic network of over 20 domain specialists, we assemble tailored project teams that combine precision, efficiency, and deep expertise. This flexible structure ensures that each project benefits from the right mix of skills and experience, whether it's a complex urban mapping initiative or a targeted environmental assessment.
+                            </p>
+                            <p class="text-lg text-secondary leading-relaxed">
+                                At Padma Geospatial Solutions, we are committed to innovation, integrity, and impact. Our mission is to transform spatial data into actionable intelligence, helping clients navigate challenges and unlock opportunities through geospatial excellence.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="bg-surface rounded-lg shadow-lg p-8 text-center reveal" style="transition-delay: 0.3s;">
+                        <img src="https://raw.githubusercontent.com/AmanullahRefat/PadmaGeospatial/4508a48c13d37e08f1c553f6169352f91d67773e/images/Amanullah_Photo.png" alt="CEO Amanullah Refat" class="w-40 h-40 rounded-full mx-auto mb-4 border-4 border-accent">
+                        <h3 class="text-2xl font-bold text-primary">Amanullah Refat</h3>
+                        <p class="text-accent font-semibold">Founder & CEO</p>
+                        <p class="text-secondary mt-4">Amanullah is a GIS and Remote Sensing specialist with a passion for leveraging technology to solve complex geographical challenges. With extensive experience in both academic research and practical application, he leads the team with a vision for innovation and excellence.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- SERVICES PAGE CONTENT -->
+        <div id="services" class="page-section">
+            <section class="py-20 container mx-auto px-6">
+                <div class="text-center">
+                    <h2 class="section-title reveal">Our Comprehensive Services</h2>
+                    <p class="section-subtitle reveal">
+                        We offer a wide spectrum of geospatial services, from data acquisition and analysis to custom application development, tailored to meet the unique needs of your project.
+                    </p>
+                </div>
+                
+                <div class="mt-12 space-y-12">
+                    <!-- GIS Services -->
+                    <div class="bg-surface p-8 rounded-lg shadow-lg reveal">
+                        <h3 class="text-2xl font-bold text-primary mb-4">Geographic Information Systems (GIS)</h3>
+                        <p class="text-secondary leading-relaxed mb-6">Our GIS services turn complex spatial data into clear, actionable intelligence. We help you visualize, question, analyze, and interpret data to understand relationships, patterns, and trends.</p>
+                        <ul class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-primary">
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Spatial Analysis & Modeling</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Geodatabase Design & Management</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Network Analysis (Routing & Logistics)</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Site Suitability Analysis</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>3D GIS and Visualization</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Asset Management & Tracking</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Thematic & Cadastral Mapping</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Data Conversion & Migration</li>
+                        </ul>
+                    </div>
+
+                    <!-- Remote Sensing Services -->
+                    <div class="bg-surface p-8 rounded-lg shadow-lg reveal">
+                        <h3 class="text-2xl font-bold text-primary mb-4">Remote Sensing</h3>
+                        <p class="text-secondary leading-relaxed mb-6">We harness the power of satellite and aerial imagery to provide critical insights for environmental monitoring, resource management, and large-scale planning.</p>
+                        <ul class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-primary">
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Satellite Image Processing & Analysis</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Land Use/Land Cover (LULC) Classification</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Change Detection Analysis</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Vegetation & Crop Health Monitoring (NDVI)</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Digital Elevation Model (DEM) Generation</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Feature Extraction (Roads, Buildings)</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Photogrammetry Services</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Thermal Imagery Analysis</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Survey and Data Collection -->
+                    <div class="bg-surface p-8 rounded-lg shadow-lg reveal">
+                        <h3 class="text-2xl font-bold text-primary mb-4">Survey & Data Collection</h3>
+                        <p class="text-secondary leading-relaxed mb-6">Accurate data is the foundation of any successful geospatial project. Our field teams are equipped with modern technology to ensure high-quality data acquisition.</p>
+                        <ul class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-primary">
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>High-Precision GPS/GNSS Surveys</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>UAV/Drone-based Mapping & Surveys</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Topographic & Hydrographic Surveys</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Mobile Data Collection App Development</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Field Data Verification & Ground Truthing</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Socio-Economic & Environmental Surveys</li>
+                        </ul>
+                    </div>
+
+                    <!-- Web GIS and Development -->
+                    <div class="bg-surface p-8 rounded-lg shadow-lg reveal">
+                        <h3 class="text-2xl font-bold text-primary mb-4">Web GIS & Custom Development</h3>
+                        <p class="text-secondary leading-relaxed mb-6">We build intuitive, web-based platforms that make your spatial data accessible to everyone, from stakeholders to the public, on any device.</p>
+                        <ul class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-primary">
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Interactive Web Map Development</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Custom GIS Dashboard Design</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Geospatial Application Development</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Cloud-based GIS Platform Setup</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>API Integration & Development</li>
+                            <li class="flex items-center"><i class="fas fa-check-circle text-accent mr-3"></i>Data Visualization & Storytelling</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Service Packages Section -->
+                <div class="mt-20">
+                    <div class="text-center">
+                        <h2 class="section-title reveal">Service Packages</h2>
+                        <p class="section-subtitle reveal">
+                            We offer flexible packages to suit your project's scale and budget.
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+                        <!-- Starter Package -->
+                        <div class="bg-surface rounded-lg p-8 flex flex-col card-hover reveal shadow-lg">
+                            <h3 class="text-2xl font-bold text-primary mb-2">Starter</h3>
+                            <p class="text-secondary mb-4">Ideal for students, researchers, and small-scale projects.</p>
+                            <p class="text-4xl font-bold my-4 text-primary">Starts at <span class="text-accent">৳15,000</span></p>
+                            <ul class="space-y-3 text-primary flex-grow">
+                                <li class="flex items-start"><i class="fas fa-check-circle text-green-500 mr-3 mt-1"></i>High-Quality Study Area Map</li>
+                                <li class="flex items-start"><i class="fas fa-check-circle text-green-500 mr-3 mt-1"></i>Basic Data Collection</li>
+                                <li class="flex items-start"><i class="fas fa-check-circle text-green-500 mr-3 mt-1"></i>Standard Geoprocessing</li>
+                            </ul>
+                            <a href="#contact" class="btn-secondary py-3 px-6 rounded-full mt-8">Get a Quote</a>
+                        </div>
+                        <!-- Professional Package -->
+                        <div class="bg-surface rounded-lg p-8 flex flex-col card-hover reveal border-2 border-accent shadow-lg" style="transition-delay: 0.2s;">
+                            <h3 class="text-2xl font-bold text-primary mb-2">Professional</h3>
+                            <p class="text-secondary mb-4">Perfect for businesses, NGOs, and detailed analytical reports.</p>
+                            <p class="text-4xl font-bold my-4 text-primary">Starts at <span class="text-accent">৳50,000</span></p>
+                            <ul class="space-y-3 text-primary flex-grow">
+                                <li class="flex items-start"><i class="fas fa-check-circle text-green-500 mr-3 mt-1"></i>Everything in Starter, plus:</li>
+                                <li class="flex items-start"><i class="fas fa-check-circle text-green-500 mr-3 mt-1"></i>LULC Classification</li>
+                                <li class="flex items-start"><i class="fas fa-check-circle text-green-500 mr-3 mt-1"></i>Custom Web Map</li>
+                                <li class="flex items-start"><i class="fas fa-check-circle text-green-500 mr-3 mt-1"></i>Detailed Spatial Analysis</li>
+                            </ul>
+                            <a href="#contact" class="btn-primary py-3 px-6 rounded-full mt-8">Get a Quote</a>
+                        </div>
+                        <!-- Enterprise Package -->
+                        <div class="bg-surface rounded-lg p-8 flex flex-col card-hover reveal shadow-lg" style="transition-delay: 0.4s;">
+                            <h3 class="text-2xl font-bold text-primary mb-2">Enterprise</h3>
+                            <p class="text-secondary mb-4">For large-scale projects and custom application development.</p>
+                            <p class="text-4xl font-bold my-4 text-primary">Custom Quote</p>
+                            <ul class="space-y-3 text-primary flex-grow">
+                                <li class="flex items-start"><i class="fas fa-check-circle text-green-500 mr-3 mt-1"></i>Everything in Professional, plus:</li>
+                                <li class="flex items-start"><i class="fas fa-check-circle text-green-500 mr-3 mt-1"></i>Custom Web GIS Application</li>
+                                <li class="flex items-start"><i class="fas fa-check-circle text-green-500 mr-3 mt-1"></i>Advanced Modeling</li>
+                                <li class="flex items-start"><i class="fas fa-check-circle text-green-500 mr-3 mt-1"></i>Dedicated Support</li>
+                            </ul>
+                             <a href="#contact" class="btn-secondary py-3 px-6 rounded-full mt-8">Get a Quote</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        
+        <!-- PROJECTS LISTING PAGE -->
+        <div id="projects" class="page-section">
+            <section class="py-20 container mx-auto px-6">
+                <div class="text-center">
+                    <h2 class="section-title reveal">Our Work</h2>
+                    <p class="section-subtitle reveal">
+                       A selection of our work that demonstrates our capabilities and the diverse challenges we solve for our clients.
+                    </p>
+                </div>
+                <div id="project-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
+                    <!-- Project cards are dynamically inserted here -->
+                </div>
+            </section>
+        </div>
+        
+        <!-- SINGLE PROJECT DETAIL VIEW -->
+        <div id="project-detail-view" class="page-section">
+            <!-- Project detail content is dynamically inserted here -->
+        </div>
+
+        <!-- BLOG LISTING PAGE -->
+        <div id="blog" class="page-section">
+             <section class="py-20 container mx-auto px-6">
+                <div class="text-center">
+                    <h2 class="section-title reveal">From Our Blog</h2>
+                    <p class="section-subtitle reveal">
+                        Insights, trends, and discussions on the latest in geospatial technology and its applications.
+                    </p>
+                </div>
+                
+                <div id="blog-filters" class="flex flex-wrap justify-center gap-4 mb-12 reveal">
+                    <!-- Filter buttons are dynamically inserted here -->
+                </div>
+                <div id="blog-post-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Blog post cards are dynamically inserted here -->
+                </div>
+            </section>
+        </div>
+
+        <!-- SINGLE BLOG DETAIL VIEW -->
+        <div id="blog-detail-view" class="page-section">
+             <!-- Blog detail content is dynamically inserted here -->
+        </div>
+
+        <!-- CONTACT US PAGE CONTENT -->
+        <div id="contact" class="page-section">
+            <section class="py-20 container mx-auto px-6">
+                 <div class="text-center">
+                    <h2 class="section-title reveal">Contact Us</h2>
+                    <p class="section-subtitle reveal">
+                        We'd love to hear from you. Let's discuss how we can help with your next project.
+                    </p>
+                </div>
+                <div class="grid md:grid-cols-2 gap-12 mt-12 max-w-5xl mx-auto">
+                    <div class="reveal">
+                        <h3 class="text-2xl font-bold text-primary mb-6">Get in Touch</h3>
+                        <div class="space-y-6">
+                            <div class="flex items-start space-x-4"><i class="fas fa-map-marker-alt text-accent text-xl mt-1"></i><div><h4 class="font-semibold text-lg text-primary">Address</h4><p class="text-secondary">Fakirapool, Motijheel, Dhaka</p></div></div>
+                            <div class="flex items-start space-x-4"><i class="fas fa-envelope text-accent text-xl mt-1"></i><div><h4 class="font-semibold text-lg text-primary">Email</h4><a href="mailto:amanullah.geo.du@gmail.com" class="text-secondary hover:text-accent">amanullah.geo.du@gmail.com</a></div></div>
+                            <div class="flex items-start space-x-4"><i class="fas fa-phone-alt text-accent text-xl mt-1"></i><div><h4 class="font-semibold text-lg text-primary">Phone</h4><p class="text-secondary">+8801843255836</p></div></div>
+                        </div>
+                        <div class="mt-8 rounded-lg overflow-hidden shadow-lg">
+                           <iframe src="https://maps.google.com/maps?q=23.734049861754055,90.41758690236439&z=15&output=embed&hl=en" width="100%" height="250" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                        </div>
+                    </div>
+                    <div class="bg-surface p-8 rounded-lg shadow-lg reveal">
+                         <h3 class="text-2xl font-bold text-primary mb-6">Send Us a Message</h3>
+                         <form id="contactForm" action="https://formspree.io/f/mkgzljew" method="POST" class="space-y-4">
+                             <div><label for="name" class="block text-secondary font-medium mb-1">Your Name</label><input type="text" id="name" name="name" class="w-full px-4 py-2 bg-background border border-custom rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-primary" required></div>
+                             <div><label for="email" class="block text-secondary font-medium mb-1">Your Email</label><input type="email" id="email" name="_replyto" class="w-full px-4 py-2 bg-background border border-custom rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-primary" required></div>
+                             <div><label for="subject" class="block text-secondary font-medium mb-1">Subject</label><input type="text" id="subject" name="subject" class="w-full px-4 py-2 bg-background border border-custom rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-primary" required></div>
+                             <div><label for="message" class="block text-secondary font-medium mb-1">Message</label><textarea id="message" name="message" rows="4" class="w-full px-4 py-2 bg-background border border-custom rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-primary" required></textarea></div>
+                             <div><button type="submit" class="w-full btn-primary py-3 px-6 rounded-lg">Submit</button></div>
+                         </form>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-surface text-primary mt-16 border-t border-custom">
+        <div class="container mx-auto px-6 py-10">
+             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-6">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Padma Geospatial</h3>
+                    <p class="text-secondary">Transforming spatial data into actionable intelligence.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                    <ul class="space-y-1">
+                        <li><a href="#about" class="text-secondary hover:text-primary">About Us</a></li>
+                        <li><a href="#services" class="text-secondary hover:text-primary">Services</a></li>
+                        <li><a href="#projects" class="text-secondary hover:text-primary">Work</a></li>
+                        <li><a href="#blog" class="text-secondary hover:text-primary">Blog</a></li>
+                    </ul>
+                </div>
+                <div class="lg:col-span-2">
+                    <h3 class="text-lg font-semibold mb-4">Subscribe to our Newsletter</h3>
+                    <p class="text-secondary mb-4">Get the latest articles and insights from our team.</p>
+                    <form id="newsletterFormFooter" action="https://formspree.io/f/xeozbadd" method="POST" class="flex flex-col sm:flex-row gap-4">
+                        <input type="email" name="email" placeholder="Enter your email" class="w-full px-4 py-2 bg-background border border-custom rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-primary" required>
+                        <button type="submit" class="btn-primary py-2 px-6 rounded-lg whitespace-nowrap">Subscribe</button>
+                    </form>
+                </div>
+            </div>
+            <div class="border-t border-custom pt-4 mt-6 flex flex-col sm:flex-row justify-between items-center">
+                <p class="text-secondary text-sm">&copy; 2024 Padma Geospatial Solutions Ltd. All Rights Reserved.</p>
+                <div class="flex space-x-4 mt-4 sm:mt-0">
+                    <a href="https://www.facebook.com/profile.php?id=61579305396441" target="_blank" class="text-secondary hover:text-primary"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="text-secondary hover:text-primary"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="text-secondary hover:text-primary"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- DATA ---
+        const projectsData = [
+            { id: 'social-capital', title: 'Social Capital Dynamics', client: 'DRTMC', location: 'Rural Bangladesh', image: 'https://placehold.co/600x400/3B82F6/FFFFFF?text=Community+Analysis', details: `Social capital refers to the networks of relationships among people who live and work in a particular society, enabling that society to function effectively. It includes elements like trust, norms, and networks that can improve efficiency by facilitating coordinated actions.<br><br>In our project on 'Social Capital Dynamics,' we conducted an in-depth analysis to understand how these social networks are distributed spatially and how they influence socio-economic outcomes. Using advanced geospatial techniques, we mapped indicators of social capital, such as the density of community organizations and levels of civic participation. This allowed us to identify areas with strong and weak social capital, providing valuable insights for policymakers to formulate targeted interventions, strengthen community bonds, and promote resilient development.` },
+            { id: 'cyclone-shelter', title: 'Cyclone Shelter Accessibility', client: 'Professor, Department of Geography and Environment, University of Dhaka', location: 'Coastal Areas', image: 'https://placehold.co/600x400/10B981/FFFFFF?text=Coastal+Safety', details: `This study introduces a Cyclone Shelter Accessibility Satisfaction Index (CSASI) to evaluate how satisfied the coastal population of Bangladesh is with their access to cyclone shelters. By integrating data on road networks, land use/land cover (LULC), and population distribution, we developed an accessibility model.<br><br>The model considers travel time and distance to the nearest shelter, weighted by the quality of the road network and LULC type. The resulting CSASI provides a quantitative measure of accessibility satisfaction, highlighting areas where access is poor and intervention is needed. This index serves as a crucial tool for policymakers and disaster management agencies to enhance preparedness and ensure equitable access to life-saving facilities during cyclones.` },
+            { id: 'lulc-arial-beel', title: 'LULC of Arial Beel', client: 'Individual Researcher', location: 'Arial Beel Wetland', image: 'https://placehold.co/600x400/F59E0B/FFFFFF?text=Wetland+Monitoring', details: `This study focuses on classifying the seasonal Land Use/Land Cover (LULC) of Arial Beel, a significant wetland in Bangladesh, using the Google Earth Engine (GEE) platform. We utilized Sentinel-2 satellite imagery and employed the Random Forest (RF) machine learning algorithm for classification.<br><br>By analyzing images from different seasons, we accurately mapped the dynamic changes in the wetland's LULC, including variations in water bodies, agricultural land, and vegetation cover. The high accuracy achieved underscores the effectiveness of GEE and the RF algorithm for monitoring and managing vital wetland ecosystems, providing essential data for environmental planning and conservation efforts.` },
+            { id: 'shoreline-changes', title: 'Offshore Island Shoreline Changes', client: 'Individual Researcher', location: 'Bay of Bengal', image: 'https://placehold.co/600x400/6366F1/FFFFFF?text=Shoreline+Analysis', details: `This research investigates the Land Use/Land Cover (LULC) and shoreline dynamics of Hatiya and Nijhum Dwip, two vulnerable islands in Bangladesh, over a 30-year period (1990-2020). Using multi-temporal Landsat satellite imagery, we analyzed changes in the shoreline position with the Digital Shoreline Analysis System (DSAS) tool in ArcGIS.<br><br>Our findings quantify the rates of erosion and accretion, revealing significant transformations in the islands' geography. This analysis is critical for understanding the impacts of climate change and human activities, providing vital information for coastal zone management, disaster risk reduction, and sustainable development planning for these offshore communities.` },
+            { id: 'medieval-bengal', title: 'Mapping Medieval Greater Bengal', client: 'Department of Islamic History and Culture, University of Dhaka', location: 'Bengal Region', image: 'https://placehold.co/600x400/8B5CF6/FFFFFF?text=Historical+GIS', details: `This project is dedicated to the spatial reconstruction of the Parganas (medieval administrative units) of Greater Bengal. Utilizing historical maps, particularly James Rennell's 18th-century atlas, and other textual sources, we are creating a comprehensive geodatabase of these historical units.<br><br>The process involves georeferencing historical maps, digitizing the Pargana boundaries, and linking them with attribute data from historical records. This Historical GIS (HGIS) database will serve as a foundational tool for researchers studying the socio-economic, political, and environmental history of the Bengal region, enabling new forms of spatial analysis and historical inquiry.` },
+            { id: 'study-area-mapping', title: 'Study Area Mapping Service', client: 'Various Researchers', location: 'Nationwide', image: 'https://placehold.co/600x400/EC4899/FFFFFF?text=Cartographic+Design', details: `A well-crafted study area map is a fundamental component of any research paper, report, or presentation. It not only orients the reader but also adds a professional and credible touch to your work. However, creating a high-quality map that meets publication standards can be a time-consuming and technical challenge.<br><br>We specialize in producing professional, publication-ready study area maps tailored to your specific needs. Whether for academic journals, corporate reports, or presentations, we ensure your map is clear, accurate, and visually appealing, allowing you to focus on your core research while we handle the cartography.` },
+            { 
+                id: 'chunati-wildlife', 
+                title: 'Chunati Wildlife Sanctuary Analysis', 
+                client: 'Individual Researcher', 
+                location: 'Chunati, Bangladesh', 
+                image: 'https://placehold.co/600x400/22C55E/FFFFFF?text=Wildlife+Sanctuary', 
+                liveUrl: 'https://amanullahrefat.github.io/ChunatiWildlifeSanctuary/',
+                buttonText: 'Chunati Wildlife Sanctuary Webpage',
+                details: `This project involved a comprehensive analysis of the Chunati Wildlife Sanctuary based on secondary data sources. By integrating existing satellite imagery, topographical maps, and ecological reports, we performed a multi-faceted study of the sanctuary's environment.<br><br>The analysis focused on Land Use/Land Cover (LULC) changes over time to identify deforestation or encroachment, and an assessment of wildlife habitat suitability. The findings provide valuable insights for conservation planning and sanctuary management.` 
+            }
+        ];
+
+        const blogCategories = {
+            'all': { name: 'All Posts', icon: 'fa-globe', color: 'bg-gray-500' },
+            'gis-mapping': { name: 'GIS Mapping & Analysis', icon: 'fa-map-location-dot', color: 'bg-blue-500' },
+            'remote-sensing': { name: 'Remote Sensing & Image Processing', icon: 'fa-satellite-dish', color: 'bg-teal-500' },
+            'survey-data': { name: 'Survey & Data Collection', icon: 'fa-ruler-combined', color: 'bg-indigo-500' },
+            'web-gis': { name: 'Web GIS & Dashboard Development', icon: 'fa-window-maximize', color: 'bg-purple-500' },
+            'contemporary': { name: 'Contemporary GIS & RS Issues', icon: 'fa-brain', color: 'bg-pink-500' },
+            'miscellaneous': { name: 'Miscellaneous', icon: 'fa-lightbulb', color: 'bg-amber-500' }
+        };
+        
+        const blogPostsData = [
+            { 
+                id: 1, 
+                title: "High-Precision Geospatial Data Visualization", 
+                category: "gis-mapping", 
+                date: "2024-08-05", 
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRq7-U4hS1P8zTgxWu7wF8GVyczJHKpbpTf2g&s",
+                summary: "Explore how advanced data visualization is transforming strategic decision-making across industries.",
+                content: `
+                    <div class="prose max-w-none text-lg text-secondary leading-relaxed">
+                        <h3 class="font-bold text-xl mb-3 text-primary">What is High-Precision Geospatial Data Visualization?</h3>
+                        <p class="mb-4">Geospatial data visualization is the process of representing spatial information in graphical formats, such as maps, 3D models, and interactive dashboards. High-precision visualization enhances this by using cutting-edge technologies to ensure accuracy, detail, and real-time updates. This includes using high-resolution data from sources like satellites, drones, and LiDAR; advanced analytics from AI and ML to identify patterns; and interactive tools like GIS platforms. The goal is to turn raw data into actionable insights for strategic decisions.</p>
+                        <figure class="my-8">
+                            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRq7-U4hS1P8zTgxWu7wF8GVyczJHKpbpTf2g&s" class="rounded-lg shadow-md">
+                            <figcaption class="text-center text-sm text-gray-500 mt-2">Figure 1: A 3D model of a city, a key tool in high-precision visualization.</figcaption>
+                        </figure>
+                        <h3 class="font-bold text-xl mb-3 text-primary">Why High-Precision Visualization Matters</h3>
+                        <ul class="list-disc list-inside mb-4 space-y-2">
+                            <li><b>Enhanced Accuracy:</b> It ensures decisions are based on accurate, up-to-date information, useful for things like urban planning.</li>
+                            <li><b>Real-Time Insights:</b> With real-time data integration, it allows organizations to monitor changes as they happen, which is crucial for disaster management.</li>
+                            <li><b>Improved Communication:</b> Visual representations simplify complex data, making it easier for stakeholders to understand and collaborate.</li>
+                            <li><b>Predictive Capabilities:</b> By combining historical data with predictive analytics, it can forecast future scenarios, such as predicting sea-level rise for coastal cities.</li>
+                        </ul>
+                    </div>
+                ` 
+            },
+             { 
+                id: 2, 
+                title: "Advanced Spatial Modeling for EIA", 
+                category: "gis-mapping", 
+                date: "2024-07-25", 
+                image: "https://files.readme.io/b438d6f-suitability-layer-settings.png",
+                summary: "A deep dive into the techniques used for effective environmental impact assessment.", 
+                content: `
+                    <div class="prose max-w-none text-lg text-secondary leading-relaxed">
+                        <p>Environmental Impact Assessments (EIA) are crucial for ensuring that development projects are sustainable and do not cause undue harm to the environment. Advanced spatial modeling techniques, powered by GIS, have become indispensable in this process, allowing for a more comprehensive and quantitative analysis of potential impacts.</p>
+                        <figure class="my-8">
+                            <img src="https://files.readme.io/b438d6f-suitability-layer-settings.png" class="rounded-lg shadow-md">
+                            <figcaption class="text-center text-sm text-gray-500 mt-2">Figure 1: Example of a suitability analysis map used in EIA. (Source: readme.io)</figcaption>
+                        </figure>
+                        <h3 class="font-bold text-xl mt-4 mb-3 text-primary">Key Spatial Modeling Techniques in EIA:</h3>
+                        <ul class="list-disc list-inside mb-4 space-y-2">
+                            <li><b>Suitability Analysis:</b> This technique involves overlaying multiple spatial layers to identify the most and least suitable locations for a project.</li>
+                            <li><b>Hydrological Modeling:</b> These models predict how a project might alter water flow, affect water quality, or increase flood risk.</li>
+                            <li><b>Habitat and Species Distribution Modeling:</b> These models predict the potential impact on biodiversity by analyzing how a project might fragment habitats.</li>
+                        </ul>
+                    </div>
+                `
+            },
+            { 
+                id: 3, 
+                title: "Interactive Web GIS Dashboards", 
+                category: "web-gis", 
+                date: "2024-07-05", 
+                image: "https://www.esri.com/arcgis-blog/wp-content/uploads/2022/06/Picture1-2.png",
+                summary: "Learn how real-time, interactive dashboards are empowering organizations with actionable insights.", 
+                content: `
+                    <div class="prose max-w-none text-lg text-secondary leading-relaxed">
+                        <p>In today's data-driven world, organizations are increasingly relying on spatial data for informed decisions. The true power of GIS lies in effectively visualizing and analyzing this data, which is where Interactive Web GIS Dashboards play a crucial role.</p>
+                        <figure class="my-8">
+                            <img src="https://www.esri.com/arcgis-blog/wp-content/uploads/2022/06/Picture1-2.png" class="rounded-lg shadow-md">
+                            <figcaption class="text-center text-sm text-gray-500 mt-2">Figure 1: A sample Web GIS dashboard for monitoring operations. (Source: Esri)</figcaption>
+                        </figure>
+                        <p>These dashboards are dynamic, user-friendly interfaces that integrate spatial data with real-time analytics. They allow users to visualize data on maps, charts, and graphs, enabling them to explore trends, identify patterns, and make data-driven decisions.</p>
+                    </div>
+                `
+            },
+            { 
+                id: 4, 
+                title: "The Role of Drones in Modern Surveying", 
+                category: "survey-data", 
+                date: "2024-06-28", 
+                image: "https://5.imimg.com/data5/SELLER/Default/2024/9/454505500/DB/WY/HM/34172042/aerial-drone-survey-services.jpg",
+                summary: "Discover how UAVs are revolutionizing data collection with high-resolution imagery and 3D models.", 
+                content: `
+                    <div class="prose max-w-none text-lg text-secondary leading-relaxed">
+                        <p>Unmanned Aerial Vehicles (UAVs), commonly known as drones, have emerged as a disruptive technology in the field of surveying and mapping. They offer a powerful alternative to traditional ground-based methods, providing a unique combination of speed, accuracy, safety, and cost-effectiveness.</p>
+                        <figure class="my-8">
+                            <img src="https://5.imimg.com/data5/SELLER/Default/2024/9/454505500/DB/WY/HM/34172042/aerial-drone-survey-services.jpg" class="rounded-lg shadow-md">
+                            <figcaption class="text-center text-sm text-gray-500 mt-2">Figure 1: UAV in action during an aerial survey. (Source: IndiaMART)</figcaption>
+                        </figure>
+                        <h3 class="font-bold text-xl mt-4 mb-3 text-primary">Key Advantages of Drone Surveying:</h3>
+                        <ul class="list-disc list-inside mb-4 space-y-2">
+                            <li><b>Speed and Efficiency:</b> Drones can survey large areas in a fraction of the time it would take a ground crew.</li>
+                            <li><b>Data Richness:</b> Drones capture high-resolution aerial imagery which can be processed to create detailed orthomosaic maps and 3D models.</li>
+                            <li><b>Enhanced Safety:</b> Surveying hazardous or inaccessible areas can be done safely from a distance.</li>
+                        </ul>
+                    </div>
+                `
+            },
+            { 
+                id: 5, 
+                title: "AI and Machine Learning in Geospatial Analysis", 
+                category: "contemporary", 
+                date: "2024-06-20", 
+                image: "https://towardsdatascience.com/wp-content/uploads/2024/01/1NGcaaVHPBOkje_M6-Seu3w.png",
+                summary: "Unpacking the current trends and applications of AI/ML in the geospatial field.", 
+                content: `
+                    <div class="prose max-w-none text-lg text-secondary leading-relaxed">
+                        <p>The integration of Artificial Intelligence (AI) and Machine Learning (ML) is revolutionizing how we interpret, analyze, and utilize spatial data. These technologies are transforming various sectors, from urban planning and environmental monitoring to disaster management and precision agriculture.</p>
+                        <figure class="my-8">
+                            <img src="https://towardsdatascience.com/wp-content/uploads/2024/01/1NGcaaVHPBOkje_M6-Seu3w.png" class="rounded-lg shadow-md">
+                            <figcaption class="text-center text-sm text-gray-500 mt-2">Figure 1: Conceptual diagram of a neural network used in AI. (Source: Towards Data Science)</figcaption>
+                        </figure>
+                        <h3 class="font-bold text-xl mt-4 mb-3 text-primary">Current Trends in Geospatial AI/ML:</h3>
+                        <ul class="list-disc list-inside mb-4 space-y-2">
+                            <li><b>Deep Learning for Image Analysis:</b> Convolutional Neural Networks (CNNs) are used for land cover classification, object detection, and change detection.</li>
+                            <li><b>Predictive Modeling and Simulation:</b> AI/ML models forecast natural disasters, simulate climate impacts, and predict crop yields.</li>
+                            <li><b>Geospatial Big Data Analytics:</b> Techniques like clustering and regression help manage and analyze massive spatial datasets.</li>
+                        </ul>
+                    </div>
+                `
+            },
+            { 
+                id: 6, 
+                title: "Understanding Coastal Zone Management", 
+                category: "miscellaneous", 
+                date: "2024-06-12", 
+                image: "https://www.tuckermanreef.com/images/MSP-master-diagram2.jpg",
+                summary: "A deep dive into various aspects of coastal management, assessing strengths and weaknesses.", 
+                content: `
+                    <div class="prose max-w-none text-lg text-secondary leading-relaxed">
+                        <p>Coastal zones are among the most dynamic and productive ecosystems on Earth, but they are also highly vulnerable to pressures from both human activities and natural phenomena like climate change. Effective management is crucial for their long-term sustainability. Integrated Coastal Zone Management (ICZM) is a widely recognized framework for achieving this.</p>
+                        <figure class="my-8">
+                            <img src="https://www.tuckermanreef.com/images/MSP-master-diagram2.jpg" class="rounded-lg shadow-md">
+                            <figcaption class="text-center text-sm text-gray-500 mt-2">Figure 1: Diagram illustrating the complexities of coastal zone management. (Source: Tuckerman Reef)</figcaption>
+                        </figure>
+                        <h3 class="font-bold text-xl mt-4 mb-3 text-primary">What is ICZM?</h3>
+                        <p>ICZM is a dynamic, multidisciplinary, and iterative process to promote sustainable management of coastal zones. It covers the full cycle of information collection, planning, decision-making, management, and monitoring of implementation.</p>
+                    </div>
+                `
+            }
+        ];
+
+        // --- THEME SWITCHER LOGIC ---
+        const themeToggle = document.getElementById('theme-toggle');
+        const docElement = document.documentElement;
+
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                docElement.classList.add('theme-dark');
+            } else {
+                docElement.classList.remove('theme-dark');
+            }
+        }
+
+        function toggleTheme() {
+            const currentTheme = docElement.classList.contains('theme-dark') ? 'dark' : 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyTheme(newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            } else {
+                // Auto-detect based on time
+                const hour = new Date().getHours();
+                const autoTheme = (hour >= 6 && hour < 18) ? 'light' : 'dark';
+                applyTheme(autoTheme);
+            }
+        }
+        
+        if(themeToggle) {
+             themeToggle.addEventListener('click', toggleTheme);
+        }
+
+
+        // --- PAGE NAVIGATION & ANIMATION ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        function observeElements() {
+            document.querySelectorAll('.reveal').forEach(el => {
+                observer.observe(el);
+            });
+        }
+
+        function showPage(pageId, navElement = null) {
+            document.querySelectorAll('.page-section').forEach(section => section.classList.remove('active'));
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.classList.add('active');
+                document.querySelectorAll(`#${pageId} .reveal`).forEach(el => {
+                    el.classList.remove('visible');
+                    observer.observe(el);
+                });
+            }
+
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            if (navElement) navElement.classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function handleNavigation() {
+            const hash = window.location.hash.substring(1) || 'home';
+            let [pageId, detailId] = hash.split('/');
+            
+            if (pageId === 'project' && detailId) {
+                renderProjectDetail(detailId);
+                showPage('project-detail-view', document.querySelector('a[href="#projects"]'));
+            } else if (pageId === 'blog' && detailId) {
+                renderBlogDetail(detailId);
+                 showPage('blog-detail-view', document.querySelector('a[href="#blog"]'));
+            } else {
+                 const navLink = document.querySelector(`.nav-link[href="#${pageId || 'home'}"]`);
+                 showPage(pageId || 'home', navLink);
+            }
+        }
+
+        // --- DYNAMIC CONTENT RENDERING ---
+        function renderProjects() {
+            const container = document.getElementById('project-list');
+            if (!container) return;
+            container.innerHTML = projectsData.map(p => `
+                <a href="#project/${p.id}" class="relative block h-80 rounded-lg overflow-hidden group card-hover reveal shadow-lg">
+                    <img src="${p.image}" alt="${p.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-white mb-1">${p.title}</h3>
+                            <p class="text-sm text-gray-300">${p.client}</p>
+                        </div>
+                    </div>
+                </a>
+            `).join('');
+        }
+
+        function renderProjectDetail(id) {
+            const project = projectsData.find(p => p.id === id);
+            const container = document.getElementById('project-detail-view');
+            if (project) {
+                 let liveUrlButton = '';
+                if (project.liveUrl) {
+                    const buttonText = project.buttonText || 'View Live Project';
+                    liveUrlButton = `
+                        <div class="mt-8">
+                            <a href="${project.liveUrl}" target="_blank" class="btn-primary py-3 px-8 rounded-full">
+                                ${buttonText} <i class="fas fa-external-link-alt ml-2"></i>
+                            </a>
+                        </div>
+                    `;
+                }
+                
+                container.innerHTML = `
+                    <section class="py-20 container mx-auto px-6">
+                        <div class="max-w-4xl mx-auto">
+                            <a href="#projects" class="text-accent font-semibold hover:underline mb-8 inline-block">← Back to Work</a>
+                            <h2 class="text-4xl font-bold text-primary mb-2">${project.title}</h2>
+                             <p class="text-lg text-secondary mb-8">Client: ${project.client} | Location: ${project.location}</p>
+                            <img src="${project.image.replace('600x400', '1200x600')}" alt="${project.title}" class="w-full rounded-lg shadow-lg mb-8">
+                            <div class="text-lg text-secondary leading-relaxed space-y-4">
+                                ${project.details}
+                            </div>
+                            ${liveUrlButton}
+                        </div>
+                    </section>
+                `;
+            }
+        }
+
+        function renderBlogFilters() {
+            const container = document.getElementById('blog-filters');
+            if (!container) return;
+            container.innerHTML = Object.entries(blogCategories).map(([key, value]) => `
+                <button class="filter-btn cursor-pointer py-2 px-5 rounded-full font-medium ${key === 'all' ? 'active' : ''}" onclick="filterBlogPosts('${key}', this)">
+                    ${value.name}
+                </button>
+            `).join('');
+        }
+
+        function renderBlogPosts(categoryKey = 'all') {
+            const container = document.getElementById('blog-post-list');
+            if (!container) return;
+            const filteredPosts = categoryKey === 'all' 
+                ? blogPostsData 
+                : blogPostsData.filter(p => p.category === categoryKey);
+            
+            container.innerHTML = filteredPosts.map(p => `
+                 <a href="#blog/${p.id}" class="block bg-surface rounded-lg shadow-lg card-hover overflow-hidden group reveal">
+                    <img src="${p.image}" alt="${p.title}" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <p class="text-sm text-accent font-semibold mb-2">${blogCategories[p.category].name}</p>
+                        <h3 class="text-xl font-bold text-primary mb-3">${p.title}</h3>
+                        <p class="text-secondary">${p.summary}</p>
+                    </div>
+                </a>
+            `).join('');
+            
+            container.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+        }
+        
+        function filterBlogPosts(categoryKey, btnElement) {
+            document.querySelectorAll('#blog-filters .filter-btn').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+            renderBlogPosts(categoryKey);
+        }
+        
+        function renderBlogDetail(id) {
+            const post = blogPostsData.find(p => p.id == id);
+            const container = document.getElementById('blog-detail-view');
+            if (post) {
+                container.innerHTML = `
+                    <section class="py-20 container mx-auto px-6">
+                        <div class="max-w-3xl mx-auto">
+                            <a href="#blog" class="text-accent font-semibold hover:underline mb-8 inline-block">← Back to Blog</a>
+                            <p class="text-accent font-semibold mb-2">${blogCategories[post.category].name}</p>
+                            <h2 class="text-4xl font-bold text-primary mb-4">${post.title}</h2>
+                            <p class="text-lg text-secondary mb-8">${post.date}</p>
+                            <div class="text-lg text-secondary leading-relaxed space-y-4">
+                                ${post.content}
+                            </div>
+                        </div>
+                    </section>
+                `;
+            }
+        }
+
+        // --- FORM HANDLING ---
+        function handleFormSubmit(formId) {
+            const form = document.getElementById(formId);
+            if (!form) return;
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const submitButton = form.querySelector('button');
+                const originalButtonText = submitButton.textContent;
+                submitButton.textContent = 'Sending...';
+                submitButton.disabled = true;
+
+                const formData = new FormData(form);
+                const response = await fetch(form.action, {
+                    method: form.method,
+                    body: formData,
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (response.ok) {
+                    form.reset();
+                    const successMessage = document.createElement('p');
+                    successMessage.className = 'text-green-500 mt-4 text-center';
+                    successMessage.textContent = "Thank you! Your message has been sent.";
+                     if (formId === 'newsletterFormFooter') {
+                         successMessage.className = 'text-green-500 mt-4 text-sm';
+                    }
+                    form.parentNode.appendChild(successMessage);
+                    setTimeout(() => successMessage.remove(), 5000);
+                }
+
+                submitButton.textContent = originalButtonText;
+                submitButton.disabled = false;
+            });
+        }
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTheme();
+            renderProjects();
+            renderBlogFilters();
+            renderBlogPosts();
+            handleNavigation();
+            observeElements();
+            handleFormSubmit('contactForm');
+            handleFormSubmit('newsletterFormFooter');
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+
+            if(mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+            }
+            if(mobileNavLinks.length > 0) {
+                 mobileNavLinks.forEach(link => link.addEventListener('click', () => mobileMenu.classList.add('hidden')));
+            }
+
+            document.querySelectorAll('a[href^="#"]').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    const href = link.getAttribute('href');
+                    if(href.length > 1 && !href.includes('/')) {
+                        e.preventDefault();
+                        window.location.hash = href;
+                    }
+                });
+            });
+            window.addEventListener('hashchange', handleNavigation);
+        });
+    </script>
+</body>
+</html>
+

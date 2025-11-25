@@ -1,0 +1,38 @@
+body {
+    padding: 30px; 
+    background-color: darkgrey;
+    color: #101010;
+}
+
+a.nav-link:link {
+    text-decoration: none;
+}
+
+a:link {
+    color: black;
+    text-decoration: underline;
+}
+
+/* visited link */
+a:visited {
+    color: #1a1a1a;
+    text-decoration: underline;
+}
+  
+  /* mouse over link */
+a:hover {
+    color: brown;
+}
+
+/* selected link */
+a:active {
+    color: hotpink;
+}
+
+/* map gallery banner */
+.banner {
+    background: #977000;
+    background: -webkit-linear-gradient(to right, #977000, #9f8b00, #9d765b);
+    background: linear-gradient(to right, #977000, #9f8b00, #9d765b);
+}
+
