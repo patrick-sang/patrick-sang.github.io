@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en" mv-app="kenyaRemittance" mv-storage="https://github.com/patrick-sang" mv-plugins="github">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title></title>
+  
+  <!-- Mavo CSS -->
+  <link rel="stylesheet" href="https://get.mavo.io/mavo.css">
+  <script src="https://get.mavo.io/mavo.js"></script>
+  
+  <style>
+    :root {
+      --primary: #2c3e50;
+      --secondary: #3498db;
+      --success: #27ae60;
+      --warning: #f39c12;
+      --danger: #e74c3c;
+      --light: #ecf0f1;
+      --dark: #34495e;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    
+    header h1 {
+      margin-bottom: 10px;
+    }
+    
+    header p {
+      opacity: 0.8;
+    }
+    
+    .mv-bar.mv-ui {
+      background: var(--dark);
+      padding: 10px 20px;
+    }
+    
+    .content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      padding: 20px;
+    }
+    
+    @media (max-width: 768px) {
+      .content {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel {
+      background: var(--light);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+    
+    .panel h2 {
+      color: var(--primary);
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .data-form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .form-group label {
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: var(--dark);
+    }
+    
+    .form-group input, .form-group select {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: var(--secondary);
+    }
+    
+    .btn {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+      background: var(--secondary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #2980b9;
+    }
+    
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+    
+    .btn-success:hover {
+      background: #219653;
+    }
+    
+    .btn-warning {
+      background: var(--warning);
+      color: white;
+    }
+    
+    .btn-warning:hover {
+      background: #e67e22;
+    }
+    
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background: #c0392b;
+    }
+    
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    
+    .data-table th, .data-table td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .data-table th {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .data-table tr:nth-child(even) {
+      background: #f8f9fa;
+    }
+    
+    .data-table tr:hover {
+      background: #e9ecef;
+    }
+    
+    .actions {
+      display: flex;
+      gap: 5px;
+    }
+    
+    .actions button {
+      padding: 5px 10px;
+      font-size: 14px;
+    }
+    
+    .stats-panel {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+    
+    .stat-card {
+      background: white;
+      border-left: 4px solid var(--secondary);
+      padding: 15px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+    
+    .stat-card h3 {
+      font-size: 14px;
+      color: #7f8c8d;
+      margin-bottom: 5px;
+    }
+    
+    .stat-card .value {
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    
+    .positive {
+      color: var(--success) !important;
+    }
+    
+    .negative {
+      color: var(--danger) !important;
+    }
+    
+    .upload-section {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+    
+    .upload-section h3 {
+      margin-bottom: 10px;
+      color: var(--primary);
+    }
+    
+    .upload-section textarea {
+      width: 100%;
+      height: 150px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: monospace;
+      resize: vertical;
+    }
+    
+    .instructions {
+      margin-top: 20px;
+      padding: 15px;
+      background: #e8f4fd;
+      border-radius: 8px;
+      border-left: 4px solid var(--secondary);
+    }
+    
+    .instructions h3 {
+      color: var(--primary);
+      margin-bottom: 10px;
+    }
+    
+    .instructions ul {
+      padding-left: 20px;
+    }
+    
+    .instructions li {
+      margin-bottom: 5px;
+    }
+    
+    .mv-status.mv-saving {
+      background: var(--warning);
+    }
+    
+    .mv-status.mv-saving:after {
+      content: "Saving...";
+    }
+    
+    .mv-status.mv-saved {
+      background: var(--success);
+    }
+    
+    .mv-status.mv-saved:after {
+      content: "All changes saved";
+    }
+    
+    .region-color {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    
+    .region-North_America { background-color: #377eb8; }
+    .region-Europe { background-color: #4daf4a; }
+    .region-Middle_East { background-color: #984ea3; }
+    .region-Africa { background-color: #ff7f00; }
+    .region-Asia_Pacific { background-color: #e41a1c; }
+    .region-Rest_of_World { background-color: #999999; }
+  </style>
+</head>
+
+<body>
+  <div class="container" mv-app="kenyaRemittance" mv-storage="https://github.com/patrick-sang" mv-autosave="5">
+    <header>
+      <h1></h1>
+      <p></p>
+    </header>
+
+    <div class="content">
+      <!-- Data Entry Panel -->
+      <div class="panel">
+        <h2> Remittance Data</h2>
+        <div class="data-form">
+          <div class="form-group">
+            <label for="year">Year</label>
+            <select property="year" id="year" required>
+              <option value="">Select Year</option>
+              <option value="2018">2018</option>
+              <option value="2019">2019</option>
+              <option value="2020">2020</option>
+              <option value="2021">2021</option>
+              <option value="2022">2022</option>
+              <option value="2023">2023</option>
+              <option value="2024">2024</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="region">Region</label>
+            <select property="region" id="region" required>
+              <option value="">Select Region</option>
+              <option value="North America">North America</option>
+              <option value="Europe">Europe</option>
+              <option value="Middle East">Middle East</option>
+              <option value="Africa">Africa</option>
+              <option value="Asia-Pacific">Asia-Pacific</option>
+              <option value="Rest of World">Rest of World</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="remittance">Remittance (USD Billion)</label>
+            <input type="number" property="remittance" id="remittance" step="0.01" min="0" required placeholder="e.g., 3.9">
+          </div>
+          
+          <div class="form-group">
+            <label for="latitude">Region Center Latitude</label>
+            <input type="number" property="latitude" id="latitude" step="0.0001" required placeholder="e.g., 39.5">
+          </div>
+          
+          <div class="form-group">
+            <label for="longitude">Region Center Longitude</label>
+            <input type="number" property="longitude" id="longitude" step="0.0001" required placeholder="e.g., -98.35">
+          </div>
+          
+          <button class="btn btn-primary" mv-action="add(remittanceData)">Add Regional Data</button>
+        </div>
+        
+        <!-- CSV Upload Section -->
+        <div class="upload-section">
+          <h3>Bulk Upload via CSV</h3>
+          <textarea property="csvData" placeholder="Paste CSV data here. Format: Year,Region,Remittance_USD_Billion,Latitude,Longitude"></textarea>
+          <button class="btn btn-success" mv-action="processCSV()" style="margin-top: 10px;">Process CSV Data</button>
+          <button class="btn btn-warning" mv-action="loadSampleData()" style="margin-top: 10px; margin-left: 10px;">Load Sample Data</button>
+        </div>
+      </div>
+
+      <!-- Data Display Panel -->
+      <div class="panel">
+        <h2>Regional Remittance Data</h2>
+        
+        <!-- Statistics -->
+        <div class="stats-panel">
+          <h3>Regional Summary</h3>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <h3>Total Records</h3>
+              <div class="value">[count(remittanceData)]</div>
+            </div>
+            <div class="stat-card">
+              <h3>Total Remittance</h3>
+              <div class="value">$[sum(remittanceData.remittance)]B</div>
+            </div>
+            <div class="stat-card">
+              <h3>Regions Covered</h3>
+              <div class="value">[count(unique(remittanceData.region))]</div>
+            </div>
+            <div class="stat-card">
+              <h3>Years Covered</h3>
+              <div class="value">[count(unique(remittanceData.year))]</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Regional Breakdown -->
+        <div class="stats-panel" style="margin-top: 15px;">
+          <h3>Regional Distribution (Current Year)</h3>
+          <div id="regionalBreakdown">
+            <div mv-if="count(remittanceData) > 0">
+              <div mv-each="region in unique(remittanceData.region)" mv-if="remittanceData.year = currentYear">
+                <div class="regional-item" style="display: flex; justify-content: space-between; margin: 8px 0; padding: 8px; background: white; border-radius: 4px;">
+                  <span>
+                    <span class="region-color" [class]="'region-' + region.replace(' ', '_')"></span>
+                    [region]
+                  </span>
+                  <span style="font-weight: bold;">
+                    $[sum(remittanceData.remittance where region = region and year = currentYear)]B
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div mv-if="count(remittanceData) == 0" style="text-align: center; color: #7f8c8d; padding: 10px;">
+              No data available
+            </div>
+          </div>
+        </div>
+        
+        <!-- Data Table -->
+        <table class="data-table" mv-if="count(remittanceData) > 0" style="margin-top: 20px;">
+          <thead>
+            <tr>
+              <th>Year</th>
+              <th>Region</th>
+              <th>Remittance ($B)</th>
+              <th>Coordinates</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr property="remittanceData" mv-multiple>
+              <td property="year">[year]</td>
+              <td>
+                <span class="region-color" [class]="'region-' + region.replace(' ', '_')"></span>
+                <span property="region">[region]</span>
+              </td>
+              <td property="remittance">$[remittance]B</td>
+              <td>([latitude], [longitude])</td>
+              <td class="actions">
+                <button class="btn btn-warning" mv-action="edit()">Edit</button>
+                <button class="btn btn-danger" mv-action="delete()">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div mv-if="count(remittanceData) == 0" style="text-align: center; padding: 20px; color: #7f8c8d;">
+          No regional remittance data available. Add records using the form.
+        </div>
+      </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+      <!--<h3>How to Use This Regional Data System</h3>
+      <ul>
+        <li><strong>Add Regional Records:</strong> Use the form to add remittance data by region and year</li>
+        <li><strong>Bulk Upload:</strong> Paste CSV data in the format: Year,Region,Remittance_USD_Billion,Latitude,Longitude</li>
+        <li><strong>Region Colors:</strong> Each region has a consistent color code for visualization</li>
+        <li><strong>Coordinates:</strong> Use representative coordinates for each region's center point</li>
+        <li><strong>Edit Data:</strong> Click the "Edit" button next to any record to modify it</li>
+        <li><strong>Delete Records:</strong> Use the "Delete" button to remove unwanted records</li>
+        <li><strong>Auto-save:</strong> All changes are automatically saved to your browser's local storage</li>
+      </ul>
+      
+      <h4 style="margin-top: 15px;">Region Color Coding:</h4>
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
+        <div><span class="region-color region-North_America"></span> North America</div>
+        <div><span class="region-color region-Europe"></span> Europe</div>
+        <div><span class="region-color region-Middle_East"></span> Middle East</div>
+        <div><span class="region-color region-Africa"></span> Africa</div>
+        <div><span class="region-color region-Asia_Pacific"></span> Asia-Pacific</div>
+        <div><span class="region-color region-Rest_of_World"></span> Rest of World</div>-->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Mavo initialization and custom functions
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set current year for filtering
+      const currentYear = new Date().getFullYear().toString();
+      
+      // Initialize Mavo
+      Mavo.init();
+      
+      // Process CSV data function
+      window.processCSV = function() {
+        const csvText = document.querySelector('[property="csvData"]').value.trim();
+        if (!csvText) {
+          alert('Please enter CSV data first');
+          return;
+        }
+        
+        const lines = csvText.split('\n');
+        const headers = lines[0].split(',').map(h => h.trim());
+        
+        // Validate headers
+        const expectedHeaders = ['Year', 'Region', 'Remittance_USD_Billion', 'Latitude', 'Longitude'];
+        if (!headers.every((h, i) => h === expectedHeaders[i])) {
+          alert('Invalid CSV format. Headers must be: Year, Region, Remittance_USD_Billion, Latitude, Longitude');
+          return;
+        }
+        
+        // Process data rows
+        const newData = [];
+        for (let i = 1; i < lines.length; i++) {
+          const values = lines[i].split(',').map(v => v.trim());
+          if (values.length === headers.length) {
+            newData.push({
+              year: values[0],
+              region: values[1],
+              remittance: parseFloat(values[2]),
+              latitude: parseFloat(values[3]),
+              longitude: parseFloat(values[4])
+            });
+          }
+        }
+        
+        // Add to Mavo collection
+        const app = Mavo.get('kenyaRemittance');
+        newData.forEach(item => {
+          app.add('remittanceData', item);
+        });
+        
+        // Clear CSV textarea
+        document.querySelector('[property="csvData"]').value = '';
+        
+        alert(`Successfully added ${newData.length} regional records from CSV`);
+      };
+      
+      // Sample data function
+      window.loadSampleData = function() {
+        const sampleCSV = `Year,Region,Remittance_USD_Billion,Latitude,Longitude
+2024,North America,3.9,39.5,-98.35
+2024,Europe,1.35,52.35,-1.5
+2024,Middle East,0.8,23.8,45.0
+2024,Africa,0.15,-26.2041,28.0473
+2024,Asia-Pacific,0.32,20.5937,78.9629
+2024,Rest of World,0.38,41.9,12.5
+2023,North America,3.7,39.5,-98.35
+2023,Europe,1.23,52.35,-1.5
+2023,Middle East,0.74,23.8,45.0
+2023,Africa,0.14,-26.2041,28.0473
+2023,Asia-Pacific,0.29,20.5937,78.9629
+2023,Rest of World,0.35,41.9,12.5`;
+        
+        document.querySelector('[property="csvData"]').value = sampleCSV;
+      };
+    });
+  </script>
+</body>
+</html>
