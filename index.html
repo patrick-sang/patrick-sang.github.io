@@ -1016,6 +1016,329 @@ font-weight: bold; font-family: monospace; font-size: 1.2rem; text-align: justif
             </div>
         </section>
     </div>
+	<div id="spatialanalysis" class="page-section">
+        <section class="py-20 container mx-auto px-6">
+           
+ <div id="dataservices" class="page-section">
+       <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+       
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            
+        }
+        
+        body {
+            
+            
+        }
+        
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        
+        
+        
+        
+        
+       
+       
+        
+        /* Services Section */
+        .services {
+            padding: 5rem 0;
+            background-color: white;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .section-title h2 {
+            font-size: 2.5rem;
+            
+            margin-bottom: 1rem;
+        }
+        
+        .section-title p {
+            color: var(--gray);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Filter Section */
+        .filter-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .filter-btn {
+            background: white;
+            color: var(--dark);
+            border: 2px solid var(--primary);
+            padding: 8px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .service-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            border-top: 4px solid var(--primary);
+        }
+        
+        .service-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+        }
+        
+        .service-icon {
+            
+           
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            color: white;
+        }
+        
+        .service-content {
+            padding: 1.5rem;
+        }
+        
+        .service-content h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+        
+        .service-content p {
+            color: var(--gray);
+            margin-bottom: 1.5rem;
+        }
+        
+        .service-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+        
+        .service-link i {
+            margin-left: 5px;
+            transition: transform 0.3s ease;
+        }
+        
+        .service-link:hover i {
+            transform: translateX(5px);
+        }
+        
+        
+        /* CTA Section */
+        .cta-section {
+            padding: 5rem 0;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            text-align: center;
+            border-radius: 30px;
+            margin: 4rem 0;
+        }
+        
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+       
+
+    <!-- Hero Section -->
+   
+
+    <!-- Services Section -->
+    <section class="services" id="services">
+        <div class="container">
+            <div class="section-title">
+                <h4 style="color:darkblue;">Data Solutions That Deliver</h4>
+                <p>Specialized services designed to extract maximum value from your data</p>
+            </div>
+            
+            <!-- Filter Section -->
+            <div class="filter-container">
+                <button class="filter-btn active" data-filter="all">All Services</button>
+                <button class="filter-btn" data-filter="predictive">Predictive Analytics</button>
+                <button class="filter-btn" data-filter="machine-learning">Machine Learning</button>
+                <button class="filter-btn" data-filter="nlp">NLP & Text Analytics</button>
+                <button class="filter-btn" data-filter="real-time">Real-Time Analytics</button>
+                <button class="filter-btn" data-filter="data-quality">Data Quality</button>
+            </div>
+            
+            <div class="services-grid">
+                <div class="service-card" data-category="predictive">
+                    <div class="service-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="service-content">
+                        <h3>Future-Proof Predictions</h3>
+                        <p>Stop guessing what's next. I build custom predictive models that analyze your historical data to forecast trends, risks, and opportunities with stunning accuracy.</p>
+                        <a href="#" class="service-link">See how it works <i>→</i></a>
+                    </div>
+                </div>
+                <div class="service-card" data-category="machine-learning">
+                    <div class="service-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="service-content">
+                        <h3>Adaptive Machine Intelligence</h3>
+                        <p>Rigid systems holding you back? I create self-learning algorithms that evolve with your data, automating decisions and optimizing operations without constant human intervention.</p>
+                        <a href="#" class="service-link">Explore possibilities <i>→</i></a>
+                    </div>
+                </div>
+                <div class="service-card" data-category="nlp">
+                    <div class="service-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="service-content">
+                        <h3>Text Intelligence Engine</h3>
+                        <p>Drowning in documents? My NLP systems transform unstructured text—reports, logs, feedback—into structured insights that drive smarter decisions and automate tedious tasks.</p>
+                        <a href="#" class="service-link">Read case studies <i>→</i></a>
+                    </div>
+                </div>
+                <div class="service-card" data-category="real-time">
+                    <div class="service-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div class="service-content">
+                        <h3>Real-Time Analytics</h3>
+                        <p>Capture opportunities as they happen with live dashboards and instant alerts that keep you ahead of market shifts and operational issues.</p>
+                        <a href="#" class="service-link">Learn more <i>→</i></a>
+                    </div>
+                </div>
+                <div class="service-card" data-category="data-quality">
+                    <div class="service-icon">
+                        <i class="fas fa-filter"></i>
+                    </div>
+                    <div class="service-content">
+                        <h3>Data Quality Engineering</h3>
+                        <p>Eliminate costly errors with robust data validation frameworks that ensure your decisions are based on accurate, trustworthy information.</p>
+                        <a href="#" class="service-link">See details <i>→</i></a>
+                    </div>
+                </div>
+                <div class="service-card" data-category="machine-learning">
+                    <div class="service-icon">
+                        <i class="fas fa-map-marked-alt"></i>
+                    </div>
+                    <div class="service-content">
+                        <h3>Location Intelligence</h3>
+                        <p>Uncover geographic patterns and relationships to optimize routes, allocate resources, and make smarter location-based decisions.</p>
+                        <a href="#" class="service-link">Explore options <i>→</i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    
+                </div>
+            </div>
+            
+    <script>
+        // Mobile menu toggle
+        document.querySelector('.mobile-menu').addEventListener('click', function() {
+            document.querySelector('.nav-links').classList.toggle('active');
+        });
+        
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                if(targetId === '#') return;
+                
+                const targetElement = document.querySelector(targetId);
+                if(targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                    
+                    // Close mobile menu if open
+                    document.querySelector('.nav-links').classList.remove('active');
+                }
+            });
+        });
+        
+        // Service filtering functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const serviceCards = document.querySelectorAll('.service-card');
+            
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    const filterValue = this.getAttribute('data-filter');
+                    
+                    // Show/hide service cards based on filter
+                    serviceCards.forEach(card => {
+                        if (filterValue === 'all' || card.getAttribute('data-category') === filterValue) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
     <div id="datamanagement" class="page-section">
         <section class="py-20 container mx-auto px-6">
             <div class="grid lg:grid-cols-3 gap-12 items-start">
