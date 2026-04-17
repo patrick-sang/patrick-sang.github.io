@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en" mv-app="geoBlog" mv-storage="github" mv-source="https://github.com/patrick-sang/blog-posts" mv-path="posts" mv-plugins="github" mv-autosave="5">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patrick Sang | GIS Blog – Edit only after login</title>
+  <!-- Mavo CSS + JS (includes login bar) -->
+  <script src="https://get.mavo.io/mavo.js"></script>
+  <link rel="stylesheet" href="https://get.mavo.io/mavo.css">
+  <!-- Font Awesome & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #2c5f8a;
+      --secondary: #00a896;
+      --accent: #f4a261;
+      --light-bg: #f8fafc;
+      --dark-bg: #0b1a2e;
+      --card-light: #ffffff;
+      --card-dark: #132b3f;
+      --text-light: #1e293b;
+      --text-dark: #e2e8f0;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--light-bg);
+      color: var(--text-light);
+      transition: background 0.2s, color 0.2s;
+      padding-top: 50px; /* space for Mavo bar */
+    }
+    body.dark-mode {
+      background: var(--dark-bg);
+      color: var(--text-dark);
+    }
+    /* Mavo bar styling – visible and functional */
+    .mv-bar {
+      background: var(--primary) !important;
+      color: white !important;
+      border-bottom: none !important;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .mv-bar a, .mv-bar button {
+      color: white !important;
+    }
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    /* Header */
+    .glass-header {
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      position: sticky;
+      top: 50px;
+      z-index: 99;
+    }
+    body.dark-mode .glass-header {
+      background: rgba(11,26,46,0.9);
+      border-bottom-color: rgba(255,255,255,0.05);
+    }
+    .header-flex {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      padding: 18px 0;
+      gap: 16px;
+    }
+    .logo h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .theme-toggle {
+      background: #e2e8f0;
+      border-radius: 60px;
+      width: 44px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      padding: 3px;
+      cursor: pointer;
+    }
+    .theme-toggle .toggle-ball {
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    body.dark-mode .theme-toggle {
+      background: var(--primary);
+    }
+    body.dark-mode .theme-toggle .toggle-ball {
+      transform: translateX(18px);
+      background: #facc15;
+    }
+    /* Stats */
+    .stats-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin: 32px 0;
+    }
+    .stat-card {
+      background: var(--card-light);
+      border-radius: 28px;
+      padding: 20px 28px;
+      text-align: center;
+      flex: 1;
+      min-width: 140px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    }
+    body.dark-mode .stat-card {
+      background: var(--card-dark);
+    }
+    .stat-number {
+      font-size: 2.6rem;
+      font-weight: 800;
+      color: var(--secondary);
+    }
+    /* Add post panel – hidden until login */
+    .add-panel {
+      background: var(--card-light);
+      border-radius: 28px;
+      padding: 24px;
+      margin: 30px 0;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+      transition: all 0.2s;
+    }
+    body.dark-mode .add-panel {
+      background: var(--card-dark);
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .field label {
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+    .field input, .field textarea, .field select {
+      padding: 12px 14px;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      background: var(--light-bg);
+      font-family: inherit;
+    }
+    body.dark-mode .field input, body.dark-mode .field textarea {
+      background: #0f2a3b;
+      border-color: #2d4a6e;
+      color: white;
+    }
+    /* Filter bar */
+    .filter-bar {
+      background: var(--card-light);
+      border-radius: 60px;
+      padding: 12px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: center;
+      margin: 20px 0;
+    }
+    .search-input, select {
+      padding: 10px 16px;
+      border-radius: 40px;
+      border: 1px solid #ddd;
+      background: transparent;
+    }
+    .search-input { flex: 2; min-width: 200px; }
+    /* Blog grid */
+    .blog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 28px;
+      margin: 40px 0;
+    }
+    .post-card {
+      background: var(--card-light);
+      border-radius: 28px;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    }
+    body.dark-mode .post-card {
+      background: var(--card-dark);
+    }
+    .post-card:hover {
+      transform: translateY(-6px);
+    }
+    .post-thumb {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      background: #cbd5e1;
+    }
+    .post-body {
+      padding: 20px;
+    }
+    .post-category {
+      display: inline-block;
+      background: var(--accent);
+      color: #1e293b;
+      font-weight: 700;
+      font-size: 0.7rem;
+      padding: 4px 12px;
+      border-radius: 30px;
+      margin-bottom: 12px;
+    }
+    .post-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin: 8px 0;
+    }
+    .post-excerpt {
+      opacity: 0.8;
+      font-size: 0.9rem;
+      margin: 12px 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      font-size: 0.75rem;
+      opacity: 0.7;
+      border-top: 1px solid rgba(0,0,0,0.05);
+      padding-top: 12px;
+    }
+    .card-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      justify-content: flex-end;
+    }
+    .btn {
+      padding: 8px 18px;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: #eef2f6;
+      color: #1e2a3a;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #1e3e5c;
+      transform: translateY(-2px);
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+    }
+    .btn-sm {
+      padding: 5px 12px;
+      font-size: 0.75rem;
+    }
+    /* Contact & subscribe */
+    .forms-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 28px;
+      margin: 50px 0;
+    }
+    .info-card {
+      background: var(--card-light);
+      border-radius: 28px;
+      padding: 24px;
+    }
+    footer {
+      background: #0b1a2e;
+      color: #cbd5e1;
+      border-radius: 32px 32px 0 0;
+      padding: 40px 0 20px;
+      margin-top: 60px;
+    }
+    .footer-inner {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 30px;
+    }
+    /* EDITING CONTROLS VISIBLE ONLY AFTER LOGIN */
+    .admin-only { display: none; }
+    .admin-inline { display: none; }
+    body.mv-logged-in .admin-only { display: block; }
+    body.mv-logged-in .admin-inline { display: flex; }
+    @media (max-width: 720px) {
+      .container { padding: 0 18px; }
+      .header-flex { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Mavo bar appears automatically at the top (login/logout) -->
+
+<div class="glass-header">
+  <div class="container">
+    <div class="header-flex">
+      <div class="logo">
+        <h1><i class="fas fa-map-marked-alt" style="color: var(--secondary);"></i> Patrick Sang</h1>
+        <p>GIS Developer | Spatial Intelligence</p>
+      </div>
+      <div class="theme-toggle" id="darkModeToggle">
+        <div class="toggle-ball"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main class="container">
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-number" id="totalPosts">0</div><div class="stat-label">Total Posts</div></div>
+    <div class="stat-card"><div class="stat-number" id="totalCats">0</div><div class="stat-label">Categories</div></div>
+    <div class="stat-card"><div class="stat-number" id="subsCount">0</div><div class="stat-label">Subscribers</div></div>
+  </div>
+
+  <!-- ADD POST FORM – visible only after Mavo login -->
+  <div class="add-panel admin-only">
+    <h3><i class="fas fa-feather-alt"></i> ✍️ Create New Post</h3>
+    <div class="form-grid">
+      <div class="field"><label>Title</label><input property="newTitle" id="newTitle" placeholder="Post title"></div>
+      <div class="field"><label>Category</label><input property="newCategory" id="newCategory" placeholder="e.g., GIS, Mapping"></div>
+      <div class="field"><label>Thumbnail URL</label><input property="newThumb" id="newThumb" placeholder="https://..."></div>
+      <div class="field"><label>Tags (comma)</label><input property="newTags" id="newTags" placeholder="gis, africa"></div>
+      <div class="field full-width"><label>Excerpt</label><textarea property="newExcerpt" id="newExcerpt" rows="2" placeholder="Short summary..."></textarea></div>
+      <div class="field"><label>Author</label><input property="newAuthor" id="newAuthor" value="Patrick Sang"></div>
+    </div>
+    <button id="publishBtn" class="btn btn-primary" style="margin-top:20px;" mv-action="add(post, {title: newTitle, category: newCategory, thumbnail: newThumb, tags: newTags, excerpt: newExcerpt, author: newAuthor, date: now()})"><i class="fas fa-save"></i> Publish Post</button>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search posts...">
+    <select id="categoryFilter"><option value="">All Categories</option></select>
+    <select id="sortSelect"><option value="desc">📅 Newest first</option><option value="asc">Oldest first</option></select>
+  </div>
+
+  <!-- Blog grid – posts are editable only after login (Edit/Delete buttons appear) -->
+  <div class="blog-grid" id="blogGrid">
+    <article mv-multiple="post" class="post-card">
+      <img class="post-thumb" property="thumbnail" mv-default="https://source.unsplash.com/featured/800x600?gis">
+      <div class="post-body">
+        <span class="post-category" property="category">Category</span>
+        <h3 class="post-title" property="title">Title</h3>
+        <div class="post-excerpt" property="excerpt">Excerpt</div>
+        <div class="meta-row">
+          <span><i class="far fa-user"></i> <span property="author">Author</span></span>
+          <span><i class="far fa-calendar-alt"></i> <time property="date">Date</time></span>
+        </div>
+        <div property="tags" style="display:none;"></div>
+        <!-- Edit/Delete buttons – only visible when logged in -->
+        <div class="card-actions admin-inline">
+          <button class="btn btn-sm btn-outline" mv-action="edit()"><i class="fas fa-edit"></i> Edit</button>
+          <button class="btn btn-sm btn-outline" mv-action="delete()" style="color:#e74c3c;"><i class="fas fa-trash-alt"></i> Delete</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <!-- Contact & Subscribe (separate Mavo apps) -->
+  <div class="forms-section">
+    <div class="info-card">
+      <h3><i class="fas fa-envelope"></i> Contact Me</h3>
+      <div mv-app="contactApp" mv-storage="github" mv-path="messages" mv-source="https://github.com/patrick-sang/contact-data">
+        <form onsubmit="this.reset(); return false;" mv-action="add(message, {name: newName, email: newEmail, message: newMsg, date: now()})">
+          <div class="field"><label>Name</label><input mv-value="newName" required></div>
+          <div class="field"><label>Email</label><input type="email" mv-value="newEmail" required></div>
+          <div class="field"><label>Message</label><textarea mv-value="newMsg" rows="2" required></textarea></div>
+          <button type="submit" class="btn btn-primary">Send Message</button>
+        </form>
+      </div>
+    </div>
+    <div class="info-card">
+      <h3><i class="fas fa-bell"></i> Newsletter</h3>
+      <div mv-app="subApp" mv-storage="github" mv-path="subscribers" mv-source="https://github.com/patrick-sang/subscribers-data">
+        <div style="display:none;" mv-multiple="subscriber"><div property="email"></div></div>
+        <form id="subForm">
+          <div class="field"><label>Email</label><input type="email" id="subEmail" placeholder="you@example.com" required></div>
+          <div class="field"><label>Name</label><input id="subName" placeholder="Your name"></div>
+          <button type="button" id="doSubscribe" class="btn btn-primary">Subscribe</button>
+          <div id="subMsg" style="margin-top:10px; font-size:0.8rem; display:none;"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div><i class="fas fa-map-pin"></i> Nairobi, Kenya<br><i class="fas fa-envelope"></i> sangpatrick211@gmail.com</div>
+      <div class="social-links">
+        <a href="#"><i class="fab fa-github"></i></a>
+        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+      </div>
+      <div>© 2025 Patrick Sang — GIS Innovation</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function() {
+    // Dark mode toggle
+    const toggle = document.getElementById('darkModeToggle');
+    if(localStorage.getItem('geoTheme') === 'dark') document.body.classList.add('dark-mode');
+    toggle?.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('geoTheme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    });
+
+    // Show/hide admin panels based on Mavo login state (mv-logged-in class on body)
+    function updateAdminUI() {
+      const isLogged = document.body.classList.contains('mv-logged-in');
+      document.querySelectorAll('.admin-only').forEach(el => el.style.display = isLogged ? 'block' : 'none');
+      document.querySelectorAll('.admin-inline').forEach(el => el.style.display = isLogged ? 'flex' : 'none');
+    }
+    const observer = new MutationObserver(updateAdminUI);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    updateAdminUI();
+
+    // Filtering and stats
+    function refreshFiltersAndStats() {
+      const posts = Array.from(document.querySelectorAll('[mv-multiple="post"]'));
+      const categories = new Set();
+      posts.forEach(post => {
+        const cat = post.querySelector('[property="category"]')?.innerText.trim();
+        if(cat) categories.add(cat);
+      });
+      const catSelect = document.getElementById('categoryFilter');
+      if(catSelect) {
+        const current = catSelect.value;
+        catSelect.innerHTML = '<option value="">All Categories</option>';
+        categories.forEach(c => {
+          let opt = document.createElement('option');
+          opt.value = c;
+          opt.textContent = c;
+          catSelect.appendChild(opt);
+        });
+        if(current && categories.has(current)) catSelect.value = current;
+      }
+      applyFilters();
+      updateStatsNumbers();
+    }
+
+    function applyFilters() {
+      const search = (document.getElementById('searchInput')?.value || "").toLowerCase();
+      const selectedCat = document.getElementById('categoryFilter')?.value || "";
+      const sort = document.getElementById('sortSelect')?.value || "desc";
+      const posts = Array.from(document.querySelectorAll('[mv-multiple="post"]'));
+      let visible = posts.filter(post => {
+        const title = (post.querySelector('[property="title"]')?.innerText || "").toLowerCase();
+        const excerpt = (post.querySelector('[property="excerpt"]')?.innerText || "").toLowerCase();
+        const category = post.querySelector('[property="category"]')?.innerText || "";
+        return (title.includes(search) || excerpt.includes(search)) && (!selectedCat || category === selectedCat);
+      });
+      visible.sort((a,b) => {
+        const dateA = new Date(a.querySelector('[property="date"]')?.innerText || 0);
+        const dateB = new Date(b.querySelector('[property="date"]')?.innerText || 0);
+        return sort === 'asc' ? dateA - dateB : dateB - dateA;
+      });
+      posts.forEach(p => p.style.display = 'none');
+      visible.forEach(p => p.style.display = 'block');
+      const grid = document.getElementById('blogGrid');
+      visible.forEach(p => grid.appendChild(p));
+    }
+
+    function updateStatsNumbers() {
+      const visible = Array.from(document.querySelectorAll('[mv-multiple="post"]')).filter(p => p.style.display !== 'none');
+      const total = visible.length;
+      const cats = new Set();
+      visible.forEach(p => {
+        let c = p.querySelector('[property="category"]')?.innerText;
+        if(c) cats.add(c);
+      });
+      const subs = document.querySelectorAll('[mv-app="subApp"] [property="email"]').length;
+      document.getElementById('totalPosts').innerText = total;
+      document.getElementById('totalCats').innerText = cats.size;
+      document.getElementById('subsCount').innerText = subs;
+    }
+
+    document.getElementById('searchInput')?.addEventListener('input', applyFilters);
+    document.getElementById('categoryFilter')?.addEventListener('change', applyFilters);
+    document.getElementById('sortSelect')?.addEventListener('change', applyFilters);
+    document.addEventListener('mv-load', () => setTimeout(refreshFiltersAndStats, 100));
+    document.addEventListener('mv-change', () => setTimeout(refreshFiltersAndStats, 100));
+
+    // Subscribe handler
+    const subBtn = document.getElementById('doSubscribe');
+    if(subBtn) {
+      subBtn.addEventListener('click', async () => {
+        const email = document.getElementById('subEmail').value.trim();
+        const name = document.getElementById('subName').value.trim();
+        if(!email) { alert("Email required"); return; }
+        const subApp = document.querySelector('[mv-app="subApp"]');
+        if(!subApp) return;
+        const existing = Array.from(document.querySelectorAll('[mv-app="subApp"] [property="email"]')).map(el => el.innerText.trim());
+        if(existing.includes(email)) {
+          document.getElementById('subMsg').innerHTML = "Already subscribed!";
+          document.getElementById('subMsg').style.display = 'block';
+          setTimeout(() => document.getElementById('subMsg').style.display = 'none', 2000);
+          return;
+        }
+        try {
+          await Mavo.Functions.exec(null, `add(subscriber, {email: "${email}", name: "${name}", date: now()})`, subApp);
+          document.getElementById('subMsg').innerHTML = "✅ Subscribed!";
+          document.getElementById('subMsg').style.display = 'block';
+          document.getElementById('subForm').reset();
+          setTimeout(() => document.getElementById('subMsg').style.display = 'none', 3000);
+          updateStatsNumbers();
+        } catch(e) { alert("Subscription error. Check console."); }
+      });
+    }
+  })();
+</script>
+</body>
+</html>
