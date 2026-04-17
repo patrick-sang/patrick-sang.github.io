@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en" mv-app="atsResume" mv-storage="https://github.com/patrick-sang/resume-data/" mv-plugins="github" mv-autosave="5">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS-Optimized CV | Professional Resume</title>
+    
+    <!-- Mavo Core (enables GitHub login & editing) -->
+    <link rel="stylesheet" href="https://get.mavo.io/mavo.css">
+    <script src="https://get.mavo.io/mavo.js"></script>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- html2pdf library for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
+    <!-- Structured Data for ATS & SEO -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Alex Mwangi",
+      "jobTitle": "Senior Data Analyst & Diaspora Economist",
+      "email": "alex.mwangi@example.com",
+      "telephone": "+254 712 345 678",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Nairobi",
+        "addressCountry": "Kenya"
+      },
+      "alumniOf": {
+        "@type": "CollegeOrUniversity",
+        "name": "University of Nairobi"
+      },
+      "knowsAbout": ["Data Visualization", "Economic Analysis", "Remittance Modeling", "GIS Mapping", "Mavo", "ATS Systems"],
+      "worksFor": {
+        "@type": "Organization",
+        "name": "Central Bank of Kenya (Analytics Division)"
+      }
+    }
+    </script>
+    
+    <style>
+        /* RESET & GLOBAL — ATS FRIENDLY */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #eef2f5;
+            padding: 40px 20px;
+            color: #1e2a3a;
+            line-height: 1.5;
+        }
+        
+        .resume-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        
+        /* Header area */
+        .resume-header {
+            background: #0f2b3d;
+            color: white;
+            padding: 32px 40px;
+        }
+        
+        .resume-header h1 {
+            font-size: 2.6rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .resume-header .job-title {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 400;
+            border-left: 4px solid #4a9eff;
+            padding-left: 12px;
+            margin-top: 6px;
+        }
+        
+        .contact-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding-top: 18px;
+        }
+        
+        .contact-bar i {
+            width: 24px;
+            margin-right: 8px;
+            color: #8fcbff;
+        }
+        
+        .contact-item {
+            display: inline-flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .resume-body {
+            padding: 32px 40px;
+            background: #fff;
+        }
+        
+        .section {
+            margin-bottom: 32px;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            border-bottom: 3px solid #0f2b3d;
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #0f2b3d;
+        }
+        
+        .section-title i {
+            font-size: 1.3rem;
+            color: #2c7cb6;
+        }
+        
+        .exp-item, .edu-item, .cert-item, .lang-item, .project-item {
+            margin-bottom: 24px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .exp-header, .edu-header, .project-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 8px;
+        }
+        
+        .exp-title, .edu-degree, .project-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1e4663;
+        }
+        
+        .exp-company, .edu-institution {
+            font-weight: 600;
+            color: #2c7cb6;
+        }
+        
+        .exp-date, .edu-date, .project-date {
+            font-size: 0.85rem;
+            color: #5f6c7a;
+            font-weight: 500;
+        }
+        
+        .exp-description, .project-description {
+            margin-top: 10px;
+            font-size: 0.95rem;
+            color: #2c3e44;
+            white-space: pre-line;
+        }
+        
+        .project-link {
+            display: inline-block;
+            margin-top: 8px;
+            font-size: 0.85rem;
+            background: #eef2fa;
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-decoration: none;
+            color: #2c7cb6;
+            font-weight: 500;
+            transition: 0.1s;
+        }
+        
+        .project-link i {
+            margin-right: 6px;
+        }
+        
+        .project-link:hover {
+            background: #e0e7f5;
+            text-decoration: underline;
+        }
+        
+        .skills-list, .lang-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        
+        .skill-tag, .lang-tag {
+            background: #eef2fa;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #1e4663;
+        }
+        
+        /* --- EDITING CONTROLS VISIBILITY --- */
+        .custom-add-btn,
+        .item-actions,
+        .add-button-container {
+            display: none !important;
+        }
+        
+        .mv-logged-in .custom-add-btn,
+        .mv-logged-in .item-actions,
+        .mv-logged-in .add-button-container {
+            display: flex !important;
+        }
+        
+        .mv-bar.mv-ui {
+            display: block !important;
+            background: #1e4663;
+            border-radius: 0 0 8px 8px;
+            font-size: 0.85rem;
+            position: relative;
+            z-index: 100;
+        }
+        
+        .mv-bar button, .mv-bar .mv-button {
+            color: white;
+            background: #2c7cb6;
+        }
+        
+        [property] {
+            cursor: default;
+        }
+        
+        .mv-logged-in [property]:hover {
+            background-color: #f0f7ff;
+            outline: 1px dashed #4a9eff;
+            cursor: text;
+        }
+        
+        /* PDF export button */
+        .pdf-export-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 9999;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: inherit;
+        }
+        
+        .pdf-export-btn:hover {
+            background: #b02a37;
+            transform: scale(1.02);
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .resume-container {
+                box-shadow: none;
+                max-width: 100%;
+                border-radius: 0;
+            }
+            .pdf-export-btn, .mv-bar, .mv-ui {
+                display: none !important;
+            }
+            .project-link {
+                color: #0f2b3d !important;
+                text-decoration: underline !important;
+            }
+        }
+        
+        @media (max-width: 700px) {
+            .resume-header, .resume-body {
+                padding: 24px;
+            }
+            .exp-header, .project-header {
+                flex-direction: column;
+                gap: 5px;
+            }
+            .contact-bar {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .pdf-export-btn {
+                padding: 8px 18px;
+                font-size: 0.9rem;
+                bottom: 16px;
+                right: 16px;
+            }
+        }
+        
+        .login-note {
+            text-align: center;
+            font-size: 0.75rem;
+            margin-top: 16px;
+            color: #5f6c7a;
+            background: #f8f9fc;
+            padding: 8px;
+            border-radius: 30px;
+            display: inline-block;
+            width: auto;
+        }
+        .mv-logged-in .login-note {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="resume-container" id="resumeContent">
+    <!-- HEADER -->
+    <div class="resume-header">
+        <h1 property="fullName">Alex Mwangi</h1>
+        <div class="job-title" property="jobTitle">Senior Data Analyst &amp; Diaspora Economics Specialist</div>
+        <div class="contact-bar">
+            <span class="contact-item"><i class="fas fa-envelope"></i> <span property="email">alex.mwangi@example.com</span></span>
+            <span class="contact-item"><i class="fas fa-phone-alt"></i> <span property="phone">+254 712 345 678</span></span>
+            <span class="contact-item"><i class="fas fa-map-marker-alt"></i> <span property="location">Nairobi, Kenya</span></span>
+            <span class="contact-item"><i class="fab fa-linkedin"></i> <span property="linkedin">linkedin.com/in/alex-mwangi</span></span>
+        </div>
+    </div>
+    
+    <div class="resume-body">
+        <!-- SUMMARY -->
+        <div class="section">
+            <div class="section-title"><i class="fas fa-user-edit"></i> Professional Summary</div>
+            <div property="summary" style="font-size: 1rem; line-height: 1.5;">
+                Data-driven economist with 8+ years of experience in remittance flow analysis, diaspora investment trends, and geospatial visualization. 
+                Expertise in policy advisory, economic modeling, and data storytelling. Published research on Kenya’s diaspora remittance corridors.
+                Passionate about leveraging open data and GitHub-backed CMS (Mavo) for transparent analytics.
+            </div>
+        </div>
+        
+        <!-- WORK EXPERIENCE -->
+        <div class="section">
+            <div class="section-title"><i class="fas fa-briefcase"></i> Work Experience</div>
+            <div class="work-list">
+                <div property="workExperiences" mv-multiple>
+                    <div class="exp-item">
+                        <div class="exp-header">
+                            <span class="exp-title" property="position">Senior Diaspora Analyst</span>
+                            <span class="exp-date" property="dateRange">2022 – Present</span>
+                        </div>
+                        <div class="exp-company" property="company">Central Bank of Kenya – Research Dept</div>
+                        <div class="exp-description" property="description">
+                            • Lead remittance data modeling, forecasting inflows from 6 regions (North America, Europe, Middle East, etc.)<br>
+                            • Developed interactive dashboards using Leaflet + Turf.js that reduced reporting turnaround by 35%<br>
+                            • Collaborated with World Bank on diaspora investment policy briefs, cited in national economic reports.
+                        </div>
+                        <div class="item-actions">
+                            <button mv-action="edit()">✎ Edit</button>
+                            <button mv-action="delete()">🗑 Delete</button>
+                        </div>
+                    </div>
+                </div>
+                <div property="workExperiences" mv-multiple>
+                    <div class="exp-item">
+                        <div class="exp-header">
+                            <span class="exp-title" property="position">Economic Data Consultant</span>
+                            <span class="exp-date" property="dateRange">2019 – 2022</span>
+                        </div>
+                        <div class="exp-company" property="company">KNBS &amp; IOM Kenya (Remote)</div>
+                        <div class="exp-description" property="description">
+                            • Built ATS-friendly reporting frameworks for migration and remittance surveys (N=10,000+).<br>
+                            • Created data pipelines for real-time remittance tracking; increased stakeholder adoption by 40%.<br>
+                            • Presented findings to parliamentary committees on diaspora engagement strategies.
+                        </div>
+                        <div class="item-actions">
+                            <button mv-action="edit()">✎ Edit</button>
+                            <button mv-action="delete()">🗑 Delete</button>
+                        </div>
+                    </div>
+                </div>
+                <div property="workExperiences" mv-multiple>
+                    <div class="exp-item">
+                        <div class="exp-header">
+                            <span class="exp-title" property="position">Junior Economist</span>
+                            <span class="exp-date" property="dateRange">2017 – 2019</span>
+                        </div>
+                        <div class="exp-company" property="company">Diaspora Investment Hub (Nairobi)</div>
+                        <div class="exp-description" property="description">
+                            • Researched diaspora savings and investment products, delivering quarterly remittance trend reports.<br>
+                            • Supported design of Kenya Diaspora Remittance Index; collaborated with FinTech partners.<br>
+                            • Automated data collection from public APIs, saving 15+ hours per month.
+                        </div>
+                        <div class="item-actions">
+                            <button mv-action="edit()">✎ Edit</button>
+                            <button mv-action="delete()">🗑 Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="add-button-container">
+                <button class="custom-add-btn" mv-action="add(workExperiences)"><i class="fas fa-plus-circle"></i> Add Work Experience</button>
+            </div>
+        </div>
+        
+        <!-- EDUCATION -->
+        <div class="section">
+            <div class="section-title"><i class="fas fa-graduation-cap"></i> Education</div>
+            <div class="edu-list">
+                <div property="educations" mv-multiple>
+                    <div class="edu-item">
+                        <div class="exp-header">
+                            <span class="edu-degree" property="degree">MSc. Economics (Data Analytics)</span>
+                            <span class="edu-date" property="eduDateRange">2015 – 2017</span>
+                        </div>
+                        <div class="edu-institution" property="institution">University of Nairobi, Kenya</div>
+                        <div class="exp-description" property="eduDescription">Thesis: "Remittance flows and household welfare in Kenya" – Distinction. Coursework: Econometrics, GIS, Development Finance.</div>
+                        <div class="item-actions">
+                            <button mv-action="edit()">✎ Edit</button>
+                            <button mv-action="delete()">🗑 Delete</button>
+                        </div>
+                    </div>
+                </div>
+                <div property="educations" mv-multiple>
+                    <div class="edu-item">
+                        <div class="exp-header">
+                            <span class="edu-degree" property="degree">B.A. International Economics</span>
+                            <span class="edu-date" property="eduDateRange">2011 – 2015</span>
+                        </div>
+                        <div class="edu-institution" property="institution">University of Nairobi, Upper Second Class</div>
+                        <div class="exp-description" property="eduDescription">Minor in Statistics; President of Economics Students' Association.</div>
+                        <div class="item-actions">
+                            <button mv-action="edit()">✎ Edit</button>
+                            <button mv-action="delete()">🗑 Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="add-button-container">
+                <button class="custom-add-btn" mv-action="add(educations)"><i class="fas fa-plus-circle"></i> Add Education</button>
+            </div>
+        </div>
+        
+        <!-- PROJECTS SECTION (with live links) -->
+        <div class="section">
+            <div class="section-title"><i class="fas fa-code-branch"></i> Featured Projects</div>
+            <div class="projects-list">
+                <!-- Project 1 -->
+                <div property="projects" mv-multiple>
+                    <div class="project-item">
+                        <div class="project-header">
+                            <span class="project-title" property="projectName">Kenya Diaspora Remittance Dashboard</span>
+                            <span class="project-date" property="projectDate">2024</span>
+                        </div>
+                        <div class="project-description" property="projectDescription">
+                            Interactive geospatial platform visualizing real-time remittance flows from 6 global regions to Kenya. Built with Leaflet, Turf.js, and Mavo CMS.
+                        </div>
+                        <a class="project-link" property="projectLink" href="https://patrick-sang.github.io/diaspora-remittance/" target="_blank" rel="noopener noreferrer">
+                            <i class="fas fa-external-link-alt"></i> Live Demo
+                        </a>
+                        <div class="item-actions">
+                            <button mv-action="edit()">✎ Edit</button>
+                            <button mv-action="delete()">🗑 Delete</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Project 2 -->
+                <div property="projects" mv-multiple>
+                    <div class="project-item">
+                        <div class="project-header">
+                            <span class="project-title" property="projectName">ATS-Optimized CV Template</span>
+                            <span class="project-date" property="projectDate">2025</span>
+                        </div>
+                        <div class="project-description" property="projectDescription">
+                            Open-source, Mavo-powered resume template with GitHub backend, PDF export, and schema.org markup for ATS compatibility.
+                        </div>
+                        <a class="project-link" property="projectLink" href="https://github.com/patrick-sang/ats-cv-template" target="_blank" rel="noopener noreferrer">
+                            <i class="fab fa-github"></i> GitHub Repository
+                        </a>
+                        <div class="item-actions">
+                            <button mv-action="edit()">✎ Edit</button>
+                            <button mv-action="delete()">🗑 Delete</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Project 3 -->
+                <div property="projects" mv-multiple>
+                    <div class="project-item">
+                        <div class="project-header">
+                            <span class="project-title" property="projectName">Remittance Forecasting Model</span>
+                            <span class="project-date" property="projectDate">2023</span>
+                        </div>
+                        <div class="project-description" property="projectDescription">
+                            Time-series analysis and machine learning model to predict diaspora remittance inflows using macroeconomic indicators.
+                        </div>
+                        <a class="project-link" property="projectLink" href="https://colab.research.google.com/drive/example" target="_blank" rel="noopener noreferrer">
+                            <i class="fas fa-chart-line"></i> Interactive Notebook
+                        </a>
+                        <div class="item-actions">
+                            <button mv-action="edit()">✎ Edit</button>
+                            <button mv-action="delete()">🗑 Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="add-button-container">
+                <button class="custom-add-btn" mv-action="add(projects)"><i class="fas fa-plus-circle"></i> Add Project</button>
+            </div>
+        </div>
+        
+        <!-- SKILLS -->
+        <div class="section">
+            <div class="section-title"><i class="fas fa-code"></i> Core Competencies & Skills</div>
+            <div class="skills-list">
+                <div property="skills" mv-multiple><div class="skill-tag" property="skillName">Remittance Analytics</div><div class="item-actions"><button mv-action="edit()">✎</button><button mv-action="delete()">🗑</button></div></div>
+                <div property="skills" mv-multiple><div class="skill-tag" property="skillName">GIS & Spatial Mapping (Leaflet, Turf.js)</div><div class="item-actions"><button mv-action="edit()">✎</button><button mv-action="delete()">🗑</button></div></div>
+                <div property="skills" mv-multiple><div class="skill-tag" property="skillName">Mavo / GitHub CMS</div><div class="item-actions"><button mv-action="edit()">✎</button><button mv-action="delete()">🗑</button></div></div>
+                <div property="skills" mv-multiple><div class="skill-tag" property="skillName">Python (Pandas, GeoPandas)</div><div class="item-actions"><button mv-action="edit()">✎</button><button mv-action="delete()">🗑</button></div></div>
+                <div property="skills" mv-multiple><div class="skill-tag" property="skillName">ATS Resume Optimization</div><div class="item-actions"><button mv-action="edit()">✎</button><button mv-action="delete()">🗑</button></div></div>
+                <div property="skills" mv-multiple><div class="skill-tag" property="skillName">Statistical Modeling (R, Stata)</div><div class="item-actions"><button mv-action="edit()">✎</button><button mv-action="delete()">🗑</button></div></div>
+                <div property="skills" mv-multiple><div class="skill-tag" property="skillName">Data Storytelling & Dashboards</div><div class="item-actions"><button mv-action="edit()">✎</button><button mv-action="delete()">🗑</button></div></div>
+            </div>
+            <div class="add-button-container">
+                <button class="custom-add-btn" mv-action="add(skills)"><i class="fas fa-plus-circle"></i> Add Skill</button>
+            </div>
+        </div>
+        
+        <!-- CERTIFICATIONS -->
+        <div class="section">
+            <div class="section-title"><i class="fas fa-certificate"></i> Certifications</div>
+            <div class="cert-list">
+                <div property="certifications" mv-multiple>
+                    <div class="cert-item">
+                        <div><strong property="certName">Certified Data Analyst (CDA)</strong> – <span property="certOrg">Data Science Council of America</span> (2023)</div>
+                        <div class="item-actions"><button mv-action="edit()">✎ Edit</button> <button mv-action="delete()">🗑 Delete</button></div>
+                    </div>
+                </div>
+                <div property="certifications" mv-multiple>
+                    <div class="cert-item">
+                        <div><strong property="certName">Remittance & Migration Economics</strong> – <span property="certOrg">World Bank Group / IMF</span> (2022)</div>
+                        <div class="item-actions"><button mv-action="edit()">✎ Edit</button> <button mv-action="delete()">🗑 Delete</button></div>
+                    </div>
+                </div>
+                <div property="certifications" mv-multiple>
+                    <div class="cert-item">
+                        <div><strong property="certName">GIS for Economic Development</strong> – <span property="certOrg">Esri / UNECA</span> (2021)</div>
+                        <div class="item-actions"><button mv-action="edit()">✎ Edit</button> <button mv-action="delete()">🗑 Delete</button></div>
+                    </div>
+                </div>
+            </div>
+            <div class="add-button-container">
+                <button class="custom-add-btn" mv-action="add(certifications)"><i class="fas fa-plus-circle"></i> Add Certification</button>
+            </div>
+        </div>
+        
+        <!-- LANGUAGES -->
+        <div class="section">
+            <div class="section-title"><i class="fas fa-language"></i> Languages</div>
+            <div class="lang-list">
+                <div property="languages" mv-multiple><div class="lang-tag" property="languageName">English (Fluent)</div><div class="item-actions"><button mv-action="edit()">✎</button><button mv-action="delete()">🗑</button></div></div>
+                <div property="languages" mv-multiple><div class="lang-tag" property="languageName">Swahili (Native)</div><div class="item-actions"><button mv-action="edit()">✎</button><button mv-action="delete()">🗑</button></div></div>
+                <div property="languages" mv-multiple><div class="lang-tag" property="languageName">French (Professional Working)</div><div class="item-actions"><button mv-action="edit()">✎</button><button mv-action="delete()">🗑</button></div></div>
+            </div>
+            <div class="add-button-container">
+                <button class="custom-add-btn" mv-action="add(languages)"><i class="fas fa-plus-circle"></i> Add Language</button>
+            </div>
+        </div>
+        
+        <!-- Footer + login hint -->
+        <div style="font-size: 0.75rem; border-top: 1px solid #e2e8f0; margin-top: 30px; padding-top: 16px; color: #6b7b8c; text-align: center; display: flex; justify-content: space-between; flex-wrap: wrap;">
+            <span><i class="fas fa-sync-alt"></i> Mavo GitHub sync — Data stored in your GitHub repo.</span>
+            <span class="login-note"><i class="fab fa-github"></i> To edit this CV, click the <strong>🔑 Login</strong> button above (GitHub).</span>
+        </div>
+    </div>
+</div>
+
+<!-- PDF Export Button -->
+<button id="pdfExportBtn" class="pdf-export-btn"><i class="fas fa-file-pdf"></i> Export as PDF</button>
+
+<script>
+    (function() {
+        const pdfBtn = document.getElementById('pdfExportBtn');
+        if (pdfBtn) {
+            pdfBtn.addEventListener('click', function() {
+                const element = document.getElementById('resumeContent');
+                const opt = {
+                    margin:        [0.5, 0.5, 0.5, 0.5],
+                    filename:     'Alex_Mwangi_ATS_Resume.pdf',
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, letterRendering: true, useCORS: false, logging: false },
+                    jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+                };
+                const originalText = pdfBtn.innerHTML;
+                pdfBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Generating PDF...';
+                pdfBtn.disabled = true;
+                
+                html2pdf().set(opt).from(element).save().then(() => {
+                    pdfBtn.innerHTML = originalText;
+                    pdfBtn.disabled = false;
+                }).catch(err => {
+                    console.error('PDF error:', err);
+                    pdfBtn.innerHTML = originalText;
+                    pdfBtn.disabled = false;
+                    alert('PDF generation failed. Using browser print...');
+                    window.print();
+                });
+            });
+        }
+    })();
+</script>
+</body>
+</html>
