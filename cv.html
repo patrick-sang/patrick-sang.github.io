@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>ATS CV - Editable with Mavo + GitHub (Owner Only)</title>
+    <!-- Mavo.io CSS & JS -->
+    <link rel="stylesheet" href="https://get.mavo.io/mavo.css" />
+    <script src="https://get.mavo.io/mavo.js"></script>
+    
+    <!-- Google Fonts & simple reset for clean ATS look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #eef2f5;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.5;
+            color: #1e2a3e;
+            padding: 2rem 1rem;
+        }
+
+        /* CV Container - ATS friendly single column, clean spacing */
+        .cv-container {
+            max-width: 950px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        /* Main CV content */
+        .cv-content {
+            padding: 2.5rem 2.8rem;
+        }
+
+        /* Header area */
+        .header {
+            margin-bottom: 1.8rem;
+            border-bottom: 3px solid #2c7da0;
+            padding-bottom: 1.2rem;
+        }
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #0b3b4f;
+            margin: 0 0 0.25rem 0;
+            line-height: 1.2;
+        }
+        .job-title {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: #2c7da0;
+            margin: 0.3rem 0 0.75rem 0;
+        }
+        .contact-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.2rem;
+            font-size: 0.9rem;
+            color: #2c3e50;
+            background: #f8fafc;
+            padding: 0.7rem 1rem;
+            border-radius: 12px;
+            margin-top: 0.5rem;
+        }
+        .contact-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .contact-item span:first-child {
+            font-weight: 500;
+            opacity: 0.75;
+        }
+
+        /* section headings */
+        .section {
+            margin: 1.8rem 0 1rem 0;
+        }
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #0f4c5f;
+            border-left: 4px solid #2c7da0;
+            padding-left: 0.9rem;
+            margin-bottom: 1.2rem;
+            letter-spacing: -0.2px;
+        }
+
+        /* summary text */
+        .summary-text {
+            background: #f9fbfd;
+            padding: 1rem 1.2rem;
+            border-radius: 14px;
+            margin-bottom: 0.8rem;
+            font-size: 0.98rem;
+            line-height: 1.5;
+            color: #1e2f3c;
+        }
+
+        /* Experience & Education cards (ATS-friendly: clear structure) */
+        .exp-item, .edu-item {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .exp-header, .edu-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .exp-role, .edu-degree {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #0f3b4a;
+        }
+        .exp-company, .edu-institution {
+            font-weight: 500;
+            color: #2c7da0;
+        }
+        .exp-date, .edu-date {
+            font-size: 0.85rem;
+            color: #5a6e7c;
+            font-weight: 400;
+            background: #ecf3f8;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+        }
+        .exp-description {
+            margin-top: 0.6rem;
+            font-size: 0.95rem;
+            color: #2d3e4f;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        /* Skills list */
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem;
+            margin-top: 0.5rem;
+            list-style: none;
+        }
+        .skill-badge {
+            background: #eef2f9;
+            padding: 0.4rem 1rem;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #1e5a6e;
+        }
+
+        /* Mavo multiple items controls styling */
+        [mv-multiple] .mv-multiple-add, .mv-multiple-remove {
+            background: #eef2f5;
+            border: none;
+            border-radius: 30px;
+            padding: 0.2rem 0.7rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        /* Mavo toolbar styling - we'll conditionally show it for owner only */
+        .mv-bar.mv-bar {
+            background: #ffffffd9;
+            border-bottom: 1px solid #cbd5e1;
+            backdrop-filter: blur(4px);
+            font-family: inherit;
+        }
+
+        /* Custom edit restrictions message */
+        .owner-message {
+            text-align: center;
+            padding: 0.8rem;
+            background: #fef9e3;
+            border-bottom: 1px solid #ffe2a4;
+            font-size: 0.85rem;
+            color: #a16207;
+        }
+        .owner-message a {
+            color: #2c7da0;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .login-prompt {
+            background: #e6f2f7;
+            border-radius: 40px;
+            padding: 0.4rem 1rem;
+            display: inline-block;
+            font-weight: 500;
+        }
+        .restricted-note {
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 0.6rem 1rem;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            text-align: center;
+            color: #4b6a7c;
+        }
+        button.custom-login-btn {
+            background: #2c7da0;
+            border: none;
+            color: white;
+            padding: 0.4rem 1.2rem;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-left: 0.5rem;
+        }
+        button.custom-login-btn:hover {
+            background: #1f5e7a;
+        }
+        /* PDF Download button style */
+        .pdf-download-wrapper {
+            text-align: right;
+            margin-bottom: 1rem;
+            padding: 0 1rem;
+        }
+        .pdf-download-btn {
+            background: #2c7da0;
+            color: white;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .pdf-download-btn:hover {
+            background: #1f5e7a;
+            transform: scale(1.02);
+        }
+        .footer-note {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #6c8b9b;
+            border-top: 1px solid #e2edf2;
+            padding-top: 1rem;
+        }
+
+        @media (max-width: 650px) {
+            .cv-content {
+                padding: 1.5rem;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            .exp-header, .edu-header {
+                flex-direction: column;
+                gap: 0.3rem;
+            }
+        }
+
+        /* PRINT STYLES - for PDF download via browser print */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+                margin: 0;
+            }
+            .cv-container {
+                max-width: 100%;
+                margin: 0;
+                border-radius: 0;
+                box-shadow: none;
+            }
+            .cv-content {
+                padding: 0.8rem 1rem;
+            }
+            .pdf-download-wrapper, .owner-message, .restricted-note, .mv-bar, .custom-login-btn, #githubLoginBtn, #accessControlPanel, .mv-toolbar, .mv-ui .mv-bar, .mv-multiple-add, .mv-multiple-remove, [mv-multiple] .mv-multiple-add, .mv-multiple-remove {
+                display: none !important;
+            }
+            .contact-bar {
+                background: none;
+                padding: 0.3rem 0;
+                border-bottom: 1px solid #ccc;
+            }
+            .summary-text {
+                background: none;
+                padding: 0;
+            }
+            .skill-badge {
+                background: #eef2f9;
+                border: 1px solid #cbd5e1;
+                page-break-inside: avoid;
+            }
+            .exp-item, .edu-item {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            a {
+                text-decoration: none;
+                color: black;
+            }
+            .section-title {
+                border-left-color: #2c7da0;
+            }
+            h1, .job-title {
+                color: black;
+            }
+        }
+        /* ATS compliance: ensures text is readable, no complex graphics, semantic tags */
+    </style>
+</head>
+<body>
+
+<div class="cv-container">
+    <!-- PDF download button for any user -->
+    <div class="pdf-download-wrapper">
+        <button class="pdf-download-btn" id="downloadPDFBtn">📄 Download as PDF</button>
+    </div>
+    <!-- 
+        Mavo app configuration:
+        - mv-app: application name
+        - mv-storage: GitHub repo JSON file (replace placeholders with YOUR repo)
+        - mv-bar: we show tools (edit/save/login) but initially we will hide it via JS until owner auth
+        - mv-autosave: none to avoid accidental saves, user must click save
+        - mv-plugins: none needed
+    -->
+    <div id="resumeApp" 
+         mv-app="ats_resume" 
+         mv-storage="https://api.github.com/repos/patrick-sang/cv/contents/resume_data.json"
+         mv-bar="tools"
+         mv-autosave="none"
+         mv-github-repo="https:/github.com/patrick-sang/cv"
+         class="mv-ui">
+
+        <!-- Main CV editable content -->
+        <div class="cv-content">
+            <!-- HEADER SECTION -->
+            <div class="header">
+                <h1 property="fullname">Alexandra Chen</h1>
+                <div class="job-title" property="job_title">Senior Product Manager & Data Strategist</div>
+                <div class="contact-bar">
+                    <div class="contact-item"><span>📧</span> <span property="email">alex.chen@example.com</span></div>
+                    <div class="contact-item"><span>📞</span> <span property="phone">+1 (555) 678-1234</span></div>
+                    <div class="contact-item"><span>📍</span> <span property="location">San Francisco, CA</span></div>
+                    <div class="contact-item"><span>🔗</span> <span property="linkedin">linkedin.com/in/alexchen</span></div>
+                </div>
+            </div>
+
+            <!-- PROFESSIONAL SUMMARY (ATS keyword rich) -->
+            <div class="section">
+                <div class="section-title">Professional Summary</div>
+                <div class="summary-text" property="summary">
+                    Results-driven Product Manager with 8+ years of experience in SaaS, data analytics, and cross-functional leadership. 
+                    Proven track record of launching data-driven products, increasing user engagement by 40%, and optimizing agile workflows. 
+                    Strong background in A/B testing, roadmapping, and stakeholder alignment. Passionate about leveraging ML insights to drive business value.
+                </div>
+            </div>
+
+            <!-- WORK EXPERIENCE (mv-multiple) -->
+            <div class="section">
+                <div class="section-title">Work Experience</div>
+                <div property="experience" mv-multiple>
+                    <div class="exp-item" typeof="experience">
+                        <div class="exp-header">
+                            <span class="exp-role" property="position">Senior Product Manager</span>
+                            <span class="exp-company" property="company">TechFlow Analytics</span>
+                            <span class="exp-date" property="date_range">Jan 2022 – Present</span>
+                        </div>
+                        <div class="exp-description" property="description">
+                            - Led product strategy for AI-driven analytics platform, growing ARR by 55% in 18 months.<br>
+                            - Collaborated with engineering & design to deliver 12 major features, improving NPS from 32 to 58.<br>
+                            - Implemented data-informed roadmap using user research & funnel analysis; reduced churn by 22%.
+                        </div>
+                    </div>
+                    <div class="exp-item" typeof="experience">
+                        <div class="exp-header">
+                            <span class="exp-role" property="position">Product Owner</span>
+                            <span class="exp-company" property="company">InsightBridge Solutions</span>
+                            <span class="exp-date" property="date_range">Jul 2018 – Dec 2021</span>
+                        </div>
+                        <div class="exp-description" property="description">
+                            - Owned CRM product backlog & led 3 cross-functional squads, increasing delivery velocity by 30%.<br>
+                            - Launched customer segmentation module adopted by 150+ enterprise clients.<br>
+                            - Championed agile transformation, reduced time-to-market by 25% through continuous delivery.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EDUCATION -->
+            <div class="section">
+                <div class="section-title">Education</div>
+                <div property="education" mv-multiple>
+                    <div class="edu-item" typeof="education">
+                        <div class="edu-header">
+                            <span class="edu-degree" property="degree">MBA, Technology Management</span>
+                            <span class="edu-institution" property="institution">University of California, Berkeley</span>
+                            <span class="edu-date" property="edu_date">2016 – 2018</span>
+                        </div>
+                        <div class="exp-description" property="edu_details">Concentration in Data Science & Product Innovation. GPA: 3.9/4.0</div>
+                    </div>
+                    <div class="edu-item" typeof="education">
+                        <div class="edu-header">
+                            <span class="edu-degree" property="degree">B.Sc. in Information Systems</span>
+                            <span class="edu-institution" property="institution">University of Washington</span>
+                            <span class="edu-date" property="edu_date">2012 – 2016</span>
+                        </div>
+                        <div class="exp-description" property="edu_details">Minor in Statistics. Graduated cum laude.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SKILLS (mv-multiple list) -->
+            <div class="section">
+                <div class="section-title">Core Competencies & Skills</div>
+                <ul class="skills-list" mv-multiple property="skills">
+                    <li property="skill" class="skill-badge">Product Strategy</li>
+                    <li property="skill" class="skill-badge">Agile & Scrum</li>
+                    <li property="skill" class="skill-badge">Data Analysis (SQL, Tableau)</li>
+                    <li property="skill" class="skill-badge">A/B Testing</li>
+                    <li property="skill" class="skill-badge">Roadmap Planning</li>
+                    <li property="skill" class="skill-badge">Stakeholder Management</li>
+                    <li property="skill" class="skill-badge">JIRA / Confluence</li>
+                    <li property="skill" class="skill-badge">Python (pandas)</li>
+                </ul>
+            </div>
+            
+            <!-- Optional Certifications Section (ATS friendly) -->
+            <div class="section">
+                <div class="section-title">Certifications</div>
+                <div property="certifications" mv-multiple>
+                    <div property="cert_item" style="margin-bottom: 0.4rem;">✅ Certified Scrum Product Owner (CSPO) – Scrum Alliance</div>
+                    <div property="cert_item" style="margin-bottom: 0.4rem;">✅ Pragmatic Marketing Certified (PMC-III)</div>
+                </div>
+            </div>
+            <div class="footer-note">
+                <span></span>
+            </div>
+        </div>
+    </div>
+    <!-- Custom UI for owner-only restriction and login control -->
+    <div id="accessControlPanel" class="owner-message" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+        <span><strong></strong>:</span>
+        <div>
+            <span id="authStatusMsg" class="login-prompt">Not signed</span>
+            <button id="githubLoginBtn" class="custom-login-btn">Sign in </button>
+        </div>
+    </div>
+    <div id="restrictionNote" class="restricted-note">
+        
+         <strong></strong> 
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ****** CONFIGURATION: Only the GitHub username below can edit the CV ******
+        const ALLOWED_GITHUB_USERNAME = "patrick-sang";   // 🔁 REPLACE WITH YOUR GITHUB USERNAME (the owner)
+        // Note: you must also replace storage URLs inside mv-storage attribute (resume_data.json path) with your repo details.
+        
+        // Wait for Mavo to be fully initialized and accessible
+        let mavoApp = null;
+        let isEditingAllowed = false;
+        
+        // Helper: update UI based on authentication & allowed user
+        function updateEditorAccess() {
+            if (!mavoApp) {
+                // try to fetch app later
+                if (window.Mavo && window.Mavo.all && window.Mavo.all.length) {
+                    mavoApp = window.Mavo.all[0];
+                } else {
+                    return;
+                }
+            }
+            if (!mavoApp) return;
+            
+            // Mavo stores user info after login: mavoApp.user (object) with .username property
+            const currentUser = mavoApp.user || null;
+            let isAuthorized = false;
+            let loggedInUsername = null;
+            
+            if (currentUser && currentUser.username) {
+                loggedInUsername = currentUser.username;
+                if (loggedInUsername === ALLOWED_GITHUB_USERNAME) {
+                    isAuthorized = true;
+                }
+            }
+            
+            const authMsgSpan = document.getElementById('authStatusMsg');
+            const loginBtn = document.getElementById('githubLoginBtn');
+            const restrictionNoteDiv = document.getElementById('restrictionNote');
+            const accessPanel = document.getElementById('accessControlPanel');
+            
+            // find Mavo toolbar element
+            const mvBar = document.querySelector('.mv-bar');
+            
+            if (isAuthorized) {
+                // OWNER: Enable full editing experience
+                isEditingAllowed = true;
+                if (authMsgSpan) authMsgSpan.innerHTML = `✅ Authorized as @${loggedInUsername}`;
+                if (restrictionNoteDiv) restrictionNoteDiv.style.display = 'none';
+                if (mvBar) mvBar.style.display = 'flex';   // Show Mavo toolbar (Edit, Save, etc)
+                // ensure Mavo edit mode is not blocked
+                if (mavoApp && mavoApp.settings && mavoApp.settings.editMode === false) {
+                    // do not force edit mode, but enable the possibility
+                    mavoApp.settings.editMode = true;
+                }
+                // if there's any leftover hidden class
+                if (accessPanel) accessPanel.style.background = "#e0f2e9";
+            } 
+            else {
+                // Not authorized or not logged in: disable editing completely, hide Mavo toolbar
+                isEditingAllowed = false;
+                if (mvBar) mvBar.style.display = 'none';
+                if (authMsgSpan) {
+                    if (!currentUser) authMsgSpan.innerHTML = `🔒 Not signed in`;
+                    else if (currentUser.username) authMsgSpan.innerHTML = `⛔ Unauthorized: @${currentUser.username} is not the owner`;
+                    else authMsgSpan.innerHTML = `🔒 Not signed in`;
+                }
+                if (restrictionNoteDiv) restrictionNoteDiv.style.display = 'block';
+                if (accessPanel) accessPanel.style.background = "#fef9e3";
+                
+                // Disable Mavo edit mode if it's somehow active
+                if (mavoApp) {
+                    // Force leave edit mode if currently editing
+                    if (mavoApp.editMode) {
+                        mavoApp.editMode = false;
+                    }
+                    // also disable any property editing by making edit button inactive - but since bar hidden it's fine.
+                }
+            }
+        }
+        
+        // Function to manually trigger GitHub login via Mavo
+        async function performGitHubLogin() {
+            if (!mavoApp) {
+                console.warn("Mavo not ready yet");
+                return;
+            }
+            try {
+                // Mavo's built-in GitHub login flow (uses Mavo clientId)
+                await mavoApp.login('github');
+                // After login, Mavo fires mavo:login event, we will catch it and re-check access
+            } catch(e) {
+                console.error("Login failed", e);
+                alert("GitHub login failed. Make sure popups are allowed and try again.");
+            }
+        }
+        
+        // Setup event listeners and Mavo ready detection
+        function initAccessRestriction() {
+            // Attempt to get Mavo app instance after DOM ready
+            if (window.Mavo && window.Mavo.all && window.Mavo.all.length) {
+                mavoApp = window.Mavo.all[0];
+                updateEditorAccess();
+            } else {
+                // wait for mavo:ready event
+                document.addEventListener('mavo:ready', function(e) {
+                    if (window.Mavo && window.Mavo.all && window.Mavo.all.length) {
+                        mavoApp = window.Mavo.all[0];
+                        // initial user check
+                        updateEditorAccess();
+                        // listen to login/logout events
+                        mavoApp.on('login', () => {
+                            setTimeout(() => updateEditorAccess(), 300);
+                        });
+                        mavoApp.on('logout', () => {
+                            updateEditorAccess();
+                        });
+                    }
+                });
+            }
+            
+            // Also watch for dynamic changes after Mavo loads
+            document.addEventListener('mavo:login', () => {
+                setTimeout(() => {
+                    if (window.Mavo && window.Mavo.all && window.Mavo.all[0]) {
+                        mavoApp = window.Mavo.all[0];
+                        updateEditorAccess();
+                    }
+                }, 200);
+            });
+            document.addEventListener('mavo:logout', () => {
+                setTimeout(() => updateEditorAccess(), 100);
+            });
+            
+            // Button handler for custom login
+            const loginButton = document.getElementById('githubLoginBtn');
+            if (loginButton) {
+                loginButton.addEventListener('click', () => {
+                    if (!mavoApp) {
+                        alert("Mavo is initializing, please wait a moment and try again.");
+                        return;
+                    }
+                    performGitHubLogin();
+                });
+            }
+        }
+        
+        // Override any accidental attempts to save if not authorized? Already hidden bar, but extra safe: listen to mavo:beforesave
+        document.addEventListener('mavo:beforesave', (e) => {
+            if (!isEditingAllowed && mavoApp) {
+                e.preventDefault();
+                alert("❌ You are not authorized to save changes. Only the repository owner can edit and save.");
+                return false;
+            }
+        });
+        
+        // Also enforce for mavo:save (prevent any save action)
+        document.addEventListener('mavo:save', (e) => {
+            if (!isEditingAllowed) {
+                e.preventDefault();
+                alert("Save blocked: Only the owner (GitHub user) can modify this CV.");
+                return false;
+            }
+        });
+        
+        // Ensure that on page load, we also hide toolbar until owner check
+        window.addEventListener('load', () => {
+            // hide mv-bar initially to prevent any accidental editing before auth
+            const bar = document.querySelector('.mv-bar');
+            if (bar) bar.style.display = 'none';
+            initAccessRestriction();
+            // Additional check if Mavo already there after load
+            setTimeout(() => {
+                if (window.Mavo && window.Mavo.all && window.Mavo.all[0]) {
+                    mavoApp = window.Mavo.all[0];
+                    updateEditorAccess();
+                }
+            }, 500);
+        });
+        
+        // Setup PDF download (available to any user)
+        const pdfBtn = document.getElementById('downloadPDFBtn');
+        if (pdfBtn) {
+            pdfBtn.addEventListener('click', function(e) {
+                window.print();
+            });
+        }
+        
+        // Provide setup instructions to console to help user replace placeholders
+        console.log("%c⚠️ ATS CV with Mavo | Important Setup:", "color: #2c7da0; font-weight: bold");
+        console.log("1. Replace ALL occurrences of 'YOUR_GITHUB_USERNAME' and 'YOUR_REPO_NAME' in mv-storage attribute and also in ALLOWED_GITHUB_USERNAME constant inside <script>.");
+        console.log("2. Create a GitHub repo (private recommended) and ensure it contains a file (or Mavo will auto-create resume_data.json on first save).");
+        console.log("3. ONLY your GitHub account will have write permissions → perfect 'only me' editing.");
+        console.log("4. Any visitor can click 'Download as PDF' to save a copy of the current CV (viewable & printable).");
+    })();
+</script>
+
+<!-- Additional instructions for user: replace placeholders and ensure ATS compliance -->
+</body>
+</html>
