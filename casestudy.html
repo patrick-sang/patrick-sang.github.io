@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>GIS Portfolio | Interactive Case Studies with Image Upload</title>
+    <!-- Mavo.io Core & GitHub Backend -->
+    <link rel="stylesheet" href="https://get.mavo.io/mavo.min.css" />
+    <script src="https://get.mavo.io/mavo.min.js"></script>
+    <!-- Google Fonts & custom styling -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f4f8;
+            color: #0f172a;
+            line-height: 1.5;
+        }
+
+        .site-header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            padding: 2.5rem 2rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .site-header h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.75rem;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .site-header p {
+            font-size: 1.15rem;
+            opacity: 0.9;
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: -1.5rem auto 0;
+            padding: 0 2rem 3rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .mavo-toolbar {
+            background: white;
+            border-radius: 60px;
+            padding: 0.75rem 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .toolbar-buttons {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-status {
+            font-size: 0.85rem;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .github-badge {
+            background: #0f172a;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mv-edit-button, .mv-save-button, .mv-login-button {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+
+        .mv-edit-button:hover, .mv-save-button:hover, .mv-login-button:hover {
+            background: #e2e8f0;
+            transform: translateY(-1px);
+        }
+
+        .case-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 2rem;
+            margin: 1.5rem 0 2rem;
+        }
+
+        .case-card {
+            background: white;
+            border-radius: 1.25rem;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #eef2ff;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .case-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 35px rgba(0,0,0,0.1);
+        }
+
+        /* Image container with upload options */
+        .image-container {
+            position: relative;
+            height: 220px;
+            background-color: #eef2ff;
+            overflow: hidden;
+        }
+
+        .card-img {
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.2s;
+        }
+
+        .card-img i {
+            font-size: 4rem;
+            color: #3b82f6;
+            opacity: 0.6;
+        }
+
+        .image-upload-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            padding: 12px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .image-container:hover .image-upload-overlay {
+            opacity: 1;
+        }
+
+        .upload-btn {
+            background: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            color: #1e293b;
+        }
+
+        .upload-btn:hover {
+            background: #2563eb;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .upload-url-btn {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+        }
+
+        .image-input {
+            display: none;
+        }
+
+        .card-content {
+            padding: 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .case-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #0f172a;
+            line-height: 1.3;
+        }
+
+        .case-location {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            color: #2563eb;
+            background: #eff6ff;
+            padding: 0.3rem 0.9rem;
+            border-radius: 30px;
+            width: fit-content;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .case-description {
+            color: #334155;
+            margin-bottom: 1.25rem;
+            line-height: 1.6;
+            flex: 1;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 0.75rem 0 1.25rem;
+        }
+
+        .tech-badge {
+            background: #f1f5f9;
+            padding: 0.25rem 0.85rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-outline, .btn-primary {
+            padding: 0.5rem 1rem;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-outline {
+            border: 1px solid #cbd5e1;
+            background: white;
+            color: #1e293b;
+        }
+
+        .btn-outline:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .add-case-btn {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.8rem;
+            border-radius: 60px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            margin: 1rem 0;
+        }
+
+        .add-case-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(15,23,42,0.2);
+        }
+        
+        .case-permalink {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .case-permalink a {
+            color: #3b82f6;
+            text-decoration: none;
+            word-break: break-all;
+        }
+        
+        .case-permalink a:hover {
+            text-decoration: underline;
+        }
+        
+        .copy-link-btn {
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 20px;
+            transition: 0.2s;
+        }
+        
+        .copy-link-btn:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #0f172a;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 2rem;
+            color: #64748b;
+            font-size: 0.85rem;
+            background: white;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 0 1rem 2rem;
+            }
+            .site-header h1 {
+                font-size: 2rem;
+            }
+            .case-grid {
+                grid-template-columns: 1fr;
+            }
+            .mavo-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .image-upload-overlay {
+                opacity: 1;
+                background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+            }
+        }
+
+        [property]:focus, [property]:active {
+            outline: 2px solid #3b82f6;
+            background: #fffde7;
+        }
+        
+        .url-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10001;
+        }
+        
+        .url-modal-content {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            width: 400px;
+            max-width: 90%;
+        }
+        
+        .url-modal-content input {
+            width: 100%;
+            padding: 0.75rem;
+            margin: 1rem 0;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-family: inherit;
+        }
+        
+        .url-modal-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+    </style>
+</head>
+<body>
+
+<div class="site-header">
+    <h1><i class="fas fa-draw-polygon"></i> GIS Case Studies</h1>
+    <p>Spatial intelligence meets real-world impact — Upload images from local files or URLs</p>
+</div>
+
+<div class="main-container">
+    <div mv-app="gisCaseStudies" 
+         mv-storage="https://github.com/patrick-sang/gis-case-studies" 
+         mv-plugins="markdown"
+         id="gisApp">
+        
+        <div property="studies" mv-multiple mv-default='{"title":"New GIS Project","location":"Add location","description":"Describe your GIS methodology...","image":"","tech":["GIS","Spatial Analysis"],"link":"#","reportLink":"#","permalink":"https://gis-portfolio.com/case/new-project"}' style="display: none;"></div>
+        
+        <div class="mavo-toolbar">
+            <div class="toolbar-buttons">
+                <button class="mv-edit-button" mv-action="mvEdit()">
+                    <i class="fas fa-pen"></i> Edit Mode
+                </button>
+                <button class="mv-save-button" mv-action="mvSave()">
+                    <i class="fas fa-save"></i> Save to GitHub
+                </button>
+                <button class="mv-login-button" mv-action="mvLogin()">
+                    <i class="fab fa-github"></i> Login with GitHub
+                </button>
+            </div>
+            <div class="toolbar-status">
+                <i class="fas fa-database"></i>
+                <span>Storage: <strong>patrick-sang/gis-case-studies</strong></span>
+                <span class="github-badge">
+                    <i class="fab fa-github"></i> Auto-sync
+                </span>
+            </div>
+        </div>
+        
+        <div style="background: #eef2ff; border-radius: 16px; padding: 1rem 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid #3b82f6;">
+            <p style="font-size: 0.9rem; color: #1e40af;">
+                <i class="fas fa-info-circle"></i> 
+                <strong>How to use:</strong> Login with GitHub → Edit Mode → <strong>Hover over any image and click:</strong> 
+                📁 "Upload File" for local images or 🔗 "URL" for online images. All images save to GitHub as Base64!
+            </p>
+        </div>
+        
+        <div class="case-grid">
+            <!-- Case 1 -->
+            <div class="case-card" mv-multiple property="study" mv-multiple-item>
+                <div class="image-container">
+                    <div class="card-img" mv-style.background-image="'url(' + property('image') + ')'" style="background-size: cover; background-position: center;">
+                        <i class="fas fa-map-marked-alt"></i>
+                    </div>
+                    <div class="image-upload-overlay">
+                        <button class="upload-btn" onclick="uploadLocalImage(this)">
+                            <i class="fas fa-upload"></i> 📁 Upload File
+                        </button>
+                        <button class="upload-btn upload-url-btn" onclick="uploadUrlImage(this)">
+                            <i class="fas fa-link"></i> 🔗 URL
+                        </button>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <h3 class="case-title" property="title">🌍 Urban Heat Island Analysis</h3>
+                    <div class="case-location"><i class="fas fa-map-pin"></i> <span property="location">New York City, USA</span></div>
+                    <div class="case-description" property="description">Using Landsat 8 thermal imagery and machine learning to map surface temperature variations across NYC's five boroughs.</div>
+                    <div class="tech-stack" property="tech" mv-multiple>
+                        <span class="tech-badge" property="techItem">Landsat 8</span>
+                        <span class="tech-badge" property="techItem">Python</span>
+                        <span class="tech-badge" property="techItem">QGIS</span>
+                        <span class="tech-badge" property="techItem">Leaflet</span>
+                    </div>
+                    <div class="btn-group">
+                        <a class="btn-outline" property="link" href="#" target="_blank"><i class="fas fa-globe"></i> Interactive Map</a>
+                        <a class="btn-primary" property="reportLink" href="#" target="_blank"><i class="fas fa-file-alt"></i> Full Report</a>
+                    </div>
+                    <div class="case-permalink">
+                        <i class="fas fa-link"></i> <span style="font-size:0.7rem;">Case URL:</span>
+                        <a property="permalink" href="#" target="_blank" style="font-size:0.75rem;">https://gis-portfolio.com/case/urban-heat</a>
+                        <button class="copy-link-btn" onclick="copyPermalink(this)"><i class="far fa-copy"></i> Copy</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Case 2 -->
+            <div class="case-card" mv-multiple property="study" mv-multiple-item>
+                <div class="image-container">
+                    <div class="card-img" mv-style.background-image="'url(' + property('image') + ')'" style="background-size: cover; background-position: center;">
+                        <i class="fas fa-water"></i>
+                    </div>
+                    <div class="image-upload-overlay">
+                        <button class="upload-btn" onclick="uploadLocalImage(this)"><i class="fas fa-upload"></i> 📁 Upload File</button>
+                        <button class="upload-btn upload-url-btn" onclick="uploadUrlImage(this)"><i class="fas fa-link"></i> 🔗 URL</button>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <h3 class="case-title" property="title">🌊 Flood Risk Assessment</h3>
+                    <div class="case-location"><i class="fas fa-map-pin"></i> <span property="location">Bangkok, Thailand</span></div>
+                    <div class="case-description" property="description">Hydrological modeling combined with Sentinel-1 SAR data for flood extent mapping and risk analysis.</div>
+                    <div class="tech-stack" property="tech" mv-multiple>
+                        <span class="tech-badge" property="techItem">Sentinel-1</span>
+                        <span class="tech-badge" property="techItem">HEC-RAS</span>
+                        <span class="tech-badge" property="techItem">PostGIS</span>
+                    </div>
+                    <div class="btn-group">
+                        <a class="btn-outline" property="link" href="#" target="_blank"><i class="fas fa-chart-line"></i> Dashboard</a>
+                        <a class="btn-primary" property="reportLink" href="#" target="_blank"><i class="fas fa-download"></i> Paper</a>
+                    </div>
+                    <div class="case-permalink">
+                        <i class="fas fa-link"></i> <span style="font-size:0.7rem;">Case URL:</span>
+                        <a property="permalink" href="#" target="_blank" style="font-size:0.75rem;">https://gis-portfolio.com/case/flood-risk</a>
+                        <button class="copy-link-btn" onclick="copyPermalink(this)"><i class="far fa-copy"></i> Copy</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Case 3 -->
+            <div class="case-card" mv-multiple property="study" mv-multiple-item>
+                <div class="image-container">
+                    <div class="card-img" mv-style.background-image="'url(' + property('image') + ')'" style="background-size: cover; background-position: center;">
+                        <i class="fas fa-tree"></i>
+                    </div>
+                    <div class="image-upload-overlay">
+                        <button class="upload-btn" onclick="uploadLocalImage(this)"><i class="fas fa-upload"></i> 📁 Upload File</button>
+                        <button class="upload-btn upload-url-btn" onclick="uploadUrlImage(this)"><i class="fas fa-link"></i> 🔗 URL</button>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <h3 class="case-title" property="title">🌳 Deforestation Analysis</h3>
+                    <div class="case-location"><i class="fas fa-map-pin"></i> <span property="location">Amazon Basin, Brazil</span></div>
+                    <div class="case-description" property="description">Time-series analysis of Landsat imagery to quantify deforestation patterns and estimate carbon emissions.</div>
+                    <div class="tech-stack" property="tech" mv-multiple>
+                        <span class="tech-badge" property="techItem">Google Earth Engine</span>
+                        <span class="tech-badge" property="techItem">Random Forest</span>
+                    </div>
+                    <div class="btn-group">
+                        <a class="btn-outline" property="link" href="#" target="_blank"><i class="fas fa-chart-simple"></i> Time Lapse</a>
+                        <a class="btn-primary" property="reportLink" href="#" target="_blank"><i class="fas fa-book-open"></i> Study</a>
+                    </div>
+                    <div class="case-permalink">
+                        <i class="fas fa-link"></i> <span style="font-size:0.7rem;">Case URL:</span>
+                        <a property="permalink" href="#" target="_blank" style="font-size:0.75rem;">https://gis-portfolio.com/case/deforestation</a>
+                        <button class="copy-link-btn" onclick="copyPermalink(this)"><i class="far fa-copy"></i> Copy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin: 1rem 0 2rem;">
+            <button class="add-case-btn" mv-action="mvAdd('study')">
+                <i class="fas fa-plus-circle"></i> Add New Case Study
+            </button>
+        </div>
+        
+        <div class="mv-message"></div>
+    </div>
+</div>
+
+<footer>
+    <p>
+        <i class="fab fa-github"></i> <strong>GitHub Backend</strong> — Repository: patrick-sang/gis-case-studies • 
+        <i class="fas fa-image"></i> <strong>Two ways to add images:</strong> Upload from computer or paste image URL
+    </p>
+</footer>
+
+<script>
+    // Show toast notification
+    function showToast(message, isError = false) {
+        const existing = document.querySelector('.toast');
+        if (existing) existing.remove();
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.style.background = isError ? '#dc2626' : '#0f172a';
+        toast.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${message}`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+    
+    // Upload local image file
+    window.uploadLocalImage = function(btn) {
+        const card = btn.closest('.case-card');
+        const imgDiv = card.querySelector('.card-img');
+        const imageProperty = card.querySelector('[property="image"]');
+        
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/jpeg,image/png,image/jpg,image/webp';
+        
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.startsWith('image/')) {
+                showToast('Please select an image file', true);
+                return;
+            }
+            
+            // Show loading
+            const originalIcon = imgDiv.innerHTML;
+            imgDiv.innerHTML = '<i class="fas fa-spinner fa-pulse" style="font-size: 2rem;"></i>';
+            
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const base64 = evt.target.result;
+                
+                // Compress if needed
+                if (base64.length > 500000) {
+                    compressImage(base64, file.type, (compressed) => {
+                        updateImage(imgDiv, imageProperty, compressed);
+                    });
+                } else {
+                    updateImage(imgDiv, imageProperty, base64);
+                }
+            };
+            reader.readAsDataURL(file);
+        };
+        
+        fileInput.click();
+    };
+    
+    // Upload image from URL
+    window.uploadUrlImage = function(btn) {
+        const card = btn.closest('.case-card');
+        const imgDiv = card.querySelector('.card-img');
+        const imageProperty = card.querySelector('[property="image"]');
+        
+        // Create modal for URL input
+        const modal = document.createElement('div');
+        modal.className = 'url-modal';
+        modal.innerHTML = `
+            <div class="url-modal-content">
+                <h3 style="margin-bottom: 0.5rem;">Enter Image URL</h3>
+                <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 1rem;">Paste a direct link to an image (JPG, PNG, GIF)</p>
+                <input type="text" id="imageUrlInput" placeholder="https://example.com/image.jpg">
+                <div class="url-modal-buttons">
+                    <button class="btn-outline" onclick="this.closest('.url-modal').remove()">Cancel</button>
+                    <button class="btn-primary" id="confirmUrlBtn">Add Image</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        document.getElementById('confirmUrlBtn').onclick = async () => {
+            const url = document.getElementById('imageUrlInput').value.trim();
+            if (!url) {
+                showToast('Please enter a URL', true);
+                return;
+            }
+            
+            modal.remove();
+            
+            // Show loading
+            const originalIcon = imgDiv.innerHTML;
+            imgDiv.innerHTML = '<i class="fas fa-spinner fa-pulse" style="font-size: 2rem;"></i>';
+            
+            try {
+                // Fetch and convert to Base64
+                const base64 = await urlToBase64(url);
+                if (base64) {
+                    updateImage(imgDiv, imageProperty, base64);
+                } else {
+                    imgDiv.innerHTML = originalIcon;
+                    showToast('Failed to load image from URL', true);
+                }
+            } catch (error) {
+                imgDiv.innerHTML = originalIcon;
+                showToast('Invalid image URL', true);
+            }
+        };
+    };
+    
+    // Convert URL to Base64
+    async function urlToBase64(url) {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            
+            if (!blob.type.startsWith('image/')) {
+                return null;
+            }
+            
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
+            });
+        } catch (error) {
+            return null;
+        }
+    }
+    
+    // Compress image
+    function compressImage(base64, mimeType, callback) {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const maxSize = 1024;
+            
+            if (width > height && width > maxSize) {
+                height = (height * maxSize) / width;
+                width = maxSize;
+            } else if (height > maxSize) {
+                width = (width * maxSize) / height;
+                height = maxSize;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            const quality = mimeType === 'image/png' ? 0.85 : 0.7;
+            const compressed = canvas.toDataURL(mimeType, quality);
+            callback(compressed);
+        };
+        img.src = base64;
+    }
+    
+    // Update image in Mavo property
+    function updateImage(imgDiv, imageProperty, imageData) {
+        imageProperty.textContent = imageData;
+        imgDiv.style.backgroundImage = `url(${imageData})`;
+        imgDiv.innerHTML = '<i class="fas fa-map-marked-alt"></i>';
+        const icon = imgDiv.querySelector('i');
+        if (icon) icon.style.display = 'none';
+        
+        // Trigger Mavo change detection
+        const event = new Event('input', { bubbles: true });
+        imageProperty.dispatchEvent(event);
+        
+        showToast('✓ Image loaded! Click "Save to GitHub" to store permanently.');
+    }
+    
+    // Copy permalink
+    window.copyPermalink = function(btn) {
+        const permalinkDiv = btn.closest('.case-permalink');
+        const link = permalinkDiv.querySelector('a');
+        if (link && link.href) {
+            navigator.clipboard.writeText(link.href).then(() => {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                }, 1500);
+                showToast('Link copied!');
+            });
+        }
+    };
+    
+    // Sync images from stored data
+    function syncImages() {
+        document.querySelectorAll('.case-card').forEach(card => {
+            const imgDiv = card.querySelector('.card-img');
+            const imageProperty = card.querySelector('[property="image"]');
+            if (imgDiv && imageProperty && imageProperty.textContent && imageProperty.textContent.startsWith('data:image')) {
+                imgDiv.style.backgroundImage = `url(${imageProperty.textContent})`;
+                const icon = imgDiv.querySelector('i');
+                if (icon) icon.style.display = 'none';
+            }
+        });
+    }
+    
+    // Initialize
+    if (typeof Mavo !== 'undefined') {
+        Mavo.on('mv-load', () => setTimeout(syncImages, 200));
+        Mavo.on('mv-save', () => setTimeout(syncImages, 100));
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => setTimeout(syncImages, 300));
+</script>
+</body>
+</html>
