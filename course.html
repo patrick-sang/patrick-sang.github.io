@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>GIS Course Studio | Mavo + GitHub (Edit & Save)</title>
+    <!-- Mavo Core & GitHub plugin -->
+    <link rel="stylesheet" href="https://get.mavo.io/stable/mavo.css">
+    <script src="https://get.mavo.io/stable/mavo.js"></script>
+    <script src="https://get.mavo.io/stable/plugins/github/mavo-github.js"></script>
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f4fafd;
+            color: #1a2c3e;
+            line-height: 1.5;
+        }
+        /* Header with GIS theme */
+        .hero {
+            background: linear-gradient(115deg, #0a4c62 0%, #157a6e 100%);
+            color: white;
+            padding: 2rem 2rem 1.8rem;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+        }
+        .hero-content {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 2.4rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        h1 i {
+            font-size: 2.2rem;
+            color: #ffdb7e;
+        }
+        .sub {
+            opacity: 0.9;
+            margin: 0.5rem 0 0.8rem;
+        }
+        .github-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+            align-items: center;
+        }
+        .btn-login, .btn-save-all {
+            background: #ffffffdd;
+            backdrop-filter: blur(4px);
+            border: none;
+            padding: 0.5rem 1.4rem;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-login {
+            color: #0a4c62;
+        }
+        .btn-save-all {
+            background: #ffdd99dd;
+            color: #1f5e54;
+        }
+        .btn-login:hover, .btn-save-all:hover {
+            background: white;
+            transform: scale(0.98);
+        }
+        .login-status {
+            background: #1f3b42aa;
+            border-radius: 30px;
+            padding: 0.3rem 1rem;
+            font-size: 0.8rem;
+            backdrop-filter: blur(4px);
+        }
+        .save-feedback {
+            font-size: 0.8rem;
+            background: #2c7a6e;
+            padding: 0.2rem 0.8rem;
+            border-radius: 30px;
+            transition: 0.2s;
+        }
+        /* container */
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1.8rem;
+        }
+        /* toolbar */
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            background: white;
+            padding: 0.9rem 1.8rem;
+            border-radius: 60px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 2.2rem;
+        }
+        .search-box {
+            flex: 2;
+            min-width: 220px;
+            background: #f0f5f9;
+            border-radius: 50px;
+            padding: 0.5rem 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .search-box input {
+            border: none;
+            background: transparent;
+            width: 100%;
+            font-size: 1rem;
+            outline: none;
+            font-family: inherit;
+        }
+        .btn-add {
+            background: #157a6e;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.6rem;
+            border-radius: 40px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-add:hover {
+            background: #0e5f55;
+            transform: translateY(-2px);
+        }
+        .reset-filter {
+            background: #eef2f5;
+            border: none;
+            padding: 0.6rem 1.4rem;
+            border-radius: 40px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .stats {
+            background: #e4edf2;
+            padding: 0.4rem 1rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        /* grid */
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+        /* card styling with image area */
+        .course-card {
+            background: white;
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 15px 30px -12px rgba(0,0,0,0.12);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            border: 1px solid #e2edf2;
+        }
+        .course-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 25px 35px -16px rgba(0,0,0,0.2);
+        }
+        .card-img {
+            height: 170px;
+            background: #cbdde6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        .card-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: 0.3s;
+        }
+        .no-img-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #dcecf5, #c2dae8);
+            color: #2c6e5c;
+            font-size: 2rem;
+            height: 100%;
+            width: 100%;
+        }
+        .card-header {
+            padding: 1rem 1.3rem 0.2rem;
+        }
+        .course-card h3 {
+            font-size: 1.55rem;
+            font-weight: 700;
+            color: #0b4f6c;
+            line-height: 1.3;
+        }
+        .card-body {
+            padding: 0.5rem 1.3rem 1.3rem;
+            flex: 1;
+        }
+        .description {
+            color: #2c4956;
+            margin: 0.5rem 0 0.8rem;
+            font-size: 0.93rem;
+        }
+        .meta-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            margin: 0.8rem 0;
+            font-size: 0.8rem;
+            background: #f2f7fa;
+            padding: 0.6rem 0.8rem;
+            border-radius: 20px;
+        }
+        .tech-stack {
+            background: #eef3f0;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            display: inline-block;
+            margin-top: 6px;
+        }
+        .course-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #eef2fa;
+            padding: 0.3rem 1rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            text-decoration: none;
+            color: #157a6e;
+            font-weight: 500;
+            margin-top: 0.8rem;
+        }
+        /* edit/delete bar */
+        .mv-item-bar {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255,255,245,0.9);
+            border-radius: 30px;
+            padding: 0.2rem 0.5rem;
+            backdrop-filter: blur(4px);
+            z-index: 10;
+        }
+        .mv-edit, .mv-delete {
+            background: white;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.6rem;
+        }
+        /* hidden filter class */
+        .hidden-course {
+            display: none !important;
+        }
+        footer {
+            background: #102b33;
+            color: #bcd0d9;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            font-size: 0.85rem;
+        }
+        @media (max-width: 700px) {
+            .toolbar { flex-direction: column; border-radius: 30px; }
+            .courses-grid { gap: 1.2rem; }
+        }
+        /* Mavo inline editing style */
+        [property]:focus, [mv-mode="edit"] [property] {
+            background: #fff8e0;
+            border-radius: 8px;
+            outline: none;
+        }
+        /* Save indicator animation */
+        @keyframes fadePulse {
+            0% { opacity: 0.6; background: #ffdd99; }
+            100% { opacity: 1; background: #2c7a6e; }
+        }
+        .saving-toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2c7a6e;
+            color: white;
+            padding: 0.7rem 1.4rem;
+            border-radius: 50px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: fadePulse 0.3s ease;
+        }
+        .image-edit-hint {
+            font-size: 0.7rem;
+            color: #5b7c8c;
+            margin-top: 4px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<div class="hero">
+    <div class="hero-content">
+        <h1><i class="fas fa-globe-americas"></i> GIS Course Studio</h1>
+        <div class="sub">Curated GIS, Remote Sensing & Spatial Data Science courses — add images, descriptions, tech tags. Live GitHub sync.</div>
+        <div class="github-actions">
+            <button id="githubLoginBtn" class="btn-login"><i class="fab fa-github"></i> Login with GitHub</button>
+            <button id="saveAllBtn" class="btn-save-all"><i class="fas fa-save"></i> Save All Changes</button>
+            <div id="loginStatusDisplay" class="login-status"><i class="fas fa-lock-open"></i> Not logged in (click to edit)</div>
+            <div><i class="fas fa-database"></i> Repo: patrick-sang/gis-courses</div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="toolbar">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="globalSearch" placeholder="Search by title, description, provider, technologies...">
+        </div>
+        <div>
+            <button class="reset-filter" id="resetSearchBtn"><i class="fas fa-undo-alt"></i> Reset</button>
+        </div>
+        <div>
+            <button class="btn-add" id="customAddCourseBtn"><i class="fas fa-plus-circle"></i> Add new course</button>
+        </div>
+        <div id="courseStatsPanel" class="stats">📊 Loading courses...</div>
+    </div>
+
+    <!-- Mavo app: GitHub storage with full schema (including image, imageAlt, techStack) -->
+    <div id="mavoApp" mv-app="gis_repo_plus" 
+         mv-storage="https://github.com/patrick-sang/gis-courses/"
+         mv-plugins="github"
+         mv-autosave="manual"
+         mv-mode="edit"
+         mv-defaults='{"image": "", "imageAlt": "GIS course illustration", "techStack": ""}'>
+
+        <!-- Collection container: courses grid -->
+        <div id="coursesCollection" mv-multiple class="courses-grid">
+            <!-- Predefined course 1: Intro GIS with image demo -->
+            <article class="course-card">
+                <div class="card-img">
+                    <img property="image" src="https://placehold.co/600x400/2c7a6e/white?text=GIS+Basics" alt="Course thumbnail" onerror="this.onerror=null;this.src='https://placehold.co/600x400/bfd9e5/1f5e54?text=GIS+Image'">
+                    <div class="no-img-placeholder" style="display: none;">📷</div>
+                </div>
+                <div class="card-header">
+                    <h3 property="title">Introduction to GIS & Cartography</h3>
+                </div>
+                <div class="card-body">
+                    <div class="description" property="description">Master core GIS concepts: spatial data models, projections, digitizing, and thematic mapping. Hands-on with QGIS and ArcGIS Online.</div>
+                    <div class="meta-info">
+                        <span><i class="fas fa-university"></i> <span property="provider">GIS Foundation</span></span>
+                        <span><i class="far fa-clock"></i> <span property="duration">6 weeks</span></span>
+                        <span><i class="fas fa-signal"></i> <span property="level">Beginner</span></span>
+                    </div>
+                    <div><span class="tech-stack"><i class="fas fa-microchip"></i> <span property="techStack">QGIS, ArcGIS, Cartography</span></span></div>
+                    <a property="url" class="course-link" href="#" target="_blank"><i class="fas fa-external-link-alt"></i> View syllabus</a>
+                    <div style="display: none;"><span property="imageAlt">Cartography basics illustration</span></div>
+                    <span class="image-edit-hint"><i class="fas fa-image"></i> Edit image URL (property="image")</span>
+                </div>
+            </article>
+            <!-- Course 2: Advanced Spatial Analysis -->
+            <article class="course-card">
+                <div class="card-img">
+                    <img property="image" src="https://placehold.co/600x400/2c7a6e/white?text=Spatial+Analysis" alt="spatial analysis">
+                </div>
+                <div class="card-header">
+                    <h3 property="title">Advanced Spatial Analysis & Python</h3>
+                </div>
+                <div class="card-body">
+                    <div class="description" property="description">Geostatistics, raster processing, machine learning for spatial data, and automation with GeoPandas & ArcPy.</div>
+                    <div class="meta-info">
+                        <span><i class="fas fa-university"></i> <span property="provider">SpatialPython Hub</span></span>
+                        <span><i class="far fa-clock"></i> <span property="duration">8 weeks</span></span>
+                        <span><i class="fas fa-signal"></i> <span property="level">Advanced</span></span>
+                    </div>
+                    <div><span class="tech-stack"><i class="fas fa-code"></i> <span property="techStack">Python, GeoPandas, ArcPy, Rasterio</span></span></div>
+                    <a property="url" class="course-link" href="#" target="_blank"><i class="fas fa-external-link-alt"></i> Explore</a>
+                    <span property="imageAlt" style="display: none;">Python spatial analysis</span>
+                    <span class="image-edit-hint"><i class="fas fa-edit"></i> Edit image URL</span>
+                </div>
+            </article>
+            <!-- Course 3: Web GIS + Leaflet with image -->
+            <article class="course-card">
+                <div class="card-img">
+                    <img property="image" src="https://placehold.co/600x400/2c7a6e/white?text=Web+Mapping" alt="web mapping">
+                </div>
+                <div class="card-header">
+                    <h3 property="title">Web GIS: Leaflet & Mapbox GL</h3>
+                </div>
+                <div class="card-body">
+                    <div class="description" property="description">Build interactive web maps, integrate GeoJSON, vector tiles, and location-based apps. Modern front-end GIS development.</div>
+                    <div class="meta-info">
+                        <span><i class="fas fa-university"></i> <span property="provider">Map Academy</span></span>
+                        <span><i class="far fa-clock"></i> <span property="duration">5 weeks</span></span>
+                        <span><i class="fas fa-signal"></i> <span property="level">Intermediate</span></span>
+                    </div>
+                    <div><span class="tech-stack"><i class="fab fa-js"></i> <span property="techStack">JavaScript, Leaflet, Mapbox, HTML/CSS</span></span></div>
+                    <a property="url" class="course-link" href="#" target="_blank"><i class="fas fa-external-link-alt"></i> Course preview</a>
+                    <span property="imageAlt" style="display: none;">Interactive web map demo</span>
+                </div>
+            </article>
+            <!-- Course 4: Remote Sensing with image -->
+            <article class="course-card">
+                <div class="card-img">
+                    <img property="image" src="https://placehold.co/600x400/2c7a6e/white?text=Remote+Sensing" alt="satellite image">
+                </div>
+                <div class="card-header">
+                    <h3 property="title">Remote Sensing & Earth Observation</h3>
+                </div>
+                <div class="card-body">
+                    <div class="description" property="description">Sentinel, Landsat imagery analysis, vegetation indices, image classification using SNAP and Google Earth Engine.</div>
+                    <div class="meta-info">
+                        <span><i class="fas fa-university"></i> <span property="provider">EarthView Institute</span></span>
+                        <span><i class="far fa-clock"></i> <span property="duration">6 weeks</span></span>
+                        <span><i class="fas fa-signal"></i> <span property="level">Intermediate</span></span>
+                    </div>
+                    <div><span class="tech-stack"><i class="fas fa-satellite"></i> <span property="techStack">SNAP, GEE, QGIS, NDVI</span></span></div>
+                    <a property="url" class="course-link" href="#" target="_blank"><i class="fas fa-external-link-alt"></i> Learn more</a>
+                    <span property="imageAlt" style="display: none;">Satellite image analysis</span>
+                </div>
+            </article>
+        </div>
+        <!-- hidden template for Mavo's new items (includes all fields) -->
+        <div style="display: none;" mv-multiple="courses" mv-template>
+            <article class="course-card">
+                <div class="card-img">
+                    <img property="image" src="https://placehold.co/600x400/bfd9e5/2c7a6e?text=New+GIS+Course" alt="Course image">
+                    <div class="no-img-placeholder" style="display: none;">🖼️</div>
+                </div>
+                <div class="card-header">
+                    <h3 property="title">New GIS Course</h3>
+                </div>
+                <div class="card-body">
+                    <div class="description" property="description">Describe the course content, learning objectives and tools.</div>
+                    <div class="meta-info">
+                        <span><i class="fas fa-university"></i> <span property="provider">Institution name</span></span>
+                        <span><i class="far fa-clock"></i> <span property="duration">X weeks</span></span>
+                        <span><i class="fas fa-signal"></i> <span property="level">Beginner/Intermediate/Advanced</span></span>
+                    </div>
+                    <div><span class="tech-stack"><i class="fas fa-cogs"></i> <span property="techStack">Tech stack / tools</span></span></div>
+                    <a property="url" class="course-link" href="#" target="_blank"><i class="fas fa-external-link-alt"></i> Course URL</a>
+                    <span property="imageAlt" style="display: none;">Course image description</span>
+                    <span class="image-edit-hint"><i class="fas fa-edit"></i> Edit image URL (property="image")</span>
+                </div>
+            </article>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <i class="fab fa-github"></i> GIS Course Studio • Data stored in <strong>patrick-sang/gis-courses</strong> repository. <br>
+    <i class="fas fa-edit"></i> Login with GitHub to add/edit courses, upload image URLs, tech tags, and descriptions. Click <strong>Save All Changes</strong> after editing.
+</footer>
+
+<script>
+    (function() {
+        // DOM elements
+        const searchInput = document.getElementById('globalSearch');
+        const resetBtn = document.getElementById('resetSearchBtn');
+        const statsPanel = document.getElementById('courseStatsPanel');
+        const loginBtn = document.getElementById('githubLoginBtn');
+        const loginStatusSpan = document.getElementById('loginStatusDisplay');
+        const addCourseBtn = document.getElementById('customAddCourseBtn');
+        const saveAllBtn = document.getElementById('saveAllBtn');
+
+        let currentSearchTerm = '';
+
+        // Show temporary toast message
+        function showToast(message, isError = false) {
+            const toast = document.createElement('div');
+            toast.className = 'saving-toast';
+            toast.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${message}`;
+            toast.style.background = isError ? '#b33b2c' : '#2c7a6e';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Filter courses based on search term
+        function filterCourses() {
+            const term = searchInput.value.trim().toLowerCase();
+            currentSearchTerm = term;
+            const allCards = document.querySelectorAll('#coursesCollection .course-card');
+            if (!allCards.length) {
+                if (statsPanel) statsPanel.innerHTML = '📭 No courses yet. Add one!';
+                return;
+            }
+            let visible = 0;
+            allCards.forEach(card => {
+                const titleEl = card.querySelector('[property="title"]');
+                const descEl = card.querySelector('[property="description"]');
+                const providerEl = card.querySelector('[property="provider"]');
+                const techEl = card.querySelector('[property="techStack"]');
+                let title = titleEl ? titleEl.innerText : '';
+                let desc = descEl ? descEl.innerText : '';
+                let provider = providerEl ? providerEl.innerText : '';
+                let tech = techEl ? techEl.innerText : '';
+                const fullText = `${title} ${desc} ${provider} ${tech}`.toLowerCase();
+                if (term === '' || fullText.includes(term)) {
+                    card.classList.remove('hidden-course');
+                    visible++;
+                } else {
+                    card.classList.add('hidden-course');
+                }
+            });
+            const total = allCards.length;
+            if (term === '') {
+                statsPanel.innerHTML = `📚 Total courses: ${total}`;
+            } else {
+                statsPanel.innerHTML = `🔍 ${visible} of ${total} match "${term}"`;
+            }
+        }
+
+        function refreshFilterDelayed() {
+            setTimeout(filterCourses, 60);
+        }
+
+        // Mavo save handler: trigger manual save via Mavo API
+        async function saveAllChanges() {
+            const appElement = document.getElementById('mavoApp');
+            if (!appElement || !appElement._mavo) {
+                showToast("Mavo not ready yet. Please wait.", true);
+                return;
+            }
+            try {
+                // Mavo provides .save() method on instance
+                await appElement._mavo.save();
+                showToast("All changes saved successfully to GitHub!");
+            } catch (err) {
+                console.error("Save error", err);
+                showToast("Save failed. Make sure you are logged in with GitHub.", true);
+            }
+        }
+
+        // GitHub Login with Mavo GitHub plugin
+        async function performGitHubLogin() {
+            if (window.Mavo && window.Mavo.login) {
+                try {
+                    await window.Mavo.login('github');
+                    updateLoginStatus();
+                    showToast("GitHub login successful! You can now edit courses.");
+                } catch(e) {
+                    console.warn("Login error", e);
+                    showToast("Login failed. Please try again.", true);
+                    loginStatusSpan.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Login failed';
+                }
+            } else {
+                const githubPlugin = document.querySelector('[mv-app]')?._mavo?.plugins?.github;
+                if (githubPlugin && githubPlugin.login) {
+                    githubPlugin.login();
+                    setTimeout(() => {
+                        updateLoginStatus();
+                        showToast("Login attempt initiated. Check popup.");
+                    }, 500);
+                } else {
+                    alert("Mavo GitHub plugin not ready. Refresh and try again.");
+                }
+            }
+        }
+
+        function updateLoginStatus() {
+            if (window.Mavo && window.Mavo.identity && window.Mavo.identity.user) {
+                const user = window.Mavo.identity.user;
+                loginStatusSpan.innerHTML = `<i class="fab fa-github"></i> Logged in as ${user.login || user.name || 'GitHub user'} | <i class="fas fa-edit"></i> Edit mode active`;
+                loginStatusSpan.style.background = "#1f5e54cc";
+            } else {
+                loginStatusSpan.innerHTML = `<i class="fab fa-github"></i> Not logged in | <i class="fas fa-lock"></i> Login to edit & save`;
+                loginStatusSpan.style.background = "#1f3b42aa";
+            }
+        }
+
+        // Add new course using Mavo collection
+        function addNewCourse() {
+            const collectionDiv = document.getElementById('coursesCollection');
+            if (collectionDiv && collectionDiv._mavo && typeof collectionDiv._mavo.add === 'function') {
+                collectionDiv._mavo.add();
+                showToast("New course added. Fill details and click Save All Changes.");
+            } else {
+                const appElem = document.getElementById('mavoApp');
+                if (appElem && appElem._mavo && appElem._mavo.collections && appElem._mavo.collections.coursesCollection) {
+                    appElem._mavo.collections.coursesCollection.add();
+                    showToast("New course template added.");
+                } else {
+                    const addButton = document.querySelector('#mavoApp .mv-add');
+                    if (addButton) addButton.click();
+                    else alert("Mavo add not ready yet.");
+                }
+            }
+            setTimeout(() => {
+                filterCourses();
+                const newCards = document.querySelectorAll('#coursesCollection .course-card');
+                if (newCards.length) newCards[newCards.length-1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        }
+
+        // Image fallback handler
+        function fixImageErrors() {
+            document.querySelectorAll('.course-card img').forEach(img => {
+                img.onerror = function() {
+                    if (!this.dataset.fallback) {
+                        this.dataset.fallback = 'true';
+                        this.src = 'https://placehold.co/600x400/cadfe5/2c7a6e?text=GIS+Preview';
+                    }
+                };
+                if (!img.complete && img.naturalWidth === 0) {
+                    img.onerror();
+                }
+            });
+        }
+
+        // Mavo event listeners
+        document.addEventListener('mavo:ready', function() {
+            setTimeout(() => {
+                filterCourses();
+                updateLoginStatus();
+                fixImageErrors();
+            }, 200);
+        });
+        document.addEventListener('mavo:load', () => { refreshFilterDelayed(); fixImageErrors(); });
+        document.addEventListener('mavo:save', () => { refreshFilterDelayed(); showToast("Changes auto-saved", false); });
+        document.addEventListener('mavo:add', refreshFilterDelayed);
+        document.addEventListener('mavo:delete', refreshFilterDelayed);
+        document.addEventListener('mavo:propertychange', () => { refreshFilterDelayed(); fixImageErrors(); });
+
+        // MutationObserver for DOM changes
+        const observer = new MutationObserver(() => { refreshFilterDelayed(); fixImageErrors(); });
+        window.addEventListener('load', () => {
+            const grid = document.getElementById('coursesCollection');
+            if (grid) observer.observe(grid, { childList: true, subtree: true, attributes: false });
+            filterCourses();
+            updateLoginStatus();
+            fixImageErrors();
+        });
+
+        // Event listeners for buttons
+        if (searchInput) searchInput.addEventListener('input', () => filterCourses());
+        if (resetBtn) resetBtn.addEventListener('click', () => { searchInput.value = ''; filterCourses(); });
+        if (loginBtn) loginBtn.addEventListener('click', performGitHubLogin);
+        if (saveAllBtn) saveAllBtn.addEventListener('click', saveAllChanges);
+        if (addCourseBtn) addCourseBtn.addEventListener('click', addNewCourse);
+
+        // Periodically update login status & image fallback
+        setInterval(() => { updateLoginStatus(); fixImageErrors(); }, 5000);
+    })();
+</script>
+</body>
+</html>
