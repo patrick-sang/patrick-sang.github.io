@@ -343,6 +343,37 @@ h6,
     padding: 0 30px;
     transition: .5s;
 }
+.stack-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+
+  .stack-item {
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-card);
+    transition: border-color 0.3s;
+  }
+
+  .stack-item:hover { border-color: var(--border-hover); }
+
+  .stack-item h4 {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  .stack-item p {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
 
 .service-item .service-icon {
     margin-bottom: 30px;
