@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>GIS Course Studio | Mavo + GitHub (Edit & Save)</title>
+    <title>Courses</title>
     <!-- Mavo Core & GitHub plugin -->
     <link rel="stylesheet" href="https://get.mavo.io/stable/mavo.css">
     <script src="https://get.mavo.io/stable/mavo.js"></script>
@@ -332,13 +332,72 @@
             margin-top: 4px;
             display: block;
         }
+     .site-header {
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(8px);
+      background: rgba(255,255,255,0.95);
+    }
+.header-inner {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+    .logo h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #1e3a5f, #2c7a6e);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .logo p {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .nav-links {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    .login-badge {
+      background: #eef2ff;
+      padding: 6px 14px;
+      border-radius: 40px;
+      font-size: 0.8rem;
+    }
     </style>
 </head>
 <body>
+<div class="site-header">
+  <div class="container header-inner">
+    <div class="logo">
+      <h1><img src="./img/logo.png"  class="imagine" alt="Patrick" title="" style="height: 4rem;"style="width:4rem;";></span></h1>
+      <p></p>
+    </div>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="index.html">About</a>
+     
+      </div>
+    </div>
+  </div>
+</div>
 
-<div class="hero">
+<!--<div class="hero">
     <div class="hero-content">
-        <h1><i class="fas fa-globe-americas"></i> GIS Course Studio</h1>
+        <!--<h1><i class="fas fa-globe-americas"></i> GIS Course Studio</h1>
         <div class="sub">Curated GIS, Remote Sensing & Spatial Data Science courses — add images, descriptions, tech tags. Live GitHub sync.</div>
         <div class="github-actions">
             <button id="githubLoginBtn" class="btn-login"><i class="fab fa-github"></i> Login with GitHub</button>
@@ -347,7 +406,7 @@
             <div><i class="fas fa-database"></i> Repo: patrick-sang/gis-courses</div>
         </div>
     </div>
-</div>
+</div>-->
 
 <div class="container">
     <div class="toolbar">
@@ -361,7 +420,7 @@
         <div>
             <button class="btn-add" id="customAddCourseBtn"><i class="fas fa-plus-circle"></i> Add new course</button>
         </div>
-        <div id="courseStatsPanel" class="stats">📊 Loading courses...</div>
+        <div id="courseStatsPanel" class="stats">Loading courses...</div>
     </div>
 
     <!-- Mavo app: GitHub storage with full schema (including image, imageAlt, techStack) -->
@@ -486,8 +545,7 @@
 </div>
 
 <footer>
-    <i class="fab fa-github"></i> GIS Course Studio • Data stored in <strong>patrick-sang/gis-courses</strong> repository. <br>
-    <i class="fas fa-edit"></i> Login with GitHub to add/edit courses, upload image URLs, tech tags, and descriptions. Click <strong>Save All Changes</strong> after editing.
+    
 </footer>
 
 <script>
