@@ -4,6 +4,8 @@
     --secondary: #34AD54;
     --light: #EEF9FF;
     --dark: #091E3E;
+	--accent-dim: #166534;
+	 --font-display: 'Fraunces', serif;
 }
 
 
@@ -113,6 +115,14 @@ h6,
     letter-spacing: 3px;
     text-transform: uppercase;
     margin-bottom: 0.75rem;
+  }
+  .card-num {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--accent-dim);
+    margin-bottom: 1rem;
+    line-height: 1;
   }
 
   .section-title {
