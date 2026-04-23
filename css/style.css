@@ -214,7 +214,30 @@ h6,
         color: var(--primary);
     }
 }
+ .hero-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    position: relative;
+    z-index: 2;
+  }
 
+  .hero-tags span {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    transition: all 0.3s;
+  }
+
+  .hero-tags span:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-glow);
+  }
 
 /*** Carousel ***/
 .carousel-caption {
