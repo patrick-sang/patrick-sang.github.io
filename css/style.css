@@ -381,9 +381,9 @@ section {
 
   .stack-item {
     padding: 1.5rem;
-    border: 1px solid color:black;
+    border: 1px solid ;
     border-radius: 10px;
-    background: var(--bg-card);
+    background: var(--accent);
     transition: border-color 0.3s;
   }
 
