@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title></title>
+    
+    <!-- Mavo Core & GitHub Extension -->
+    <link rel="stylesheet" href="https://get.mavo.io/mavo.min.css">
+    <script src="https://get.mavo.io/mavo.min.js"></script>
+    <script src="https://get.mavo.io/mavo-extensions/mavo-github.min.js"></script>
+    
+    <!-- Font Awesome 6 (free icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            background: linear-gradient(145deg, #f1f5f9 0%, #e6edf4 100%);
+            min-height: 100vh;
+            padding: 2rem 1.5rem;
+        }
+
+        /* main card container */
+        .faq-app-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 2rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        /* header section */
+        .app-header {
+            background: #0f172a;
+            padding: 1.5rem 2rem;
+            color: white;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .app-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: -0.3px;
+        }
+
+        .app-header h1 i {
+            color: #3b82f6;
+            font-size: 1.8rem;
+        }
+
+        .app-header p {
+            margin-top: 8px;
+            opacity: 0.75;
+            font-size: 0.9rem;
+        }
+
+        /* Mavo bar customization - login prominent */
+        .mv-bar {
+            background: #0f172a !important;
+            border-bottom: 1px solid #334155 !important;
+            padding: 0.6rem 2rem !important;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .mv-login-button {
+            background: #3b82f6 !important;
+            border-radius: 40px !important;
+            padding: 6px 20px !important;
+            font-weight: 600 !important;
+            transition: 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .mv-login-button:hover {
+            background: #2563eb !important;
+            transform: scale(1.02);
+        }
+
+        /* Custom styling for logged-in user indicator */
+        .user-badge {
+            background: #1e293b;
+            padding: 5px 12px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #cbd5e1;
+        }
+
+        /* FAQ list container */
+        .faq-list-container {
+            padding: 2rem 2rem 1rem 2rem;
+            background: #ffffff;
+        }
+
+        /* individual FAQ card */
+        .faq-card {
+            background: #fefefe;
+            border-radius: 1.25rem;
+            margin-bottom: 1.25rem;
+            border: 1px solid #e9eef3;
+            transition: all 0.2s ease;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+
+        .faq-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
+        }
+
+        /* question area (click to toggle in view mode) */
+        .faq-question {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 1.2rem 1.5rem;
+            background: #ffffff;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #0f172a;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f2f5;
+            transition: background 0.1s;
+        }
+
+        .faq-question i {
+            color: #3b82f6;
+            font-size: 1.2rem;
+            width: 24px;
+            transition: transform 0.1s;
+        }
+
+        .question-text {
+            flex: 1;
+        }
+
+        /* answer area */
+        .faq-answer {
+            padding: 1.2rem 1.5rem 1.4rem 3rem;
+            color: #334155;
+            line-height: 1.55;
+            background: #fafcff;
+            font-size: 0.98rem;
+            border-top: none;
+        }
+
+        /* Mavo edit mode highlights */
+        [mv-mode="edit"] .faq-question,
+        [mv-mode="edit"] .faq-answer {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+        }
+
+        [mv-mode="edit"] .faq-question {
+            cursor: text;
+        }
+
+        /* Mavo item controls (delete, drag) */
+        .mv-item-bar {
+            background: #f1f5f9;
+            border-radius: 40px;
+            margin: 0.5rem 1rem 0.8rem 1rem;
+            padding: 0.4rem 1rem;
+            display: inline-flex;
+            gap: 12px;
+            font-size: 0.75rem;
+        }
+
+        .mv-add {
+            background: #10b981 !important;
+            border-radius: 40px !important;
+            padding: 8px 20px !important;
+            font-weight: 600;
+            margin: 0 1rem 1rem 1rem !important;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            border: none;
+        }
+
+        .mv-add:before {
+            content: "\f067";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            margin-right: 6px;
+        }
+
+        /* Disabled/readonly notice when not logged in */
+        .login-overlay-notice {
+            background: #f8fafc;
+            text-align: center;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            margin: 1rem 2rem 2rem 2rem;
+            border: 1px dashed #cbd5e1;
+        }
+
+        .login-prompt {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .login-prompt i {
+            font-size: 2.5rem;
+            color: #3b82f6;
+        }
+
+        /* Footer note */
+        .footer-message {
+            background: #f8fafc;
+            padding: 1rem 2rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #475569;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        /* utility */
+        .hidden-edit-tools {
+            /* we use conditional visibility via mavo:loggedIn */
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 1rem;
+            }
+            .faq-question {
+                padding: 1rem;
+                font-size: 1rem;
+            }
+            .faq-answer {
+                padding: 1rem 1rem 1rem 2rem;
+            }
+            .faq-list-container {
+                padding: 1rem;
+            }
+        }
+
+        /* In view mode, collapse answers initially? we keep expanded but user can toggle */
+        .mv-view-mode .faq-answer {
+            display: block;
+        }
+
+        /* For non-logged-in users, we show a soft lock style, but editing controls are hidden by Mavo itself */
+        /* Additional overlay style to indicate read-only mode */
+        .readonly-indicator {
+            background: #eef2ff;
+            border-radius: 30px;
+            padding: 4px 14px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #2563eb;
+        }
+    </style>
+</head>
+<body>
+
+<div class="faq-app-wrapper">
+    <!-- Mavo Application: data stored on GitHub under patrick-sang/mavo-faqs-data 
+         mv-github ensures ownership. Only the owner patrick-sang can edit after login -->
+    <div 
+        mv-app="secureFaqs" 
+        mv-storage="https://github.com/patrick-sang/mavo-faqs-data" 
+        mv-github="patrick-sang"
+        mv-plugins="github"
+        id="secureFaqApp"
+    >
+        <!-- Define FAQ schema: each item has question & answer -->
+        <div property="schema" typeof="schema">
+            <div property="properties">
+                <div property="question" typeof="text"></div>
+                <div property="answer" typeof="text"></div>
+            </div>
+        </div>
+
+        <!-- Header with dynamic login status (Mavo handles login UI) -->
+        <div class="app-header">
+            <h1>
+                <i class="fas fa-question-circle"></i> 
+                Frequently Asked Questions
+            </h1>
+            
+        </div>
+
+        <!-- This wrapper shows different messages based on login state -->
+        <div class="faq-list-container">
+            <!-- Login status message & editing hint (using Mavo properties and mv-if) -->
+            <div mv-if="loggedIn !== true" style="margin-bottom: 1.2rem;">
+                <div class="login-overlay-notice">
+                    <div class="login-prompt">
+                      
+                    </div>
+                </div>
+            </div>
+            
+            <div mv-if="loggedIn === true" style="margin-bottom: 1rem; display: flex; justify-content: flex-end;">
+                <div class="readonly-indicator">
+                    
+                </div>
+            </div>
+
+            <!-- FAQ COLLECTION: only editable when logged in. Mavo automatically respects permissions.
+                 But we add mv-acl to ensure only logged in users can modify (server-side enforced by GitHub storage, but we also visually reinforce) -->
+            <div property="faqs" mv-multiple="true" class="faq-list" id="faqCollection">
+                <!-- Predefined FAQs (will be stored after first login + save) -->
+                <div property="faq" class="faq-card" mv-default='{"question":"What is Mavo and why use it?","answer":"Mavo turns any HTML page into a dynamic, editable app with persistent storage. It works perfectly with GitHub, allowing you to manage FAQs like a database without backend code."}'>
+                    <div class="faq-question">
+                        <i class="fas fa-question-circle"></i>
+                        <span class="question-text" property="question">What is Mavo and why use it?</span>
+                    </div>
+                    <div class="faq-answer" property="answer">Mavo turns any HTML page into a dynamic, editable app with persistent storage. It works perfectly with GitHub, allowing you to manage FAQs like a database without backend code.</div>
+                </div>
+                
+                <div property="faq" class="faq-card" mv-default='{"question":"How do I log in as patrick-sang?","answer":"Click the red \"Login\" button in the top bar, then authorize using your GitHub credentials. Make sure you log into the GitHub account \\\"patrick-sang\\\". Once logged in, edit controls (➕ Add FAQ, ✏️ edit, 🗑️ delete) will appear automatically."}'>
+                    <div class="faq-question">
+                        <i class="fas fa-question-circle"></i>
+                        <span class="question-text" property="question">How do I log in as patrick-sang?</span>
+                    </div>
+                    <div class="faq-answer" property="answer">Click the red "Login" button in the top bar, then authorize using your GitHub credentials. Make sure you log into the GitHub account "patrick-sang". Once logged in, edit controls (➕ Add FAQ, ✏️ edit, 🗑️ delete) will appear automatically.</div>
+                </div>
+                
+                <div property="faq" class="faq-card" mv-default='{"question":"Is editing really restricted to logged-in users?","answer":"Yes! Mavo + GitHub ensures that only authenticated users with write access (patrick-sang) can modify data. Anonymous visitors see a read-only version without any add/edit/delete buttons. Your data remains safe."}'>
+                    <div class="faq-question">
+                        <i class="fas fa-question-circle"></i>
+                        <span class="question-text" property="question">Is editing really restricted to logged-in users?</span>
+                    </div>
+                    <div class="faq-answer" property="answer">Yes! Mavo + GitHub ensures that only authenticated users with write access (patrick-sang) can modify data. Anonymous visitors see a read-only version without any add/edit/delete buttons. Your data remains safe.</div>
+                </div>
+                
+                <div property="faq" class="faq-card" mv-default='{"question":"Where is the FAQ data stored?","answer":"All FAQs are stored in a GitHub repository named \\\"mavo-faqs-data\\\" under the user patrick-sang. Mavo automatically creates a data.json file. You can view the history or revert changes via GitHub."}'>
+                    <div class="faq-question">
+                        <i class="fas fa-question-circle"></i>
+                        <span class="question-text" property="question">Where is the FAQ data stored?</span>
+                    </div>
+                    <div class="faq-answer" property="answer">All FAQs are stored in a GitHub repository named "mavo-faqs-data" under the user patrick-sang. Mavo automatically creates a data.json file. You can view the history or revert changes via GitHub.</div>
+                </div>
+                
+                <div property="faq" class="faq-card" mv-default='{"question":"Can I add new FAQs after login?","answer":"Absolutely! Once logged in, you’ll see a green \\\"➕ Add FAQ\\\" button. Click it, fill in question & answer, and it will instantly be saved to GitHub. You can also reorder, edit inline, or delete any FAQ."}'>
+                    <div class="faq-question">
+                        <i class="fas fa-question-circle"></i>
+                        <span class="question-text" property="question">Can I add new FAQs after login?</span>
+                    </div>
+                    <div class="faq-answer" property="answer">Absolutely! Once logged in, you’ll see a green "➕ Add FAQ" button. Click it, fill in question & answer, and it will instantly be saved to GitHub. You can also reorder, edit inline, or delete any FAQ.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer: dynamic based on login state -->
+        <div class="footer-message">
+            
+        </div>
+    </div>
+</div>
+
+<!-- Custom JavaScript for UI enhancements:
+     1. Toggle answer visibility only in VIEW mode (when not editing)
+     2. Prevent toggling when Mavo edit mode is active to avoid conflicts.
+     3. Ensure that after login, edit controls appear naturally (Mavo handles).
+     4. Also ensure that new dynamically added FAQ items also have toggle behavior.
+-->
+<script>
+    (function() {
+        // Helper: toggle answer visibility for a given question element (only in view mode)
+        function toggleAnswerHandler(questionEl) {
+            // Get mavo app root
+            const app = document.getElementById("secureFaqApp");
+            if (!app || !app.mavo) return;
+            // Only allow toggle when in view mode (not edit mode)
+            if (app.mavo.mode === "edit") {
+                return; // editing mode — don't collapse, user needs to edit text
+            }
+            const faqCard = questionEl.closest('.faq-card');
+            if (!faqCard) return;
+            const answerDiv = faqCard.querySelector('.faq-answer');
+            if (!answerDiv) return;
+            const icon = questionEl.querySelector('i');
+            // Toggle display
+            if (answerDiv.style.display === 'none') {
+                answerDiv.style.display = 'block';
+                if (icon) icon.className = "fas fa-question-circle";
+            } else {
+                answerDiv.style.display = 'none';
+                if (icon) icon.className = "fas fa-chevron-circle-right";
+            }
+        }
+
+        // Apply click listeners to all .faq-question elements (attach once, dynamic)
+        function bindToggleListeners() {
+            const questions = document.querySelectorAll('.faq-question');
+            questions.forEach(q => {
+                // Avoid duplicate listeners
+                if (q.getAttribute('data-toggle-bound') === 'true') return;
+                q.setAttribute('data-toggle-bound', 'true');
+                q.addEventListener('click', (e) => {
+                    // Prevent if the target is an input/editable field while in edit mode? but we already check mode inside handler
+                    toggleAnswerHandler(q);
+                });
+            });
+        }
+
+        // Reset answer displays based on mode (when mavo mode changes, reset any hidden answers)
+        function resetAnswersVisibility() {
+            const app = document.getElementById("secureFaqApp");
+            if (!app || !app.mavo) return;
+            const mode = app.mavo.mode;
+            const allAnswers = document.querySelectorAll('.faq-answer');
+            const allIcons = document.querySelectorAll('.faq-question i');
+            if (mode === 'edit') {
+                // In edit mode: ensure all answers visible and icons are question style
+                allAnswers.forEach(ans => ans.style.display = 'block');
+                allIcons.forEach(icon => icon.className = "fas fa-question-circle");
+            } else {
+                // view mode: we can keep them visible by default, but user may have collapsed. We won't force expand to preserve user preference.
+                // But we need to ensure that if any answer has display: none from previous toggle, it's fine.
+                // Also for consistency, we do not auto-expand all to avoid resetting collapses. However, we set initial state for newly added.
+                // We will only set if style is not set, default block.
+                allAnswers.forEach(ans => {
+                    if (ans.style.display === '') ans.style.display = 'block';
+                });
+                allIcons.forEach(icon => {
+                    if (icon.className.indexOf('chevron') === -1 && icon.className.indexOf('question') === -1) {
+                        icon.className = "fas fa-question-circle";
+                    }
+                });
+            }
+        }
+
+        // MutationObserver to catch dynamically added FAQ cards (when Mavo adds new items)
+        const observer = new MutationObserver(function(mutations) {
+            let shouldRebind = false;
+            mutations.forEach(mut => {
+                if (mut.addedNodes.length) {
+                    mut.addedNodes.forEach(node => {
+                        if (node.nodeType === 1 && (node.classList?.contains('faq-card') || node.querySelector?.('.faq-card'))) {
+                            shouldRebind = true;
+                        }
+                    });
+                }
+            });
+            if (shouldRebind) {
+                bindToggleListeners();
+                // Also ensure answer visibility consistent with current mode
+                const app = document.getElementById("secureFaqApp");
+                if (app && app.mavo) {
+                    if (app.mavo.mode === 'edit') {
+                        document.querySelectorAll('.faq-answer').forEach(ans => ans.style.display = 'block');
+                        document.querySelectorAll('.faq-question i').forEach(icon => icon.className = "fas fa-question-circle");
+                    } else {
+                        // For view mode, make newly added answers visible
+                        document.querySelectorAll('.faq-answer').forEach(ans => {
+                            if (ans.style.display === 'none') ans.style.display = 'block';
+                        });
+                    }
+                } else {
+                    document.querySelectorAll('.faq-answer').forEach(ans => {
+                        if (ans.style.display === 'none') ans.style.display = 'block';
+                    });
+                }
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        // Mavo lifecycle events: when mode changes or mavo fully loaded
+        document.addEventListener("mavo:modechange", function(e) {
+            resetAnswersVisibility();
+            bindToggleListeners(); // ensure new items get listeners
+        });
+
+        document.addEventListener("mavo:loaded", function() {
+            bindToggleListeners();
+            resetAnswersVisibility();
+            // Also ensure that initial login status does not expose edit buttons unless logged in,
+            // but Mavo's GitHub plugin automatically handles that: edit controls only visible if user has write access.
+            // Additional guard: For non-logged in users, Mavo already disables .mv-add, etc. Perfect.
+            // Also we can hide any stray edit toolbars if needed (but Mavo's default behavior is correct)
+            // To enforce "edit only after login" more explicitly, we rely on Mavo's built-in authentication.
+            // However, we add an extra CSS rule to visually hide add button if not logged in?
+            // Mavo's native mv-bar login shows controls based on write permission. So it's safe.
+        });
+
+        // On each mutation of collection property? we rebind.
+        // Also manual trigger after any property change from Mavo
+        document.addEventListener("mavo:save", function() {
+            bindToggleListeners();
+            resetAnswersVisibility();
+        });
+
+        // Initialize after dom ready
+        document.addEventListener("DOMContentLoaded", function() {
+            bindToggleListeners();
+            // initial answer visibility: all visible
+            setTimeout(() => {
+                const app = document.getElementById("secureFaqApp");
+                if (app && app.mavo && app.mavo.mode === 'view') {
+                    // ensure answers are visible but keep user preferences? but initially none collapsed.
+                    document.querySelectorAll('.faq-answer').forEach(ans => {
+                        if (!ans.style.display) ans.style.display = 'block';
+                    });
+                } else if (app && app.mavo && app.mavo.mode === 'edit') {
+                    document.querySelectorAll('.faq-answer').forEach(ans => ans.style.display = 'block');
+                }
+                bindToggleListeners();
+            }, 100);
+        });
+    })();
+</script>
+
+<!-- Additional CSS for extra security: Hide edit controls visually when user is not logged in (Mavo does this by default, but we add fallback style) -->
+<style>
+    /* Mavo automatically hides .mv-add, .mv-item-bar, etc for non-authenticated users because it checks write access.
+       However, we reinforce by using mv-github and it only enables editing for repo owner (patrick-sang) after login.
+       For anonymous, those buttons won't appear. Great.
+       Also to avoid any flicker, we keep everything consistent. */
+    .mv-bar .mv-login-button {
+        background: #3b82f6 !important;
+    }
+    
+    /* disable editing cursors for property when not logged in (just UX) */
+    body:not(.mv-logged-in) [property="question"]:hover,
+    body:not(.mv-logged-in) [property="answer"]:hover {
+        cursor: default;
+    }
+    
+    /* Ensure that in view mode the questions have pointer cursor (expand/collapse) */
+    .mv-view-mode .faq-question {
+        cursor: pointer;
+    }
+    
+    .mv-edit-mode .faq-question {
+        cursor: text;
+    }
+    
+    /* subtle background for logged in editing */
+    .mv-logged-in .faq-card {
+        border-left: 2px solid #10b981;
+    }
+</style>
+
+
+-->
+</body>
+</html>

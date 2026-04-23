@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title></title>
+    
+    <!-- Mavo Core & GitHub Extension -->
+    <link rel="stylesheet" href="https://get.mavo.io/mavo.min.css">
+    <script src="https://get.mavo.io/mavo.min.js"></script>
+    <script src="https://get.mavo.io/mavo-extensions/mavo-github.min.js"></script>
+    
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            background: linear-gradient(145deg, #f1f5f9 0%, #e6edf4 100%);
+            min-height: 100vh;
+            padding: 2rem 1.5rem;
+        }
+
+        .glossary-app-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 2rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .app-header {
+            background: #0f172a;
+            padding: 1.5rem 2rem;
+            color: white;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .app-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            letter-spacing: -0.3px;
+        }
+
+        .app-header h1 i {
+            color: #3b82f6;
+            font-size: 1.8rem;
+        }
+
+        .app-header p {
+            margin-top: 8px;
+            opacity: 0.75;
+            font-size: 0.9rem;
+        }
+
+        .sector-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .sector-badge {
+            background: rgba(59, 130, 246, 0.2);
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #93c5fd;
+        }
+
+        /* Mavo bar customization */
+        .mv-bar {
+            background: #0f172a !important;
+            border-bottom: 1px solid #334155 !important;
+            padding: 0.6rem 2rem !important;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .mv-login-button {
+            background: #3b82f6 !important;
+            border-radius: 40px !important;
+            padding: 6px 20px !important;
+            font-weight: 600 !important;
+            transition: 0.2s;
+        }
+
+        .mv-login-button:hover {
+            background: #2563eb !important;
+            transform: scale(1.02);
+        }
+
+        .mv-logout-button {
+            background: #ef4444 !important;
+            border-radius: 40px !important;
+            padding: 6px 20px !important;
+        }
+
+        .mv-edit-button {
+            background: #f59e0b !important;
+            border-radius: 40px !important;
+            padding: 6px 20px !important;
+            color: #1e293b !important;
+            font-weight: 600 !important;
+        }
+
+        .glossary-list-container {
+            padding: 2rem 2rem 1rem 2rem;
+            background: #ffffff;
+        }
+
+        /* Filter tabs */
+        .filter-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 1.8rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .filter-btn {
+            background: #f1f5f9;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #475569;
+        }
+
+        .filter-btn:hover {
+            background: #e2e8f0;
+        }
+
+        .filter-btn.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        /* term card */
+        .term-card {
+            background: #fefefe;
+            border-radius: 1.25rem;
+            margin-bottom: 1.25rem;
+            border: 1px solid #e9eef3;
+            transition: all 0.2s ease;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+
+        .term-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
+        }
+
+        .term-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 1.2rem 1.5rem;
+            background: #ffffff;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #0f172a;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f2f5;
+            transition: background 0.1s;
+            flex-wrap: wrap;
+        }
+
+        .term-header i {
+            color: #3b82f6;
+            font-size: 1.2rem;
+            width: 24px;
+        }
+
+        .term-title {
+            flex: 1;
+            font-weight: 700;
+        }
+
+        .sector-label {
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .sector-label.realestate { background: #dbeafe; color: #1e40af; }
+        .sector-label.insurance { background: #fef3c7; color: #92400e; }
+        .sector-label.marketing { background: #dcfce7; color: #166534; }
+        .sector-label.urban { background: #fce7f3; color: #9d174d; }
+        .sector-label.environment { background: #ccfbf1; color: #0f5e4a; }
+        .sector-label.logistics { background: #e0e7ff; color: #3730a3; }
+        .sector-label.general { background: #e2e8f0; color: #334155; }
+
+        .term-definition-area {
+            padding: 1.2rem 1.5rem 1.4rem 3rem;
+            color: #334155;
+            line-height: 1.55;
+            background: #fafcff;
+            font-size: 0.98rem;
+        }
+
+        [mv-mode="edit"] .term-header,
+        [mv-mode="edit"] .term-definition-area {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+        }
+
+        [mv-mode="edit"] .term-header {
+            cursor: text;
+        }
+
+        .mv-item-bar {
+            background: #f1f5f9;
+            border-radius: 40px;
+            margin: 0.5rem 1rem 0.8rem 1rem;
+            padding: 0.4rem 1rem;
+            display: inline-flex;
+            gap: 12px;
+            font-size: 0.75rem;
+        }
+
+        .mv-add {
+            background: #10b981 !important;
+            border-radius: 40px !important;
+            padding: 8px 20px !important;
+            font-weight: 600;
+            margin: 0 1rem 1rem 1rem !important;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            border: none;
+        }
+
+        .mv-add:before {
+            content: "\f067";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            margin-right: 6px;
+        }
+
+        .login-overlay-notice {
+            background: #f8fafc;
+            text-align: center;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            margin: 1rem 2rem 2rem 2rem;
+            border: 1px dashed #cbd5e1;
+        }
+
+        .login-prompt {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .login-prompt i {
+            font-size: 2.5rem;
+            color: #3b82f6;
+        }
+
+        .footer-message {
+            background: #f8fafc;
+            padding: 1rem 2rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #475569;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .readonly-indicator {
+            background: #eef2ff;
+            border-radius: 30px;
+            padding: 4px 14px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #2563eb;
+        }
+
+        @media (max-width: 640px) {
+            body { padding: 1rem; }
+            .term-header { padding: 1rem; flex-direction: column; align-items: flex-start; }
+            .term-definition-area { padding: 1rem 1rem 1rem 1.5rem; }
+            .glossary-list-container { padding: 1rem; }
+            .filter-tabs { justify-content: center; }
+        }
+
+        [property="term"]:focus, [property="definition"]:focus, [property="sector"]:focus {
+            background: #fff8e7;
+            outline: 2px solid #f59e0b;
+            border-radius: 8px;
+        }
+
+        body:not(.mv-logged-in) [property="term"]:hover,
+        body:not(.mv-logged-in) [property="definition"]:hover,
+        body:not(.mv-logged-in) [property="sector"]:hover {
+            cursor: default;
+        }
+
+        .mv-logged-in .term-card {
+            border-left: 2px solid #10b981;
+        }
+
+        .mv-view-mode .term-header {
+            cursor: pointer;
+        }
+        .mv-edit-mode .term-header {
+            cursor: text;
+        }
+
+        [mv-mode="edit"] [property="term"],
+        [mv-mode="edit"] [property="definition"],
+        [mv-mode="edit"] [property="sector"] {
+            padding: 4px 8px;
+            margin: -4px -8px;
+            border-radius: 8px;
+            transition: background 0.1s;
+        }
+        
+        [mv-mode="edit"] [property="term"]:hover,
+        [mv-mode="edit"] [property="definition"]:hover,
+        [mv-mode="edit"] [property="sector"]:hover {
+            background: #fef3c7;
+        }
+
+        .glossary-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .term-card.hidden-filter {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="glossary-app-wrapper">
+    <div 
+        mv-app="multiSectorGlossary" 
+        mv-storage="https://github.com/patrick-sang/gis-glossary-data" 
+        mv-github="patrick-sang"
+        mv-plugins="github"
+        id="glossaryApp"
+    >
+        <div property="schema" typeof="schema">
+            <div property="properties">
+                <div property="term" typeof="text"></div>
+                <div property="definition" typeof="text"></div>
+                <div property="sector" typeof="text"></div>
+            </div>
+        </div>
+
+        <div class="app-header">
+            <h1>
+               
+            </h1>
+            
+            <div class="sector-tags">
+                <span class="sector-badge"></i> Real Estate</span>
+                <span class="sector-badge"></i> Insurance</span>
+                <span class="sector-badge"></i> Marketing</span>
+                <span class="sector-badge"></i> Urban Planning</span>
+                <span class="sector-badge"></i> Logistics</span>
+                <span class="sector-badge"></i> Environment</span>
+            </div>
+        </div>
+
+        <div class="glossary-list-container">
+            <div mv-if="loggedIn !== true" style="margin-bottom: 1.2rem;">
+                <div class="login-overlay-notice">
+                    <div class="login-prompt">
+                        <i class="fab fa-github"></i>
+                        <strong style="font-size: 1.1rem;"> </strong>
+                        <span>Click <strong style="background:#e2e8f0; padding:2px 8px; border-radius:20px;">Login</strong> above and authorize with GitHub as <code>patrick-sang</code>.</span>
+                        <span style="font-size: 0.8rem;">
+                    </div>
+                </div>
+            </div>
+            
+            <div mv-if="loggedIn === true" style="margin-bottom: 1rem; display: flex; justify-content: flex-end;">
+                <div class="readonly-indicator">
+                   
+                </div>
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="filter-tabs">
+                <button class="filter-btn active" data-sector="all"> All Sectors</button>
+                <button class="filter-btn" data-sector="Real Estate"> Real Estate</button>
+                <button class="filter-btn" data-sector="Insurance"> Insurance</button>
+                <button class="filter-btn" data-sector="Marketing"> Marketing</button>
+                <button class="filter-btn" data-sector="Urban Planning"> Urban Planning</button>
+                <button class="filter-btn" data-sector="Logistics">Logistics</button>
+                <button class="filter-btn" data-sector="Environment"> Environment</button>
+            </div>
+
+            <div property="terms" mv-multiple="true" class="glossary-list" id="termsCollection">
+                
+                <!-- REAL ESTATE SECTOR -->
+                <div property="termItem" class="term-card" data-sector="Real Estate" mv-default='{"term":"Automated Valuation Model (AVM)","definition":"A GIS-integrated property valuation system that uses spatial analysis, comparable sales, and location attributes to estimate real estate values automatically.","sector":"Real Estate"}'>
+                    <div class="term-header"><i class="fas fa-home"></i><span class="term-title" property="term">Automated Valuation Model (AVM)</span><span class="sector-label realestate" property="sector">Real Estate</span></div>
+                    <div class="term-definition-area" property="definition">A GIS-integrated property valuation system that uses spatial analysis, comparable sales, and location attributes to estimate real estate values automatically.</div>
+                </div>
+
+                <div property="termItem" class="term-card" data-sector="Real Estate" mv-default='{"term":"Location Intelligence","definition":"The process of analyzing geospatial data to derive insights for site selection, market analysis, and property investment decisions in real estate.","sector":"Real Estate"}'>
+                    <div class="term-header"><i class="fas fa-map-pin"></i><span class="term-title" property="term">Location Intelligence</span><span class="sector-label realestate" property="sector">Real Estate</span></div>
+                    <div class="term-definition-area" property="definition">The process of analyzing geospatial data to derive insights for site selection, market analysis, and property investment decisions in real estate.</div>
+                </div>
+
+                <div property="termItem" class="term-card" data-sector="Real Estate" mv-default='{"term":"Walkability Score","definition":"A GIS-based metric measuring how easily residents can access amenities like shops, parks, and transit within walking distance, influencing property values.","sector":"Real Estate"}'>
+                    <div class="term-header"><i class="fas fa-walking"></i><span class="term-title" property="term">Walkability Score</span><span class="sector-label realestate" property="sector">Real Estate</span></div>
+                    <div class="term-definition-area" property="definition">A GIS-based metric measuring how easily residents can access amenities like shops, parks, and transit within walking distance, influencing property values.</div>
+                </div>
+
+                <!-- INSURANCE SECTOR -->
+                <div property="termItem" class="term-card" data-sector="Insurance" mv-default='{"term":"Catastrophe Modeling","definition":"GIS-based risk assessment for natural disasters (floods, hurricanes, wildfires) used by insurers to price policies and manage exposure.","sector":"Insurance"}'>
+                    <div class="term-header"><i class="fas fa-bolt"></i><span class="term-title" property="term">Catastrophe Modeling</span><span class="sector-label insurance" property="sector">Insurance</span></div>
+                    <div class="term-definition-area" property="definition">GIS-based risk assessment for natural disasters (floods, hurricanes, wildfires) used by insurers to price policies and manage exposure.</div>
+                </div>
+
+                <div property="termItem" class="term-card" data-sector="Insurance" mv-default='{"term":"Flood Zone Determination","definition":"Using GIS to identify properties within FEMA-designated flood zones, critical for underwriting flood insurance policies and calculating premiums.","sector":"Insurance"}'>
+                    <div class="term-header"><i class="fas fa-water"></i><span class="term-title" property="term">Flood Zone Determination</span><span class="sector-label insurance" property="sector">Insurance</span></div>
+                    <div class="term-definition-area" property="definition">Using GIS to identify properties within FEMA-designated flood zones, critical for underwriting flood insurance policies and calculating premiums.</div>
+                </div>
+
+                <div property="termItem" class="term-card" data-sector="Insurance" mv-default='{"term":"Risk Terrain Modeling","definition":"A spatial analysis technique that identifies geographic risk factors for crime, accidents, or property damage, used in liability and property insurance.","sector":"Insurance"}'>
+                    <div class="term-header"><i class="fas fa-chart-simple"></i><span class="term-title" property="term">Risk Terrain Modeling</span><span class="sector-label insurance" property="sector">Insurance</span></div>
+                    <div class="term-definition-area" property="definition">A spatial analysis technique that identifies geographic risk factors for crime, accidents, or property damage, used in liability and property insurance.</div>
+                </div>
+
+                <!-- MARKETING SECTOR -->
+                <div property="termItem" class="term-card" data-sector="Marketing" mv-default='{"term":"Geofencing","definition":"Creating virtual geographic boundaries using GPS/beacons to trigger targeted mobile ads or notifications when customers enter a specific area.","sector":"Marketing"}'>
+                    <div class="term-header"><i class="fas fa-fence"></i><span class="term-title" property="term">Geofencing</span><span class="sector-label marketing" property="sector">Marketing</span></div>
+                    <div class="term-definition-area" property="definition">Creating virtual geographic boundaries using GPS/beacons to trigger targeted mobile ads or notifications when customers enter a specific area.</div>
+                </div>
+
+                <div property="termItem" class="term-card" data-sector="Marketing" mv-default='{"term":"Trade Area Analysis","definition":"Using GIS to define and analyze the geographic region from which a business draws its customers, optimizing store locations and marketing spend.","sector":"Marketing"}'>
+                    <div class="term-header"><i class="fas fa-chart-pie"></i><span class="term-title" property="term">Trade Area Analysis</span><span class="sector-label marketing" property="sector">Marketing</span></div>
+                    <div class="term-definition-area" property="definition">Using GIS to define and analyze the geographic region from which a business draws its customers, optimizing store locations and marketing spend.</div>
+                </div>
+
+                <div property="termItem" class="term-card" data-sector="Marketing" mv-default='{"term":"Customer Segmentation by Location","definition":"Grouping customers based on geographic and demographic data to tailor marketing campaigns, product offerings, and media buying strategies.","sector":"Marketing"}'>
+                    <div class="term-header"><i class="fas fa-users"></i><span class="term-title" property="term">Customer Segmentation by Location</span><span class="sector-label marketing" property="sector">Marketing</span></div>
+                    <div class="term-definition-area" property="definition">Grouping customers based on geographic and demographic data to tailor marketing campaigns, product offerings, and media buying strategies.</div>
+                </div>
+
+                <!-- URBAN PLANNING SECTOR -->
+                <div property="termItem" class="term-card" data-sector="Urban Planning" mv-default='{"term":"Smart Growth","definition":"Urban planning approach using GIS to promote compact, transit-oriented, walkable communities while preserving natural resources.","sector":"Urban Planning"}'>
+                    <div class="term-header"><i class="fas fa-brain"></i><span class="term-title" property="term">Smart Growth</span><span class="sector-label" property="sector">Urban Planning</span></div>
+                    <div class="term-definition-area" property="definition">Urban planning approach using GIS to promote compact, transit-oriented, walkable communities while preserving natural resources.</div>
+                </div>
+
+                <div property="termItem" class="term-card" data-sector="Urban Planning" mv-default='{"term":"Land Use & Land Cover (LULC)","definition":"GIS classification of land into categories like residential, commercial, agricultural, or forest, essential for urban growth management.","sector":"Urban Planning"}'>
+                    <div class="term-header"><i class="fas fa-draw-polygon"></i><span class="term-title" property="term">Land Use & Land Cover (LULC)</span><span class="sector-label" property="sector">Urban Planning</span></div>
+                    <div class="term-definition-area" property="definition">GIS classification of land into categories like residential, commercial, agricultural, or forest, essential for urban growth management.</div>
+                </div>
+
+                <!-- LOGISTICS SECTOR -->
+                <div property="termItem" class="term-card" data-sector="Logistics" mv-default='{"term":"Last Mile Delivery Optimization","definition":"Using GIS route planning to optimize final delivery from distribution hubs to customers, reducing fuel costs and delivery times.","sector":"Logistics"}'>
+                    <div class="term-header"><i class="fas fa-truck-fast"></i><span class="term-title" property="term">Last Mile Delivery Optimization</span><span class="sector-label" property="sector">Logistics</span></div>
+                    <div class="term-definition-area" property="definition">Using GIS route planning to optimize final delivery from distribution hubs to customers, reducing fuel costs and delivery times.</div>
+                </div>
+
+                <div property="termItem" class="term-card" data-sector="Logistics" mv-default='{"term":"Service Area Analysis","definition":"GIS modeling of travel time or distance from facilities to determine coverage zones, critical for warehouse and distribution network planning.","sector":"Logistics"}'>
+                    <div class="term-header"><i class="fas fa-clock"></i><span class="term-title" property="term">Service Area Analysis</span><span class="sector-label" property="sector">Logistics</span></div>
+                    <div class="term-definition-area" property="definition">GIS modeling of travel time or distance from facilities to determine coverage zones, critical for warehouse and distribution network planning.</div>
+                </div>
+
+                <!-- ENVIRONMENT SECTOR -->
+                <div property="termItem" class="term-card" data-sector="Environment" mv-default='{"term":"Carbon Sequestration Mapping","definition":"Using GIS to identify areas with high carbon storage potential, supporting environmental offset programs and sustainability reporting.","sector":"Environment"}'>
+                    <div class="term-header"><i class="fas fa-cloud-sun"></i><span class="term-title" property="term">Carbon Sequestration Mapping</span><span class="sector-label" property="sector">Environment</span></div>
+                    <div class="term-definition-area" property="definition">Using GIS to identify areas with high carbon storage potential, supporting environmental offset programs and sustainability reporting.</div>
+                </div>
+
+                <div property="termItem" class="term-card" data-sector="Environment" mv-default='{"term":"Habitat Fragmentation Analysis","definition":"GIS assessment of how development breaks up natural habitats, used in environmental impact studies and conservation planning.","sector":"Environment"}'>
+                    <div class="term-header"><i class="fas fa-tree"></i><span class="term-title" property="term">Habitat Fragmentation Analysis</span><span class="sector-label" property="sector">Environment</span></div>
+                    <div class="term-definition-area" property="definition">GIS assessment of how development breaks up natural habitats, used in environmental impact studies and conservation planning.</div>
+                </div>
+
+                <!-- GENERAL / CROSS-SECTOR -->
+                <div property="termItem" class="term-card" data-sector="General" mv-default='{"term":"Geospatial Artificial Intelligence (GeoAI)","definition":"Combining machine learning with GIS for predictive analytics across real estate valuation, insurance risk, and customer behavior forecasting.","sector":"General"}'>
+                    <div class="term-header"><i class="fas fa-microchip"></i><span class="term-title" property="term">Geospatial Artificial Intelligence (GeoAI)</span><span class="sector-label general" property="sector">General</span></div>
+                    <div class="term-definition-area" property="definition">Combining machine learning with GIS for predictive analytics across real estate valuation, insurance risk, and customer behavior forecasting.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-message">
+           
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // Filter functionality
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        let currentSector = 'all';
+
+        function filterTerms() {
+            const cards = document.querySelectorAll('.term-card');
+            cards.forEach(card => {
+                const cardSector = card.getAttribute('data-sector');
+                if (currentSector === 'all' || cardSector === currentSector) {
+                    card.classList.remove('hidden-filter');
+                } else {
+                    card.classList.add('hidden-filter');
+                }
+            });
+        }
+
+        function updateActiveButton() {
+            filterBtns.forEach(btn => {
+                const btnSector = btn.getAttribute('data-sector');
+                if ((currentSector === 'all' && btnSector === 'all') || btnSector === currentSector) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentSector = btn.getAttribute('data-sector');
+                filterTerms();
+                updateActiveButton();
+            });
+        });
+
+        // Mavo lifecycle - reapply filters after Mavo loads/changes
+        function reapplyFilters() {
+            setTimeout(filterTerms, 50);
+        }
+
+        document.addEventListener("mavo:loaded", reapplyFilters);
+        document.addEventListener("mavo:save", reapplyFilters);
+        document.addEventListener("mavo:modechange", reapplyFilters);
+
+        // Toggle definition visibility
+        function setupToggleListeners() {
+            const app = document.getElementById("glossaryApp");
+            if (!app || !app.mavo) return;
+            const headers = document.querySelectorAll('.term-header');
+            headers.forEach(header => {
+                if (header.getAttribute('data-toggle-bound') === 'true') return;
+                header.setAttribute('data-toggle-bound', 'true');
+                header.addEventListener('click', (e) => {
+                    if (app.mavo.mode !== 'edit') {
+                        const termCard = header.closest('.term-card');
+                        const defArea = termCard?.querySelector('.term-definition-area');
+                        const icon = header.querySelector('i');
+                        if (defArea) {
+                            if (defArea.style.display === 'none') {
+                                defArea.style.display = 'block';
+                            } else {
+                                defArea.style.display = 'none';
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        document.addEventListener("mavo:loaded", setupToggleListeners);
+        document.addEventListener("mavo:modechange", setupToggleListeners);
+        document.addEventListener("DOMContentLoaded", () => setTimeout(setupToggleListeners, 100));
+
+        // Login state logging
+        const observer = new MutationObserver(() => {
+            const isLoggedIn = document.body.classList.contains('mv-logged-in');
+            console.log(isLoggedIn ? "✅ Logged in" : "🔒 Read-only mode");
+        });
+        observer.observe(document.body, { attributes: true });
+    })();
+</script>
+
+<style>
+    .term-card.hidden-filter { display: none; }
+    .filter-btn { cursor: pointer; }
+    .mv-view-mode .term-definition-area { display: block; }
+</style>
+
+</body>
+</html>
