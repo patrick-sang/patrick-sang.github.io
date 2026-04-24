@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en" 
+      mv-app="gisProjects" 
+      mv-storage="https://github.com/patrick-sang/gis-projects-data" 
+      mv-plugins="github,markdown" 
+      mv-autosave="5"
+      mv-github-client-id="c4a3e8f3b9c1d6e8f2a1">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Patrick Sang — GIS Projects Portfolio</title>
+  
+  <!-- Mavo + GitHub -->
+  <script src="https://get.mavo.io/mavo.js"></script>
+  <link rel="stylesheet" href="https://get.mavo.io/mavo.css">
+  
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  
+  <!-- Google Fonts: Libre Baskerville + Open Sans + Nunito (from style.css) -->
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Open+Sans:wght@300;400;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Quill Rich Text Editor -->
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+  
+  <style>
+    /* ========== IMPORTED FROM STYLE.CSS ========== */
+    /********** Template CSS **********/
+    :root {
+        --primary: #06A3DA;
+        --secondary: #34AD54;
+        --light: #EEF9FF;
+        --dark: #091E3E;
+    }
+
+    /*** Heading ***/
+    h1, h2, .fw-bold { font-weight: 800 !important; }
+    h3, h4, .fw-semi-bold { font-weight: 700 !important; }
+    h5, h6, .fw-medium { font-weight: 600 !important; }
+
+    /*** Button ***/
+    .btn {
+        font-family: 'Nunito', sans-serif;
+        font-weight: 600;
+        transition: .5s;
+    }
+
+    .btn-primary, .btn-secondary {
+        color: #FFFFFF;
+        box-shadow: inset 0 0 0 50px transparent;
+    }
+
+    .btn-primary:hover { box-shadow: inset 0 0 0 0 var(--primary); }
+    .btn-secondary:hover { box-shadow: inset 0 0 0 0 var(--secondary); }
+
+    /*** Mavo Bar Styling ***/
+    .mv-bar.mv-ui {
+        background: var(--dark) !important;
+        border-bottom: 2px solid var(--primary) !important;
+        padding: 0.5rem 2rem !important;
+        font-family: 'Nunito', sans-serif !important;
+    }
+    
+    .mv-bar.mv-ui button,
+    .mv-bar.mv-ui .mv-button {
+        background: transparent !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+        color: #fff !important;
+        border-radius: 6px !important;
+        padding: 0.4rem 1rem !important;
+        font-family: 'Nunito', sans-serif !important;
+        font-size: 0.75rem !important;
+        cursor: pointer !important;
+    }
+    
+    .mv-bar.mv-ui button:hover,
+    .mv-bar.mv-ui .mv-button:hover {
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
+    }
+    
+    .mv-bar.mv-ui .mv-login-button {
+        background: linear-gradient(135deg, var(--primary), var(--secondary)) !important;
+        border-color: transparent !important;
+        color: #fff !important;
+        font-weight: bold !important;
+    }
+
+    /*** Section Title ***/
+    .section-title::before {
+        position: absolute;
+        content: "";
+        width: 150px;
+        height: 5px;
+        left: 0;
+        bottom: 0;
+        background: var(--primary);
+        border-radius: 2px;
+    }
+
+    .section-title.text-center::before {
+        left: 50%;
+        margin-left: -75px;
+    }
+
+    /* Body styling from style.css */
+    body {
+        font-family: "Libre Baskerville", serif;
+        font-weight: 400;
+        font-size: 16px;
+        line-height: 30px;
+        color: #ababab;
+        overflow-x: hidden;
+        background: var(--light);
+    }
+
+    a {
+        color: inherit;
+        transition: all 0.3s ease 0s;
+    }
+    a:hover, a:focus {
+        color: #ababab;
+        text-decoration: none;
+        outline: 0 none;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        color: #263722;
+        font-family: "Open Sans", sans-serif;
+        margin: 0;
+        line-height: 1.3;
+    }
+
+    p {
+        margin-bottom: 20px;
+    }
+
+    /* Site Header - from style.css inspiration */
+    .site-header {
+        background: linear-gradient(135deg, var(--dark) 0%, #1a3a5c 100%);
+        padding: 60px 0 40px;
+        text-align: center;
+        color: #fff;
+        border-top: 4px solid var(--primary);
+    }
+
+    .site-header h1 {
+        font-size: 68px;
+        margin-bottom: 25px;
+        position: relative;
+        z-index: 0;
+        font-weight: 900;
+        text-transform: uppercase;
+        color: #fff;
+        font-family: "Open Sans", sans-serif;
+    }
+    
+    .site-header p {
+        font-size: 16px;
+        opacity: 0.9;
+        font-family: "Open Sans", sans-serif;
+    }
+
+    .main-container {
+        max-width: 1400px;
+        margin: -1.5rem auto 0;
+        padding: 0 2rem 3rem;
+        position: relative;
+        z-index: 2;
+    }
+
+    /* Stats Bar */
+    .stats-bar {
+        background: #fff;
+        border-radius: 1.25rem;
+        padding: 1.5rem 2rem;
+        margin: 1.5rem 0 2rem;
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+        gap: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        border: 1px solid #eef2ff;
+    }
+
+    .stat-item { text-align: center; }
+    .stat-number { font-size: 2rem; font-weight: 800; color: var(--primary); display: block; font-family: "Open Sans", sans-serif; }
+    .stat-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* Filter Bar */
+    .filter-bar {
+        background: white;
+        border-radius: 1.25rem;
+        padding: 1rem 1.5rem;
+        margin: 1rem 0 1.5rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+        border: 1px solid #eef2ff;
+    }
+
+    .search-box {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #f8fafc;
+        padding: 0.7rem 1.2rem;
+        border-radius: 60px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .search-box input {
+        background: none;
+        border: none;
+        width: 100%;
+        outline: none;
+        font-family: 'Open Sans', sans-serif;
+        font-size: 0.9rem;
+    }
+
+    .filter-tags {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .filter-tag {
+        padding: 6px 18px;
+        border-radius: 40px;
+        background: #f1f5f9;
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: 600;
+        transition: all 0.2s;
+        color: #1e293b;
+        font-family: 'Open Sans', sans-serif;
+    }
+
+    .filter-tag:hover, .filter-tag.active {
+        background: var(--primary);
+        color: white;
+    }
+
+    /* Projects Grid */
+    .projects-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+        gap: 2rem;
+        margin: 2rem 0;
+    }
+
+    .project-card {
+        background: white;
+        border-radius: 1.25rem;
+        overflow: hidden;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid #eef2ff;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        cursor: pointer;
+    }
+
+    .project-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 35px rgba(0,0,0,0.1);
+    }
+
+    .project-image-area {
+        position: relative;
+        height: 220px;
+        background: linear-gradient(135deg, #e0e7ff 0%, #f1f5f9 100%);
+        overflow: hidden;
+    }
+
+    .project-thumb {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .project-content {
+        padding: 1.5rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .project-type {
+        display: inline-block;
+        background: #eff6ff;
+        color: var(--primary);
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.3rem 0.9rem;
+        border-radius: 30px;
+        width: fit-content;
+        margin-bottom: 0.75rem;
+        font-family: 'Open Sans', sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .project-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        margin: 0 0 0.5rem 0;
+        color: #263722;
+        line-height: 1.3;
+        font-family: "Open Sans", sans-serif;
+    }
+
+    .project-meta {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.75rem;
+        color: #64748b;
+        margin: 0.5rem 0 0.75rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #eef2ff;
+        flex-wrap: wrap;
+        font-family: 'Open Sans', sans-serif;
+    }
+
+    /* Rich text preview styles */
+    .project-description {
+        color: #334155;
+        line-height: 1.6;
+        margin: 0.5rem 0 1rem;
+        flex: 1;
+        font-size: 0.9rem;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        font-family: "Libre Baskerville", serif;
+    }
+    
+    .project-description p { margin-bottom: 0.5rem; }
+    .project-description ul, .project-description ol { padding-left: 1.25rem; margin: 0.5rem 0; }
+    .project-description strong { font-weight: 700; color: #0f172a; }
+    .project-description em { font-style: italic; }
+    .project-description a { color: var(--primary); text-decoration: none; }
+
+    .tech-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 0.75rem 0 1rem;
+    }
+
+    .tech-tag {
+        background: #f1f5f9;
+        padding: 0.25rem 0.85rem;
+        border-radius: 30px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #1e293b;
+        font-family: 'Open Sans', sans-serif;
+    }
+
+    .project-links {
+        display: flex;
+        gap: 12px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+    }
+
+    .project-link {
+        padding: 0.5rem 1rem;
+        border-radius: 40px;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #cbd5e1;
+        background: white;
+        color: #1e293b;
+        transition: all 0.2s;
+        font-family: 'Nunito', sans-serif;
+    }
+
+    .project-link:hover {
+        background: #f8fafc;
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+
+    .admin-inline {
+        margin-top: 1rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #eef2ff;
+        display: flex;
+        gap: 10px;
+    }
+
+    .admin-panel {
+        background: white;
+        border-radius: 1.5rem;
+        padding: 1.75rem;
+        margin: 2rem 0;
+        border: 1px solid #eef2ff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    }
+
+    .admin-panel h3 {
+        font-size: 1.3rem;
+        margin-bottom: 1rem;
+        font-weight: 700;
+        font-family: "Open Sans", sans-serif;
+        color: var(--dark);
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .full-width { grid-column: 1/-1; }
+
+    .field input, .field textarea, .field select {
+        width: 100%;
+        padding: 0.7rem 1rem;
+        border-radius: 0.75rem;
+        border: 1px solid #e2e8f0;
+        font-family: 'Open Sans', sans-serif;
+        background: #fafcff;
+        font-size: 0.9rem;
+    }
+
+    .field label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 0.25rem;
+        display: block;
+        font-family: 'Open Sans', sans-serif;
+    }
+
+    .optional-badge {
+        font-size: 0.7rem;
+        font-weight: normal;
+        color: #64748b;
+        margin-left: 0.5rem;
+    }
+
+    /* Rich Text Editor Container */
+    .rich-editor-container {
+        border: 1px solid #e2e8f0;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        background: white;
+    }
+    
+    #richDescriptionEditor {
+        height: 250px;
+        font-family: 'Libre Baskerville', serif;
+    }
+    
+    .ql-toolbar.ql-snow {
+        border-bottom: 1px solid #e2e8f0;
+        background: #fafcff;
+    }
+    
+    .ql-container.ql-snow {
+        border: none;
+        font-size: 0.9rem;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 0.7rem 1.5rem;
+        border-radius: 60px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: 'Nunito', sans-serif;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(6,163,218,0.3);
+    }
+
+    .btn-sm {
+        padding: 0.4rem 1rem;
+        font-size: 0.75rem;
+        border-radius: 40px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: 'Nunito', sans-serif;
+    }
+
+    .admin-only, .admin-inline { display: none; }
+    body.mv-logged-in .admin-only { display: block; }
+    body.mv-logged-in .admin-inline { display: flex; }
+
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-content {
+        background: white;
+        max-width: 800px;
+        width: 90%;
+        max-height: 85vh;
+        border-radius: 1.5rem;
+        padding: 2rem;
+        overflow-y: auto;
+    }
+
+    .close-modal {
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        color: #64748b;
+        font-family: 'Open Sans', sans-serif;
+    }
+    
+    .modal-description {
+        margin: 15px 0;
+        line-height: 1.6;
+        font-family: "Libre Baskerville", serif;
+    }
+    .modal-description p { margin-bottom: 0.75rem; }
+    .modal-description ul, .modal-description ol { padding-left: 1.5rem; margin: 0.75rem 0; }
+    .modal-description h3, .modal-description h4 { margin: 1rem 0 0.5rem; }
+    .modal-description a { color: var(--primary); text-decoration: none; }
+
+    .footer {
+        background: var(--dark);
+        color: #fff;
+        padding: 40px 0;
+        margin-top: 60px;
+        text-align: center;
+        font-family: 'Open Sans', sans-serif;
+    }
+    
+    .footer a {
+        color: var(--primary);
+        text-decoration: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .projects-container { grid-template-columns: 1fr; }
+        .stats-bar { flex-direction: column; align-items: center; }
+        .filter-bar { flex-direction: column; align-items: stretch; }
+        .site-header h1 { font-size: 40px; }
+        .main-container { padding: 0 1rem 2rem; }
+    }
+    
+    @media (max-width: 480px) {
+        .site-header h1 { font-size: 28px; }
+        .project-image-area { height: 180px; }
+        .project-links { flex-direction: column; }
+        .project-link { justify-content: center; }
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="site-header">
+    <div class="container">
+       
+    </div>
+</div>
+
+<div class="main-container">
+    <div mv-app="gisProjects" 
+         mv-storage="https://github.com/patrick-sang/gis-projects-data" 
+         mv-plugins="github,markdown" 
+         mv-autosave="5" 
+         mv-github-client-id="c4a3e8f3b9c1d6e8f2a1">
+        
+        <!-- Stats Bar -->
+       
+
+        <!-- Search & Filter -->
+        <div class="filter-bar">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search projects by title, description, or technology...">
+            </div>
+            <div class="filter-tags">
+                <span class="filter-tag active" data-filter="all" onclick="setFilter('all')">All</span>
+                <span class="filter-tag" data-filter="GeoAI" onclick="setFilter('GeoAI')">GeoAI</span>
+                <span class="filter-tag" data-filter="Data Engineering" onclick="setFilter('Data Engineering')">Data Engineering</span>
+                <span class="filter-tag" data-filter="Dashboard" onclick="setFilter('Dashboard')">Dashboards</span>
+                <span class="filter-tag" data-filter="Operations" onclick="setFilter('Operations')">Operations</span>
+                <span class="filter-tag" data-filter="Remote Sensing" onclick="setFilter('Remote Sensing')">Remote Sensing</span>
+            </div>
+        </div>
+
+        <!-- Add Button (Admin Only) -->
+        
+        <!-- Projects Grid -->
+        <div class="projects-container" id="projectsGrid" mv-multiple="projects">
+            <!-- Project 1 -->
+            <div class="project-card" data-type="GeoAI" mv-multiple-item>
+                <div class="project-image-area">
+                    <img class="project-thumb" property="thumbnail" src="https://images.unsplash.com/photo-1524661135-423995f22d0f?w=400" alt="Market Expansion">
+                </div>
+                <div class="project-content">
+                    <span class="project-type" property="type">GeoAI / Suitability</span>
+                    <h3 class="project-title" property="title">Data-Driven Market Expansion — Spatial Suitability Model</h3>
+                    <div class="project-meta">
+                        <span><i class="far fa-calendar-alt"></i> <span property="date">2024</span></span>
+                        <span><i class="fas fa-chart-line"></i> 89% accuracy</span>
+                    </div>
+                    <div class="project-description" property="description">Identify and score high-potential expansion locations for PAYGO energy business using spatial ML, demographic and socioeconomic indicators. <strong>Key results:</strong> 89% accuracy, 45% reduction in site selection time.</div>
+                    <div class="tech-tags">
+                        <span class="tech-tag" property="technologies">PostGIS</span>
+                        <span class="tech-tag" property="technologies">Python</span>
+                        <span class="tech-tag" property="technologies">XGBoost</span>
+                        <span class="tech-tag" property="technologies">WorldPop</span>
+                    </div>
+                    <div class="project-links">
+                        <a class="project-link" property="githubUrl" href="#" onclick="event.stopPropagation()"><i class="fab fa-github"></i> GitHub</a>
+                        <a class="project-link" property="demoUrl" href="#" onclick="event.stopPropagation()"><i class="fas fa-external-link-alt"></i> Demo</a>
+                    </div>
+                    <div class="admin-inline">
+                        <button class="btn-sm" mv-action="edit()" style="background:var(--primary); color:white;">Edit</button>
+                        <button class="btn-sm" mv-action="delete()" style="background:#dc2626; color:white;">Delete</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project 2 -->
+            <div class="project-card" data-type="Data Engineering" mv-multiple-item>
+                <div class="project-image-area">
+                    <img class="project-thumb" property="thumbnail" src="https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=400" alt="Spatial Database">
+                </div>
+                <div class="project-content">
+                    <span class="project-type" property="type">Spatial Data Engineering</span>
+                    <h3 class="project-title" property="title">Large-Scale Spatial Database & Hexagon Analytics</h3>
+                    <div class="project-meta">
+                        <span><i class="far fa-calendar-alt"></i> <span property="date">2024</span></span>
+                        <span><i class="fas fa-database"></i> 500K+ records</span>
+                    </div>
+                    <div class="project-description" property="description">Built scalable spatial analytics base for multi-year operational insights using H3 hexagons across 500K+ customer records. <strong>Tech stack:</strong> PostgreSQL, PostGIS, H3 indexing.</div>
+                    <div class="tech-tags">
+                        <span class="tech-tag" property="technologies">PostgreSQL</span>
+                        <span class="tech-tag" property="technologies">PostGIS</span>
+                        <span class="tech-tag" property="technologies">H3</span>
+                        <span class="tech-tag" property="technologies">PySAL</span>
+                    </div>
+                    <div class="project-links">
+                        <a class="project-link" property="githubUrl" href="#" onclick="event.stopPropagation()"><i class="fab fa-github"></i> GitHub</a>
+                    </div>
+                    <div class="admin-inline">
+                        <button class="btn-sm" mv-action="edit()" style="background:var(--primary); color:white;">Edit</button>
+                        <button class="btn-sm" mv-action="delete()" style="background:#dc2626; color:white;">Delete</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project 3 -->
+            <div class="project-card" data-type="Dashboard" mv-multiple-item>
+                <div class="project-image-area">
+                    <img class="project-thumb" property="thumbnail" src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400" alt="GeoDash">
+                </div>
+                <div class="project-content">
+                    <span class="project-type" property="type">Interactive Dashboard</span>
+                    <h3 class="project-title" property="title">GeoDash — Interactive Geospatial Visualization Platform</h3>
+                    <div class="project-meta">
+                        <span><i class="far fa-calendar-alt"></i> <span property="date">2024</span></span>
+                        <span><i class="fas fa-chart-bar"></i> Real-time</span>
+                    </div>
+                    <div class="project-description" property="description">Map-first web platform with SQL query interface, multi-format data loading, and H3 hexagon rendering. <em>Built with FastAPI, DuckDB, MapLibre.</em></div>
+                    <div class="tech-tags">
+                        <span class="tech-tag" property="technologies">FastAPI</span>
+                        <span class="tech-tag" property="technologies">DuckDB</span>
+                        <span class="tech-tag" property="technologies">MapLibre</span>
+                        <span class="tech-tag" property="technologies">H3</span>
+                    </div>
+                    <div class="project-links">
+                        <a class="project-link" property="githubUrl" href="#" onclick="event.stopPropagation()"><i class="fab fa-github"></i> GitHub</a>
+                        <a class="project-link" property="demoUrl" href="#" onclick="event.stopPropagation()"><i class="fas fa-external-link-alt"></i> Live Demo</a>
+                    </div>
+                    <div class="admin-inline">
+                        <button class="btn-sm" mv-action="edit()" style="background:var(--primary); color:white;">Edit</button>
+                        <button class="btn-sm" mv-action="delete()" style="background:#dc2626; color:white;">Delete</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project 4 -->
+            <div class="project-card" data-type="Operations" mv-multiple-item>
+                <div class="project-image-area">
+                    <img class="project-thumb" property="thumbnail" src="https://images.unsplash.com/photo-1580674285054-bed31e145f59?w=400" alt="Vehicle Routing">
+                </div>
+                <div class="project-content">
+                    <span class="project-type" property="type">Spatial Operations</span>
+                    <h3 class="project-title" property="title">Enterprise Vehicle Routing & Last-Mile Optimization</h3>
+                    <div class="project-meta">
+                        <span><i class="far fa-calendar-alt"></i> <span property="date">2024</span></span>
+                        <span><i class="fas fa-truck"></i> 10K+ deliveries</span>
+                    </div>
+                    <div class="project-description" property="description">Scalable VRP solution handling 10,000+ delivery locations across multiple depots - optimized last-mile LPG delivery routes reducing fuel costs by 23%.</div>
+                    <div class="tech-tags">
+                        <span class="tech-tag" property="technologies">Jsprit</span>
+                        <span class="tech-tag" property="technologies">GraphHopper</span>
+                        <span class="tech-tag" property="technologies">Node.js</span>
+                        <span class="tech-tag" property="technologies">PostGIS</span>
+                    </div>
+                    <div class="project-links">
+                        <a class="project-link" property="githubUrl" href="#" onclick="event.stopPropagation()"><i class="fab fa-github"></i> GitHub</a>
+                    </div>
+                    <div class="admin-inline">
+                        <button class="btn-sm" mv-action="edit()" style="background:var(--primary); color:white;">Edit</button>
+                        <button class="btn-sm" mv-action="delete()" style="background:#dc2626; color:white;">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Panel with Rich Text Editor -->
+        <div class="admin-panel admin-only">
+            <h3><i class="fas fa-feather-alt"></i> Add New GIS Project</h3>
+            <div class="form-grid">
+                <div class="field"><label>Project Title *</label><input mv-value="newTitle" id="newTitle" placeholder="Enter project title"></div>
+                <div class="field"><label>Project Type</label><input mv-value="newType" placeholder="GeoAI / Data Engineering / Dashboard"></div>
+                <div class="field"><label>Thumbnail URL <span class="optional-badge">(optional)</span></label><input mv-value="newThumb" placeholder="https://... leave empty for default"></div>
+                <div class="field"><label>Technologies (comma separated)</label><input mv-value="newTech" placeholder="Python, PostGIS, QGIS"></div>
+                <div class="field full-width">
+                    <label>Description <span class="optional-badge">(Rich Text - Bold, Lists, Links)</span></label>
+                    <div class="rich-editor-container">
+                        <div id="richDescriptionEditor"></div>
+                    </div>
+                    <textarea id="hiddenDescription" mv-value="newDescription" style="display:none;"></textarea>
+                </div>
+                <div class="field"><label>GitHub URL <span class="optional-badge">(optional)</span></label><input mv-value="newGithub" placeholder="https://github.com/..."></div>
+                <div class="field"><label>Demo URL <span class="optional-badge">(optional)</span></label><input mv-value="newDemo" placeholder="https://..."></div>
+                <div class="field"><label>Date</label><input mv-value="newDate" placeholder="2024"></div>
+                <button id="publishBtn" class="btn-primary">Publish Project</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Project Modal -->
+<div id="projectModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <img id="modalImage" style="width:100%; border-radius: 1rem; margin-bottom: 20px;">
+        <h2 id="modalTitle" style="font-weight: 800; margin-bottom: 10px; font-family: 'Open Sans', sans-serif;"></h2>
+        <div id="modalDescription" class="modal-description"></div>
+        <div id="modalTech" class="tech-tags"></div>
+        <div id="modalLinks" class="project-links"></div>
+    </div>
+</div>
+
+<footer class="footer">
+   
+</footer>
+
+<script>
+    let currentFilter = 'all';
+    let quillEditor = null;
+    let likes = JSON.parse(localStorage.getItem('gis_likes') || '{}');
+
+    function updateStats() {
+        document.getElementById('totalProjects').innerText = document.querySelectorAll('.project-card').length;
+        document.getElementById('totalTech').innerText = document.querySelectorAll('.tech-tag').length;
+        document.getElementById('totalLikes').innerText = Object.values(likes).reduce((a,b)=>a+b,0);
+    }
+
+    function filterProjects() {
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        document.querySelectorAll('.project-card').forEach(p => {
+            const title = p.querySelector('[property="title"]')?.innerText.toLowerCase() || '';
+            const desc = p.querySelector('[property="description"]')?.innerHTML.toLowerCase() || '';
+            const techs = Array.from(p.querySelectorAll('.tech-tag')).map(t => t.innerText.toLowerCase()).join(' ');
+            const type = p.getAttribute('data-type');
+            const match = (title.includes(term) || desc.includes(term) || techs.includes(term)) && (currentFilter === 'all' || type === currentFilter);
+            p.style.display = match ? 'flex' : 'none';
+        });
+        updateStats();
+    }
+
+    window.setFilter = function(f) {
+        currentFilter = f;
+        document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
+        document.querySelector(`.filter-tag[data-filter="${f}"]`).classList.add('active');
+        filterProjects();
+    };
+
+    function showProjectModal(card) {
+        const img = card.querySelector('.project-thumb')?.src || '';
+        const title = card.querySelector('[property="title"]')?.innerText || '';
+        const descHtml = card.querySelector('[property="description"]')?.innerHTML || '';
+        const techs = Array.from(card.querySelectorAll('.tech-tag')).map(t => t.innerText);
+        const github = card.querySelector('[property="githubUrl"]')?.href || '#';
+        const demo = card.querySelector('[property="demoUrl"]')?.href || '#';
+        document.getElementById('modalImage').src = img;
+        document.getElementById('modalTitle').innerText = title;
+        document.getElementById('modalDescription').innerHTML = descHtml;
+        const tc = document.getElementById('modalTech');
+        tc.innerHTML = '';
+        techs.forEach(t => { let s = document.createElement('span'); s.className = 'tech-tag'; s.innerText = t; tc.appendChild(s); });
+        const ld = document.getElementById('modalLinks');
+        ld.innerHTML = '';
+        if (github && github !== '#') ld.innerHTML += `<a class="project-link" href="${github}" target="_blank"><i class="fab fa-github"></i> GitHub</a>`;
+        if (demo && demo !== '#') ld.innerHTML += `<a class="project-link" href="${demo}" target="_blank"><i class="fas fa-external-link-alt"></i> Demo</a>`;
+        document.getElementById('projectModal').style.display = 'flex';
+    }
+
+    function closeModal() { document.getElementById('projectModal').style.display = 'none'; }
+    window.closeModal = closeModal;
+    window.onclick = (e) => { if (e.target === document.getElementById('projectModal')) closeModal(); };
+
+    document.querySelectorAll('.project-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.admin-inline') || e.target.closest('.project-link') || e.target.closest('.btn-sm')) return;
+            showProjectModal(card);
+        });
+    });
+
+    document.getElementById('searchInput')?.addEventListener('input', filterProjects);
+
+    // Initialize Quill Rich Text Editor
+    if (document.getElementById('richDescriptionEditor')) {
+        quillEditor = new Quill('#richDescriptionEditor', {
+            theme: 'snow',
+            placeholder: 'Write a detailed project description with formatting...\n\nUse bold, italics, bullet lists, numbered lists, links, and more!',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline', 'strike'],
+                    ['blockquote', 'code-block'],
+                    [{ 'header': [1, 2, 3, 4, false] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'script': 'sub'}, { 'script': 'super' }],
+                    [{ 'indent': '-1'}, { 'indent': '+1' }],
+                    ['link', 'clean'],
+                    [{ 'color': [] }, { 'background': [] }]
+                ]
+            }
+        });
+        
+        quillEditor.on('text-change', function() {
+            const html = quillEditor.root.innerHTML;
+            document.getElementById('hiddenDescription').value = html;
+            const event = new Event('input', { bubbles: true });
+            document.getElementById('hiddenDescription').dispatchEvent(event);
+        });
+    }
+
+    // Publish new project
+    const publishBtn = document.getElementById('publishBtn');
+    if (publishBtn) {
+        publishBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const app = document.querySelector('[mv-app="gisProjects"]');
+            if (!app) return;
+            let title = Mavo.get(app, 'newTitle');
+            if (!title?.trim()) { alert('Title required'); return; }
+            
+            let description = Mavo.get(app, 'newDescription') || '';
+            if (!description && quillEditor) description = quillEditor.root.innerHTML || '';
+            
+            let thumb = Mavo.get(app, 'newThumb') || '';
+            let finalThumb = thumb && thumb.trim() ? thumb.trim() : 'https://placehold.co/800x400/e2e8f0/64748b?text=GIS+Project';
+            
+            let newProject = {
+                title: title,
+                type: Mavo.get(app, 'newType') || 'General',
+                thumbnail: finalThumb,
+                technologies: Mavo.get(app, 'newTech') || '',
+                description: description || 'No description provided.',
+                githubUrl: Mavo.get(app, 'newGithub') || '#',
+                demoUrl: Mavo.get(app, 'newDemo') || '#',
+                date: Mavo.get(app, 'newDate') || new Date().getFullYear().toString()
+            };
+            
+            try {
+                await Mavo.Functions.exec(app, `add(projects, ${JSON.stringify(newProject)})`, app);
+                if (quillEditor) quillEditor.root.innerHTML = '';
+                ['newTitle','newType','newThumb','newTech','newDescription','newGithub','newDemo','newDate'].forEach(f => Mavo.set(app, f, ''));
+                setTimeout(() => location.reload(), 500);
+            } catch(err) { alert('Error publishing. Make sure you are logged in with GitHub.'); }
+        });
+    }
+
+    window.addEventListener('load', () => setTimeout(filterProjects, 200));
+</script>
+
+<!-- Mavo Data Schema -->
+<div style="display: none;">
+    <div mv-multiple>
+        <div property="projects" mv-label="GIS Project" mv-default='{"title":"New GIS Project","description":"Project description","type":"General","thumbnail":"","technologies":"GIS,Python","githubUrl":"","demoUrl":"","date":"2024"}'>
+            <div mv-edit-hidden>
+                <input property="title" mv-label="Project Title" />
+                <textarea property="description" mv-label="Description"></textarea>
+                <input property="type" mv-label="Project Type" />
+                <input property="thumbnail" mv-label="Thumbnail URL" />
+                <input property="technologies" mv-label="Technologies" />
+                <input property="githubUrl" mv-label="GitHub URL" />
+                <input property="demoUrl" mv-label="Demo URL" />
+                <input property="date" mv-label="Date" />
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
