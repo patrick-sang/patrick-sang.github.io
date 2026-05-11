@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en" 
+      mv-app="geoBlog" 
+      mv-storage="https://github.com/patrick-sang/blog-posts" 
+      mv-plugins="github,markdown" 
+      mv-autosave="5"
+      mv-github-client-id="c4a3e8f3b9c1d6e8f2a1">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title></title>
+  
+  <script src="https://get.mavo.io/mavo.js"></script>
+  <link rel="stylesheet" href="https://get.mavo.io/mavo.css">
+  <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary: #06A3DA;
+      --secondary: #34AD54;
+      --light: #F8FAFE;
+      --dark: #091E3E;
+      --gray: #334155;
+      --light-gray: #f1f5f9;
+      --border: #e2e8f0;
+      --card-shadow: 0 12px 28px -8px rgba(0,0,0,0.08);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      color: var(--gray);
+      background: var(--light);
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+    h1, h2, h3, h4 { font-family: 'Libre Baskerville', serif; font-weight: 700; color: var(--dark); }
+    
+    .mv-bar.mv-ui {
+      background: var(--dark) !important;
+      border-bottom: 2px solid var(--primary) !important;
+      padding: 0.5rem 1rem !important;
+      z-index: 1020;
+      flex-wrap: wrap;
+    }
+    .mv-bar.mv-ui button, .mv-bar.mv-ui .mv-button {
+      background: transparent !important;
+      border: 1px solid rgba(255,255,255,0.2) !important;
+      color: #fff !important;
+      border-radius: 40px !important;
+      font-size: 0.7rem !important;
+      padding: 0.2rem 0.6rem !important;
+    }
+    
+    .main-nav {
+      background: rgba(9, 30, 62, 0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(6,163,218,0.3);
+      position: sticky;
+      top: 0;
+      z-index: 1010;
+    }
+    .nav-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+    }
+    .nav-logo i { font-size: 1.6rem; color: var(--primary); }
+    .nav-logo span { font-weight: 800; font-size: 1.25rem; color: white; }
+    .nav-links { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .nav-link {
+      color: #eef2ff;
+      text-decoration: none;
+      font-weight: 600;
+      padding: 0.4rem 0.9rem;
+      border-radius: 40px;
+      transition: 0.2s;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-link:hover { background: rgba(6,163,218,0.2); color: white; }
+    
+    .site-header {
+      background: linear-gradient(135deg, var(--dark) 0%, #1a3a5c 100%);
+      padding: 40px 20px;
+      text-align: center;
+      color: white;
+    }
+    .profile-pic {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      border: 4px solid var(--primary);
+      object-fit: cover;
+      margin-bottom: 0.8rem;
+    }
+    .site-header h1 { font-size: 2rem; color: white; margin-bottom: 6px; }
+    .tagline { font-size: 1rem; opacity: 0.9; max-width: 700px; margin: 0 auto 16px; padding: 0 12px; }
+    .btn-outline-light {
+      display: inline-block;
+      padding: 6px 20px;
+      border: 2px solid white;
+      border-radius: 40px;
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      transition: 0.3s;
+      font-size: 0.9rem;
+    }
+    .btn-outline-light:hover { background: var(--primary); border-color: var(--primary); }
+    
+    .main-container {
+      max-width: 1400px;
+      margin: -2rem auto 0;
+      padding: 0 1.5rem 3rem;
+      position: relative;
+      z-index: 2;
+    }
+    .blog-grid {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 2rem;
+      margin-top: 1.5rem;
+    }
+    @media (max-width: 900px) {
+      .blog-grid { grid-template-columns: 1fr; gap: 1.8rem; }
+      .sidebar { order: 2; }
+    }
+    
+    .posts-container {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+    .post-card {
+      background: white;
+      border-radius: 1.25rem;
+      overflow: hidden;
+      box-shadow: var(--card-shadow);
+      transition: 0.25s;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      position: relative;
+    }
+    .post-card:hover { transform: translateY(-5px); box-shadow: 0 20px 30px -12px rgba(0,0,0,0.15); }
+    
+    .expand-hint {
+      position: absolute;
+      bottom: 16px;
+      right: 20px;
+      background: var(--primary);
+      color: white;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 5;
+      pointer-events: none;
+      opacity: 0.9;
+    }
+    .post-card:hover .expand-hint { transform: scale(1.05); background: var(--secondary); }
+    .expand-hint::after {
+      content: "Click anywhere to read full article";
+      position: absolute;
+      bottom: 50px;
+      right: 0;
+      background: #1e293b;
+      color: white;
+      font-size: 0.7rem;
+      padding: 4px 8px;
+      border-radius: 20px;
+      white-space: nowrap;
+      opacity: 0;
+      transition: 0.2s;
+      pointer-events: none;
+      font-family: 'Inter', sans-serif;
+    }
+    .expand-hint:hover::after { opacity: 1; bottom: 45px; }
+    
+    .post-image-area {
+      height: 220px;
+      overflow: hidden;
+      background: #eef2ff;
+      position: relative;
+    }
+    body.mv-logged-in .post-image-area { cursor: pointer; }
+    body.mv-logged-in .post-image-area::after {
+      content: "🖌️ Click to upload image";
+      position: absolute;
+      bottom: 8px;
+      right: 12px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      font-size: 0.65rem;
+      padding: 4px 8px;
+      border-radius: 20px;
+      opacity: 0;
+      transition: 0.2s;
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+    }
+    body.mv-logged-in .post-image-area:hover::after { opacity: 1; }
+    .post-thumb { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
+    .post-card:hover .post-thumb { transform: scale(1.02); }
+    .post-content { padding: 1.25rem; }
+    .post-category {
+      display: inline-block;
+      background: #e8f1ff;
+      color: var(--primary);
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 0.2rem 0.9rem;
+      border-radius: 30px;
+      margin-bottom: 0.6rem;
+      text-transform: uppercase;
+    }
+    .post-title { font-size: 1.3rem; margin-bottom: 0.4rem; line-height: 1.3; }
+    .post-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      font-size: 0.7rem;
+      color: #5b6e8c;
+      border-bottom: 1px solid #eef2ff;
+      padding-bottom: 0.5rem;
+      margin-bottom: 0.6rem;
+    }
+    .post-excerpt {
+      color: #334155;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .tag-cloud { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0; }
+    .tag {
+      background: #f1f5f9;
+      padding: 0.2rem 0.7rem;
+      border-radius: 30px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .tag:hover { background: #e2e8f0; }
+    .action-icons {
+      display: flex;
+      gap: 0.8rem;
+      align-items: center;
+      margin: 10px 0 8px;
+      flex-wrap: wrap;
+    }
+    .stat-icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.75rem;
+      color: #4b5563;
+      transition: 0.2s;
+      padding: 0.3rem 0.5rem;
+      border-radius: 30px;
+    }
+    .stat-icon-btn.liked { color: #e53e3e; }
+    .stat-icon-btn.bookmarked { color: var(--primary); }
+    .admin-inline { display: none; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    body.mv-logged-in .admin-inline { display: flex; }
+    .btn-sm { padding: 0.3rem 0.8rem; border-radius: 40px; border: none; font-weight: 700; cursor: pointer; font-size: 0.7rem; background: var(--primary); color: white; }
+    .btn-sm.danger { background: #dc2626; }
+    
+    .sidebar-widget {
+      background: white;
+      border-radius: 1.5rem;
+      padding: 1.2rem;
+      margin-bottom: 1.8rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    }
+    .sidebar-widget h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .search-box {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border-radius: 60px;
+      border: 1px solid var(--border);
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      font-size: 0.9rem;
+    }
+    .category-list, .recent-list { list-style: none; }
+    .category-list li, .recent-list li { margin-bottom: 10px; }
+    .category-list a, .recent-list a {
+      text-decoration: none;
+      color: var(--gray);
+      font-weight: 500;
+      cursor: pointer;
+      transition: 0.2s;
+      display: inline-block;
+      font-size: 0.9rem;
+    }
+    .category-list a:hover, .recent-list a:hover { color: var(--primary); }
+    .stat-badge {
+      background: var(--light-gray);
+      padding: 0.3rem 0.8rem;
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .admin-panel {
+      background: white;
+      border-radius: 1.5rem;
+      margin: 2rem 0;
+      border: 1px solid #eef2ff;
+    }
+    .admin-header {
+      padding: 1rem 1.2rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 800;
+      background: #fafcff;
+      border-radius: 1.5rem;
+      font-size: 0.95rem;
+      flex-wrap: wrap;
+    }
+    .admin-content { padding: 1.2rem; border-top: 1px solid #eef2ff; display: none; }
+    .admin-panel.open .admin-content { display: block; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+    .full-width { grid-column: 1/-1; }
+    .field input, .field textarea { width: 100%; padding: 0.7rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; font-size: 0.9rem; }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      border: none;
+      padding: 0.7rem 1.5rem;
+      border-radius: 60px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: 0.2s;
+    }
+    .svg-presets { margin-top: 0.8rem; padding: 0.6rem; background: #f8fafc; border-radius: 1rem; }
+    .preset-icons { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+    .preset-svg-item {
+      width: 44px; height: 44px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: 2px solid #e2e8f0; transition: 0.2s; padding: 5px;
+    }
+    .preset-svg-item svg { width: 28px; height: 28px; }
+    .preset-svg-item:hover { border-color: var(--primary); }
+    .thumbnail-preview { max-width: 70px; margin-top: 10px; border-radius: 12px; }
+    .local-upload-btn {
+      margin-top: 8px;
+      background: #f0f4f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 40px;
+      padding: 5px 12px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .svg-insert-panel {
+      margin: 10px 0;
+      background: #f1f5f9;
+      border-radius: 0.75rem;
+      padding: 8px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .svg-insert-panel button {
+      background: white;
+      border: 1px solid #cbd5e1;
+      border-radius: 40px;
+      padding: 5px 12px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: 0.2s;
+    }
+    .svg-insert-panel button:hover { background: var(--primary); color: white; border-color: var(--primary); }
+    
+    .modal {
+      display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85);
+      z-index: 2000; justify-content: center; align-items: center;
+    }
+    .modal-content {
+      background: white;
+      max-width: 800px;
+      width: 93%;
+      max-height: 90vh;
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+      overflow-y: auto;
+      margin: 1rem;
+    }
+    .modal-content img { max-width: 100%; border-radius: 0.75rem; margin-bottom: 0.8rem; }
+    .modal-content h2 { font-size: 1.6rem; margin-top: 0.3rem; }
+    .close-modal { float: right; font-size: 28px; cursor: pointer; font-weight: bold; }
+    .footer { background: var(--dark); color: white; text-align: center; padding: 1.8rem; margin-top: 3rem; font-size: 0.85rem; }
+    .admin-only { display: none; }
+    body.mv-logged-in .admin-only { display: block; }
+    #about-contact-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.8rem;
+      background: white;
+      border-radius: 1.5rem;
+      padding: 1.8rem;
+      margin-top: 2rem;
+    }
+    @media (max-width: 680px) {
+      #about-contact-section { grid-template-columns: 1fr; gap: 1.3rem; padding: 1.3rem; }
+      .post-image-area { height: 180px; }
+      .post-title { font-size: 1.2rem; }
+      .site-header h1 { font-size: 1.8rem; }
+      .nav-container { padding: 0.6rem 1rem; }
+      .sidebar-widget { padding: 1rem; }
+      .modal-content { padding: 1.2rem; }
+      .modal-content h2 { font-size: 1.4rem; }
+      .action-icons { gap: 0.5rem; }
+      .stat-icon-btn { font-size: 0.7rem; }
+      .expand-hint { width: 32px; height: 32px; font-size: 0.9rem; bottom: 12px; right: 12px; }
+    }
+    @media (max-width: 480px) {
+      body { font-size: 15px; }
+      .main-container { padding: 0 1rem 2rem; }
+      .post-content { padding: 1rem; }
+      .post-meta { gap: 0.5rem; }
+      .btn-primary { padding: 0.6rem 1.2rem; font-size: 0.85rem; }
+      .nav-link { padding: 0.3rem 0.7rem; font-size: 0.75rem; }
+      .svg-insert-panel button { padding: 4px 8px; font-size: 0.7rem; }
+      .preset-svg-item { width: 38px; height: 38px; }
+    }
+    @media (max-width: 380px) {
+      .post-title { font-size: 1.1rem; }
+      .tagline { font-size: 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="main-nav">
+  <div class="nav-container">
+    <div class="nav-logo"></div>
+   
+    </div>
+  </div>
+</nav>
+
+<div class="site-header" id="home">
+  <div class="container" style="max-width:1200px; margin:0 auto;">
+    <img class="profile-pic" src="img/toolxox.png" alt="Patrick Sang">
+    
+   </div>
+    <a href="https://patrick-sang.github.io/" class="btn-outline-light" target="_blank"><i class="fab fa-github"></i>Back Home</a>
+  </div>
+</div>
+
+<div class="main-container">
+  <div class="blog-grid">
+    <main class="blog-feed">
+      <div class="posts-container" id="postsContainer">
+        <article mv-multiple="post" class="post-card" mv-multiple-item>
+          <div class="expand-hint" title="Click anywhere to read full article"><i class="fas fa-expand-alt"></i></div>
+          <div class="post-image-area">
+            <img class="post-thumb" property="thumbnail" mv-default="https://images.unsplash.com/photo-1524661135-423995f22d0f?w=600">
+          </div>
+          <div class="post-content">
+            <span class="post-category" property="category">Category</span>
+            <h2 class="post-title" property="title">Title</h2>
+            <div class="post-meta">
+              <span><i class="far fa-user"></i> <span property="author">Patrick Sang</span></span>
+              <span><i class="far fa-calendar-alt"></i> <time property="date">Date</time></span>
+              <span><i class="far fa-clock"></i> <span class="read-time">2 min read</span></span>
+              <span><i class="fas fa-eye"></i> <span class="view-count">0</span> views</span>
+            </div>
+            <div class="post-excerpt" property="excerpt"></div>
+            <div property="fullContent" style="display:none;"></div>
+            <div class="tag-cloud"></div>
+            <div class="action-icons">
+              <button class="stat-icon-btn like-btn"><i class="far fa-heart"></i> <span class="like-count">0</span></button>
+              <button class="stat-icon-btn bookmark-btn"><i class="far fa-bookmark"></i></button>
+              <button class="stat-icon-btn share-twitter"><i class="fab fa-twitter"></i></button>
+              <button class="stat-icon-btn full-post-btn"><i class="fas fa-expand-alt"></i> Read full</button>
+            </div>
+            <div class="admin-inline">
+              <button class="btn-sm" mv-action="edit()">✏️ Edit</button>
+              <button class="btn-sm danger" mv-action="delete()">🗑️ Delete</button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </main>
+
+    <aside class="sidebar">
+      <div class="sidebar-widget">
+        <h3><i class="fas fa-search"></i> Search</h3>
+        <input type="text" id="searchInput" class="search-box" placeholder="Search by title, tags...">
+      </div>
+      <div class="sidebar-widget">
+        <h3><i class="fas fa-folder-tree"></i> Categories</h3>
+        <ul class="category-list" id="categoryList"></ul>
+      </div>
+      <div class="sidebar-widget">
+        <h3><i class="fas fa-fire"></i> Recent Posts</h3>
+        <ul class="recent-list" id="recentPostsList"></ul>
+      </div>
+      <div class="sidebar-widget">
+        <h3><i class="fas fa-chart-simple"></i> Stats</h3>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <span class="stat-badge"><i class="fas fa-layer-group"></i> <span id="totalPosts">0</span> Posts</span>
+          <span class="stat-badge"><i class="fas fa-heart"></i> <span id="totalLikes">0</span> Likes</span>
+          <span class="stat-badge"><i class="fas fa-tags"></i> <span id="totalTags">0</span> Tags</span>
+        </div>
+      </div>
+      <div class="sidebar-widget">
+        <h3><i class="fas fa-envelope"></i> Newsletter</h3>
+        <p style="font-size:0.85rem;">Get latest GIS insights</p>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <input type="email" id="newsletterEmail" placeholder="Your email" style="border-radius:40px; padding:10px; border:1px solid var(--border); font-size:0.9rem;">
+          <button class="btn-primary" id="newsletterSignup" style="padding:8px;">Subscribe →</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="admin-panel admin-only" id="adminPanelTarget">
+    <div class="admin-header" onclick="document.getElementById('adminPanelTarget').classList.toggle('open')">
+      <span><i class="fas fa-feather-alt"></i> ✍️ Write new post (SVG‑enabled editors)</span>
+      <i class="fas fa-chevron-down"></i>
+    </div>
+    <div class="admin-content">
+      <div class="form-grid">
+        <div class="field"><label>Post Title *</label><input mv-value="newTitle" id="newTitle" placeholder="GIS Analysis with SVG"></div>
+        <div class="field"><label>Category</label><input mv-value="newCategory" placeholder="GeoAI / Mapping"></div>
+        <div class="field"><label>Thumbnail URL or upload</label><input mv-value="newThumb" id="newThumb" placeholder="https://..."><img id="thumbPreview" class="thumbnail-preview" style="display:none;"><button type="button" id="localImageUploadBtn" class="local-upload-btn"><i class="fas fa-upload"></i> Upload image</button></div>
+        <div class="full-width svg-presets"><label>🎨 Thumbnail SVG Presets</label><div class="preset-icons"><div class="preset-svg-item" data-svg="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2306A3DA'%3E%3Cpath d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z'/%3E%3C/svg%3E"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#06A3DA"/></svg></div><div class="preset-svg-item" data-svg="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2334AD54'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3C/svg%3E"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#34AD54"/></svg></div></div></div>
+        <div class="field"><label>Tags (comma)</label><input mv-value="newTags" placeholder="gis, python, qgis"></div>
+        <div class="field"><label>Author</label><input mv-value="newAuthor" placeholder="Patrick Sang"></div>
+        <div class="full-width">
+          <label>📄 Short excerpt (preview) – insert SVG icons or upload SVG file</label>
+          <div class="svg-insert-panel">
+            <span style="font-size:0.7rem;">Insert SVG:</span>
+            <button onclick="insertSVGIntoEditor(excerptEditor, '📍')">📍 Pin</button>
+            <button onclick="insertSVGIntoEditor(excerptEditor, '<svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#06A3DA\" stroke-width=\"2\"><path d=\"M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z\"/></svg>')">🗺️ Map pin</button>
+            <button onclick="insertSVGIntoEditor(excerptEditor, '<svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#34AD54\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"10\"/></svg>')">🌍 Globe</button>
+            <button id="uploadSvgExcerptBtn" class="local-upload-btn" style="background:white;"><i class="fas fa-file-upload"></i> Upload SVG</button>
+          </div>
+          <textarea id="excerptEditor" rows="4" placeholder="Write a brief summary..."></textarea>
+        </div>
+        <div class="full-width">
+          <label>📖 Full article (rich text) – SVG upload also available</label>
+          <div class="svg-insert-panel">
+            <button onclick="insertSVGIntoEditor(fullEditor, '📍')">📍 Pin</button>
+            <button onclick="insertSVGIntoEditor(fullEditor, '<svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#06A3DA\" stroke-width=\"2\"><path d=\"M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z\"/></svg>')">🗺️ Map pin</button>
+            <button onclick="insertSVGIntoEditor(fullEditor, '<svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#34AD54\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"10\"/></svg>')">🌍 Globe</button>
+            <button id="uploadSvgFullBtn" class="local-upload-btn" style="background:white;"><i class="fas fa-file-upload"></i> Upload SVG</button>
+          </div>
+          <textarea id="fullContentEditor" rows="8" placeholder="Full article content..."></textarea>
+        </div>
+        <div class="full-width"><button id="publishPostBtn" class="btn-primary"><i class="fas fa-save"></i> Publish Post</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="about-contact-section">
+    
+  </div>
+</div>
+
+<div id="postModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal" id="closeModalBtn">&times;</span>
+    <img id="modalImage" style="width:100%; border-radius:1rem; margin-bottom:1rem;">
+    <h2 id="modalTitle"></h2>
+    <div id="modalFullContent" style="margin: 1rem 0; line-height:1.7;"></div>
+    <div id="modalTags" class="tag-cloud"></div>
+    <button id="pdfExportBtn" class="btn-primary" style="margin-top:20px;"><i class="fas fa-download"></i> Export PDF</button>
+  </div>
+</div>
+
+<footer class="footer"></footer>
+
+<script>
+  // ----- GLOBAL SVG UPLOAD FUNCTION (for both editors) -----
+  function uploadSVGToEditor(editor) {
+    if (!editor) { alert("Editor not ready"); return; }
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/svg+xml';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => { editor.insertContent(ev.target.result); };
+      reader.readAsText(file);
+    };
+    input.click();
+  }
+  window.uploadSVGToEditor = uploadSVGToEditor;
+  window.insertSVGIntoEditor = (editor, content) => { if (editor && editor.insertContent) editor.insertContent(content); else alert("Editor not ready"); };
+
+  let likes = JSON.parse(localStorage.getItem('gis_likes') || '{}');
+  let bookmarks = JSON.parse(localStorage.getItem('gis_bookmarks') || '{}');
+  let views = JSON.parse(localStorage.getItem('gis_views') || '{}');
+  let excerptEditor = null, fullEditor = null;
+
+  function getPostId(card) { let title = card.querySelector('[property="title"]')?.innerText || ''; let date = card.querySelector('[property="date"]')?.innerText || ''; return btoa(title + date).slice(0, 24); }
+  function readingTime(html) { let text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(); return Math.max(1, Math.ceil(text.split(/\s+/).length / 180)); }
+  function showModalForCard(card) {
+    let modal = document.getElementById('postModal');
+    document.getElementById('modalImage').src = card.querySelector('.post-thumb')?.src || '';
+    document.getElementById('modalTitle').innerText = card.querySelector('[property="title"]')?.innerText || 'Article';
+    let fullElem = card.querySelector('[property="fullContent"]');
+    let excerptElem = card.querySelector('[property="excerpt"]');
+    let content = (fullElem && fullElem.innerHTML.trim() !== '') ? fullElem.innerHTML : (excerptElem?.innerHTML || '<p><em>No content available.</em></p>');
+    document.getElementById('modalFullContent').innerHTML = content;
+    let tagsDiv = document.getElementById('modalTags');
+    tagsDiv.innerHTML = '';
+    card.querySelectorAll('.tag').forEach(t => { let clone = t.cloneNode(true); clone.onclick = null; tagsDiv.appendChild(clone); });
+    modal.style.display = 'flex';
+  }
+  function attachHandlersToCard(card) {
+    if (card._handlersAttached) return;
+    card._handlersAttached = true;
+    const id = getPostId(card);
+    let fullElem = card.querySelector('[property="fullContent"]'), excerptElem = card.querySelector('[property="excerpt"]');
+    let contentForRT = (fullElem?.innerHTML || excerptElem?.innerHTML || '');
+    let readSpan = card.querySelector('.read-time');
+    if (readSpan && !readSpan.hasAttribute('data-rt')) { let rt = readingTime(contentForRT); readSpan.innerText = rt + ' min read'; readSpan.setAttribute('data-rt', 'true'); }
+    let tagsProp = card.querySelector('[property="tags"]'), tagContainer = card.querySelector('.tag-cloud');
+    if (tagsProp && tagsProp.innerText.trim() && tagContainer && !tagContainer.hasAttribute('data-rendered')) {
+      tagContainer.innerHTML = '';
+      tagsProp.innerText.split(',').forEach(t => { let span = document.createElement('span'); span.className = 'tag'; span.innerText = t.trim(); span.onclick = (e) => { e.stopPropagation(); let sb = document.getElementById('searchInput'); if(sb) sb.value = t.trim(); filterAndSort(); }; tagContainer.appendChild(span); });
+      tagContainer.setAttribute('data-rendered', 'true');
+    }
+    if (!views[id]) views[id] = 0;
+    if (!card.hasAttribute('data-viewed')) { views[id] += 1; card.setAttribute('data-viewed', 'true'); localStorage.setItem('gis_views', JSON.stringify(views)); }
+    let viewSpan = card.querySelector('.view-count'); if(viewSpan) viewSpan.innerText = views[id];
+    let likeBtn = card.querySelector('.like-btn'), likeSpan = likeBtn.querySelector('.like-count');
+    if (!likes[id]) likes[id] = 0; likeSpan.innerText = likes[id];
+    if (likes[id] > 0) likeBtn.classList.add('liked');
+    likeBtn.onclick = (e) => { e.stopPropagation(); likes[id]++; likeSpan.innerText = likes[id]; likeBtn.classList.add('liked'); localStorage.setItem('gis_likes', JSON.stringify(likes)); updateStats(); };
+    let bookBtn = card.querySelector('.bookmark-btn'); if (bookmarks[id]) bookBtn.classList.add('bookmarked');
+    bookBtn.onclick = (e) => { e.stopPropagation(); bookmarks[id] = !bookmarks[id]; bookBtn.classList.toggle('bookmarked'); localStorage.setItem('gis_bookmarks', JSON.stringify(bookmarks)); };
+    card.querySelector('.share-twitter').onclick = (e) => { e.stopPropagation(); let title = encodeURIComponent(card.querySelector('[property="title"]').innerText); window.open(`https://twitter.com/intent/tweet?text=${title} - GIS Blog&url=${window.location.href}`, '_blank'); };
+    card.querySelector('.full-post-btn').onclick = (e) => { e.stopPropagation(); showModalForCard(card); };
+    card.onclick = (e) => { if (e.target.closest('.like-btn, .bookmark-btn, .share-twitter, .full-post-btn, .admin-inline button, .tag, .expand-hint')) return; showModalForCard(card); };
+  }
+  function bindAllCards() { document.querySelectorAll('.post-card').forEach(card => attachHandlersToCard(card)); }
+  function filterAndSort() { let term = document.getElementById('searchInput').value.toLowerCase(); document.querySelectorAll('.post-card').forEach(p => { let title = p.querySelector('[property="title"]')?.innerText.toLowerCase() || ''; let excerpt = p.querySelector('.post-excerpt')?.innerText.toLowerCase() || ''; let tags = Array.from(p.querySelectorAll('.tag')).map(t => t.innerText.toLowerCase()).join(' '); p.style.display = (title.includes(term) || excerpt.includes(term) || tags.includes(term)) ? 'flex' : 'none'; }); updateRecentPosts(); updateStats(); }
+  function updateRecentPosts() { let visible = Array.from(document.querySelectorAll('.post-card')).filter(p => p.style.display !== 'none'); let sorted = [...visible].sort((a,b) => (b.querySelector('[property="date"]')?.innerText||'').localeCompare(a.querySelector('[property="date"]')?.innerText||'')).slice(0,5); let list = document.getElementById('recentPostsList'); if (!list) return; list.innerHTML = ''; sorted.forEach(p => { let li = document.createElement('li'); li.innerHTML = `<a class="recent-link">${p.querySelector('[property="title"]').innerText}</a>`; li.onclick = () => showModalForCard(p); list.appendChild(li); }); }
+  function updateSidebarCategories() { let cats = new Set(); document.querySelectorAll('.post-card').forEach(p => { let c = p.querySelector('.post-category')?.innerText; if (c) cats.add(c); }); let catList = document.getElementById('categoryList'); if (catList) { catList.innerHTML = ''; [...cats].sort().forEach(c => { let li = document.createElement('li'); li.innerHTML = `<a class="cat-filter">${c}</a>`; li.onclick = () => { document.getElementById('searchInput').value = c; filterAndSort(); }; catList.appendChild(li); }); } }
+  function updateStats() { let visible = Array.from(document.querySelectorAll('.post-card')).filter(p => p.style.display !== 'none'); document.getElementById('totalPosts').innerText = visible.length; let allTags = new Set(); visible.forEach(p => p.querySelectorAll('.tag').forEach(t => allTags.add(t.innerText))); document.getElementById('totalTags').innerText = allTags.size; document.getElementById('totalLikes').innerText = Object.values(likes).reduce((a,b)=>a+b,0); }
+  async function updatePostThumbnail(card, dataURL) { let mvItem = card.closest('[mv-multiple-item]'); if (!mvItem) return; let index = Array.from(mvItem.parentNode.children).indexOf(mvItem); let app = document.querySelector('[mv-app="geoBlog"]'); await Mavo.Functions.exec(app, `set(post, ${index}, 'thumbnail', '${dataURL.replace(/'/g, "\\'")}')`, app); card.querySelector('.post-thumb').src = dataURL; }
+  function attachImageClickUpload() { if (!document.body.classList.contains('mv-logged-in')) return; document.querySelectorAll('.post-card .post-image-area').forEach(area => { if (area.hasAttribute('data-listener')) return; area.setAttribute('data-listener', 'true'); area.addEventListener('click', async (e) => { e.stopPropagation(); let card = area.closest('.post-card'); let input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.onchange = async (ev) => { let file = ev.target.files[0]; if (!file) return; let reader = new FileReader(); reader.onload = async (le) => { try { await updatePostThumbnail(card, le.target.result); alert('Thumbnail updated'); } catch (err) {} }; reader.readAsDataURL(file); }; input.click(); }); }); }
+  function initEditors() { if (typeof tinymce === 'undefined') return; if (tinymce.get('excerptEditor')) tinymce.remove('excerptEditor'); if (tinymce.get('fullContentEditor')) tinymce.remove('fullContentEditor'); tinymce.init({ selector: '#excerptEditor', height: 200, plugins: 'advlist autolink lists link', toolbar: 'undo redo | bold italic | bullist numlist | link', setup: (ed) => { excerptEditor = ed; ed.on('change', () => document.querySelector('[mv-value="newExcerpt"]').value = ed.getContent()); } }); tinymce.init({ selector: '#fullContentEditor', height: 280, plugins: 'advlist autolink lists link image charmap', toolbar: 'undo redo | blocks | bold italic | bullist numlist | link image', images_upload_handler: (blobInfo) => new Promise(resolve => { let reader = new FileReader(); reader.onload = e => resolve(e.target.result); reader.readAsDataURL(blobInfo.blob()); }), setup: (ed) => { fullEditor = ed; ed.on('change', () => document.querySelector('[mv-value="newFullContent"]').value = ed.getContent()); } }); }
+  document.getElementById('publishPostBtn')?.addEventListener('click', async (e) => { e.preventDefault(); let app = document.querySelector('[mv-app="geoBlog"]'); let title = Mavo.get(app, 'newTitle'); if (!title?.trim()) { alert('Title required'); return; } let newPost = { title, category: Mavo.get(app, 'newCategory') || 'General', thumbnail: Mavo.get(app, 'newThumb') || 'https://images.unsplash.com/photo-1524661135-423995f22d0f?w=600', tags: Mavo.get(app, 'newTags') || '', excerpt: excerptEditor ? excerptEditor.getContent() : '', fullContent: fullEditor ? fullEditor.getContent() : '', author: Mavo.get(app, 'newAuthor') || 'Patrick Sang', date: new Date().toISOString().slice(0,19).replace('T',' ') }; try { await Mavo.Functions.exec(app, `add(post, ${JSON.stringify(newPost)})`, app); ['newTitle','newCategory','newThumb','newTags','newExcerpt','newFullContent','newAuthor'].forEach(f => Mavo.set(app, f, '')); if (excerptEditor) excerptEditor.setContent(''); if (fullEditor) fullEditor.setContent(''); document.getElementById('thumbPreview').style.display = 'none'; } catch(err) { alert('Publish error: ' + err); } });
+  document.getElementById('newsletterSignup')?.addEventListener('click', () => { let email = document.getElementById('newsletterEmail')?.value; alert(email?.includes('@') ? `✅ Thanks ${email}!` : 'Valid email please'); });
+  let modal = document.getElementById('postModal'); document.getElementById('closeModalBtn').onclick = () => modal.style.display = 'none'; window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; }; document.getElementById('pdfExportBtn').onclick = () => window.print(); document.getElementById('searchInput')?.addEventListener('input', filterAndSort);
+  let uploadBtn = document.getElementById('localImageUploadBtn'); if (uploadBtn) uploadBtn.onclick = () => { let inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.onchange = e => { let f = e.target.files[0]; let r = new FileReader(); r.onload = ev => { document.getElementById('newThumb').value = ev.target.result; document.getElementById('thumbPreview').src = ev.target.result; document.getElementById('thumbPreview').style.display = 'block'; }; r.readAsDataURL(f); }; inp.click(); }; 
+  document.querySelectorAll('.preset-svg-item').forEach(p => { p.onclick = () => { let val = p.getAttribute('data-svg'); if (val) { document.getElementById('newThumb').value = val; document.getElementById('thumbPreview').src = val; document.getElementById('thumbPreview').style.display = 'block'; } }; });
+  document.getElementById('uploadSvgExcerptBtn')?.addEventListener('click', () => uploadSVGToEditor(excerptEditor)); document.getElementById('uploadSvgFullBtn')?.addEventListener('click', () => uploadSVGToEditor(fullEditor));
+  const observer = new MutationObserver(() => { bindAllCards(); attachImageClickUpload(); updateSidebarCategories(); updateRecentPosts(); updateStats(); }); const postsContainer = document.getElementById('postsContainer'); if (postsContainer) observer.observe(postsContainer, { childList: true, subtree: true });
+  window.addEventListener('load', () => { bindAllCards(); attachImageClickUpload(); updateSidebarCategories(); updateRecentPosts(); updateStats(); if (document.body.classList.contains('mv-logged-in')) initEditors(); });
+  document.addEventListener('mv-load', () => setTimeout(() => { bindAllCards(); attachImageClickUpload(); updateSidebarCategories(); updateRecentPosts(); updateStats(); }, 100));
+  document.addEventListener('mv-rendered', () => setTimeout(() => { bindAllCards(); attachImageClickUpload(); updateSidebarCategories(); updateRecentPosts(); updateStats(); }, 100));
+  new MutationObserver(() => { if (document.body.classList.contains('mv-logged-in') && !tinymce.get('excerptEditor')) initEditors(); }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  document.querySelectorAll('.nav-link').forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); let t = link.getAttribute('data-nav'); if (t === 'home') window.scrollTo({top:0, behavior:'smooth'}); else if (t === 'feed') document.querySelector('.blog-feed')?.scrollIntoView({behavior:'smooth'}); else if (t === 'about') document.getElementById('about-contact-section')?.scrollIntoView({behavior:'smooth'}); else if (t === 'admin') document.getElementById('adminPanelTarget')?.scrollIntoView({behavior:'smooth'}); }));
+</script>
+</body>
+</html>
