@@ -1,0 +1,1934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="Nairobi County Flood Early Warning System - Real-time flood monitoring and alerts">
+    <meta name="theme-color" content="#1e3c72">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Nairobi Flood Early Warning System</title>
+    
+    <!-- External Libraries -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* ========== RESET & BASE STYLES ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1e3c72;
+            --secondary-color: #2a5298;
+            --danger-color: #d32f2f;
+            --warning-color: #ff9800;
+            --success-color: #4caf50;
+            --info-color: #2196f3;
+            --dark-bg: #121212;
+            --light-bg: #f5f5f5;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border-radius: 12px;
+            --shadow: 0 2px 10px rgba(0,0,0,0.1);
+            --transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--light-bg);
+            color: var(--text-primary);
+            transition: var(--transition);
+        }
+
+        body.risk-critical { background: #ffebee; }
+        body.risk-high { background: #fff3e0; }
+        body.risk-medium { background: #fff9c4; }
+        body.risk-low { background: #e8f5e9; }
+
+        /* ========== LOADING SCREEN ========== */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            transition: opacity 0.5s;
+        }
+
+        .loading-screen.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader {
+            position: relative;
+            width: 100px;
+            height: 100px;
+        }
+
+        .water-wave {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 4px solid transparent;
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite;
+        }
+
+        .water-wave:nth-child(2) {
+            border-top-color: #64b5f6;
+            animation: spin 2s linear infinite;
+            opacity: 0.7;
+        }
+
+        .water-wave:nth-child(3) {
+            border-top-color: #bbdefb;
+            animation: spin 2.5s linear infinite;
+            opacity: 0.4;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-screen p {
+            color: white;
+            margin-top: 20px;
+            font-size: 1.2rem;
+        }
+
+        /* ========== NAVIGATION ========== */
+        .navbar {
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 1.8rem;
+            animation: waterPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes waterPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        .emergency-link {
+            background: var(--danger-color);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { background: var(--danger-color); }
+            50% { background: #ff5252; transform: scale(1.05); }
+        }
+
+        .nav-right {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .nav-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.05);
+        }
+
+        .emergency-btn {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .emergency-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(211,47,47,0.5);
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* ========== HERO SECTION ========== */
+        .hero {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            text-align: center;
+            padding: 4rem 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            animation: slideDown 0.8s ease;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary, .btn-secondary, .btn-outline {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: white;
+            color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid white;
+            color: white;
+        }
+
+        .btn-outline:hover {
+            background: white;
+            color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .hero-wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            overflow: hidden;
+            line-height: 0;
+        }
+
+        /* ========== STATUS CARDS ========== */
+        .status-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: -50px auto 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+        }
+
+        .card i {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .card-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+
+        .card-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .card-trend {
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .trend-up { color: var(--danger-color); }
+        .trend-down { color: var(--success-color); }
+
+        .risk-critical { color: var(--danger-color); }
+        .risk-high { color: var(--warning-color); }
+        .risk-medium { color: #fdd835; }
+        .risk-low { color: var(--success-color); }
+
+        /* ========== ALERT BANNER ========== */
+        .alert-banner {
+            background: linear-gradient(90deg, var(--danger-color), #ff5252);
+            color: white;
+            padding: 1rem;
+            margin: 1rem 2rem;
+            border-radius: var(--border-radius);
+            animation: slideDown 0.5s ease;
+        }
+
+        .alert-banner-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .alert-banner-content i {
+            font-size: 2rem;
+            animation: shake 0.5s ease-in-out infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(10deg); }
+            75% { transform: rotate(-10deg); }
+        }
+
+        .alert-banner-text {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .alert-banner button {
+            background: white;
+            color: var(--danger-color);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* ========== MAP CONTAINER ========== */
+        .map-container {
+            margin: 2rem;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        #floodMap {
+            height: 500px;
+            width: 100%;
+        }
+
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .map-btn {
+            background: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .map-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .map-legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            z-index: 1000;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+
+        .legend-item span {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        /* ========== SECTIONS ========== */
+        .alerts-section,
+        .risk-zones-section,
+        .evacuation-section,
+        .weather-section,
+        .report-section {
+            margin: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .section-header h2, 
+        .alerts-section h2,
+        .risk-zones-section h2,
+        .evacuation-section h2,
+        .weather-section h2,
+        .report-section h2 {
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mute-btn {
+            background: var(--text-secondary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .mute-btn:hover {
+            background: var(--danger-color);
+        }
+
+        /* ========== ALERTS ========== */
+        .alerts-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-left: 4px solid;
+            border-radius: 8px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .alert-red {
+            background: #ffebee;
+            border-left-color: var(--danger-color);
+        }
+
+        .alert-orange {
+            background: #fff3e0;
+            border-left-color: var(--warning-color);
+        }
+
+        .alert-yellow {
+            background: #fff9c4;
+            border-left-color: #fdd835;
+        }
+
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .alert-severity {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .alert-time {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .alert-content {
+            margin: 0.5rem 0;
+        }
+
+        .alert-content strong {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .alert-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .alert-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .alert-btn.emergency {
+            background: var(--danger-color);
+        }
+
+        .no-alerts {
+            text-align: center;
+            padding: 2rem;
+            color: var(--success-color);
+        }
+
+        .no-alerts i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        /* ========== ZONES & CENTERS GRID ========== */
+        .zones-grid,
+        .centers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .zone-card,
+        .center-card {
+            background: var(--light-bg);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .zone-card:hover,
+        .center-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow);
+        }
+
+        .zone-card.risk-critical { 
+            background: #ffebee; 
+            border-left: 4px solid var(--danger-color); 
+        }
+        .zone-card.risk-high { 
+            background: #fff3e0; 
+            border-left: 4px solid var(--warning-color); 
+        }
+        .zone-card.risk-medium { 
+            background: #fff9c4; 
+            border-left: 4px solid #fdd835; 
+        }
+        .zone-card.risk-low { 
+            background: #e8f5e9; 
+            border-left: 4px solid var(--success-color); 
+        }
+
+        .zone-card h3,
+        .center-card h3 {
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .zone-risk {
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+
+        .zone-population {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin: 0.5rem 0;
+        }
+
+        .zone-btn,
+        .center-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            width: 100%;
+            transition: var(--transition);
+        }
+
+        .zone-btn:hover,
+        .center-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        /* ========== WEATHER FORECAST ========== */
+        .weather-forecast {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .forecast-day {
+            text-align: center;
+            padding: 1rem;
+            background: var(--light-bg);
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+        }
+
+        .forecast-day:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow);
+        }
+
+        .forecast-date {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .forecast-day i {
+            font-size: 2rem;
+            margin: 0.5rem 0;
+            color: var(--primary-color);
+        }
+
+        .forecast-temp {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+
+        .forecast-rain {
+            color: var(--info-color);
+        }
+
+        /* ========== REPORT FORM ========== */
+        .report-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-group {
+            position: relative;
+        }
+
+        .form-group i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.8rem 1rem 0.8rem 2.5rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30,60,114,0.1);
+        }
+
+        .form-group textarea {
+            padding-top: 0.8rem;
+            resize: vertical;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 0.25rem;
+            color: var(--text-secondary);
+        }
+
+        /* ========== USSD INFO ========== */
+        .ussd-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 2rem;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+        }
+
+        .ussd-content {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            justify-content: center;
+            text-align: center;
+            flex-wrap: wrap;
+        }
+
+        .ussd-content i {
+            font-size: 3rem;
+        }
+
+        .ussd-content h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .ussd-content strong {
+            font-size: 1.2rem;
+        }
+
+        /* ========== FOOTER ========== */
+        footer {
+            background: var(--primary-color);
+            color: white;
+            margin-top: 3rem;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .footer-section h4 {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .footer-section p,
+        .footer-section a {
+            margin: 0.5rem 0;
+            color: #ccc;
+            text-decoration: none;
+            display: block;
+            transition: var(--transition);
+        }
+
+        .footer-section a:hover {
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .social-links a {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .social-links a:hover {
+            background: white;
+            color: var(--primary-color);
+            transform: translateY(-3px);
+        }
+
+        .install-btn {
+            background: white;
+            color: var(--primary-color);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .install-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* ========== TOAST NOTIFICATIONS ========== */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 10000;
+            animation: slideUp 0.3s ease;
+            max-width: 90vw;
+        }
+
+        .toast-success {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .toast-error {
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .toast-info {
+            border-left: 4px solid var(--info-color);
+        }
+
+        .toast-warning {
+            border-left: 4px solid var(--warning-color);
+        }
+
+        /* ========== RESPONSIVE DESIGN ========== */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+                width: 100%;
+                flex-direction: column;
+                gap: 0.5rem;
+                margin-top: 1rem;
+            }
+            
+            .nav-links.active {
+                display: flex;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            .hero h1 {
+                font-size: 1.5rem;
+            }
+            
+            .hero p {
+                font-size: 1rem;
+            }
+            
+            .status-cards {
+                padding: 1rem;
+                margin-top: -30px;
+                gap: 1rem;
+            }
+            
+            .map-container,
+            .alerts-section,
+            .risk-zones-section,
+            .evacuation-section,
+            .weather-section,
+            .report-section,
+            .ussd-info {
+                margin: 1rem;
+            }
+            
+            .zones-grid,
+            .centers-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .alert-banner-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .map-controls {
+                top: 10px;
+                right: 10px;
+            }
+            
+            .map-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 1rem;
+            }
+            
+            .footer-content {
+                padding: 2rem 1rem;
+                gap: 1.5rem;
+            }
+        }
+
+        /* ========== DARK MODE ========== */
+        body.dark-mode {
+            background: var(--dark-bg);
+            color: white;
+        }
+
+        body.dark-mode .card,
+        body.dark-mode .alerts-section,
+        body.dark-mode .risk-zones-section,
+        body.dark-mode .evacuation-section,
+        body.dark-mode .weather-section,
+        body.dark-mode .report-section {
+            background: #1e1e1e;
+            color: white;
+        }
+
+        body.dark-mode .card-label,
+        body.dark-mode .zone-population {
+            color: #aaa;
+        }
+
+        body.dark-mode .form-group input,
+        body.dark-mode .form-group textarea {
+            background: #2d2d2d;
+            border-color: #444;
+            color: white;
+        }
+
+        body.dark-mode .map-legend {
+            background: #1e1e1e;
+            color: white;
+        }
+
+        /* ========== PRINT STYLES ========== */
+        @media print {
+            .navbar,
+            .hero-buttons,
+            .map-controls,
+            .report-section,
+            .ussd-info,
+            footer,
+            .alert-actions {
+                display: none;
+            }
+            
+            body {
+                background: white;
+                color: black;
+            }
+            
+            .card {
+                break-inside: avoid;
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+            
+            .map-container {
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="loadingScreen" class="loading-screen">
+    <div class="loader">
+        <div class="water-wave"></div>
+        <div class="water-wave"></div>
+        <div class="water-wave"></div>
+    </div>
+    <p>Loading Flood Early Warning System...</p>
+</div>
+
+<!-- Navigation -->
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="logo">
+            <i class="fas fa-water"></i>
+            <span>Nairobi Flood EWS</span>
+        </div>
+        <div class="nav-links" id="navLinks">
+            <a href="#" class="active" onclick="return false;"><i class="fas fa-home"></i> <span>Home</span></a>
+            <a href="#" onclick="scrollToDashboard(); return false;"><i class="fas fa-chart-line"></i> <span>Dashboard</span></a>
+            <a href="#" onclick="scrollToMap(); return false;"><i class="fas fa-map"></i> <span>Map</span></a>
+            <a href="#" class="emergency-link" onclick="callEmergency(); return false;"><i class="fas fa-exclamation-triangle"></i> <span>Emergency</span></a>
+        </div>
+        <div class="nav-right">
+            <button class="nav-btn" id="darkModeToggle" onclick="toggleDarkMode()"><i class="fas fa-moon"></i></button>
+            <button class="emergency-btn" onclick="callEmergency()"><i class="fas fa-phone-alt"></i> SOS</button>
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<header class="hero">
+    <div class="hero-content">
+        <h1><i class="fas fa-cloud-rain"></i> Nairobi County Flood Early Warning System</h1>
+        <p>Real-time monitoring • AI Predictions • Emergency Response • Community Protection</p>
+        <div class="hero-buttons">
+            <button class="btn-primary" onclick="scrollToMap()"><i class="fas fa-map-marked-alt"></i> View Flood Map</button>
+            <button class="btn-secondary" onclick="subscribeAlerts()"><i class="fas fa-bell"></i> Get Alerts</button>
+            <button class="btn-outline" onclick="shareSystem()"><i class="fas fa-share-alt"></i> Share</button>
+        </div>
+    </div>
+    <div class="hero-wave">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+            <path fill="#ffffff" fill-opacity="1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,154.7C960,171,1056,181,1152,165.3C1248,149,1344,107,1392,85.3L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+        </svg>
+    </div>
+</header>
+
+<!-- Status Cards -->
+<div class="status-cards">
+    <div class="card">
+        <i class="fas fa-tint"></i>
+        <div class="card-value" id="currentRisk">--</div>
+        <div class="card-label">Overall Risk Level</div>
+        <div class="card-trend" id="riskTrend">--</div>
+    </div>
+    <div class="card">
+        <i class="fas fa-chart-line"></i>
+        <div class="card-value" id="rainfall">-- mm</div>
+        <div class="card-label">Rainfall (24h)</div>
+        <div class="card-trend" id="rainTrend">--</div>
+    </div>
+    <div class="card">
+        <i class="fas fa-water"></i>
+        <div class="card-value" id="riverLevel">-- m</div>
+        <div class="card-label">Nairobi River Level</div>
+        <div class="card-trend" id="riverTrend">--</div>
+    </div>
+    <div class="card">
+        <i class="fas fa-users"></i>
+        <div class="card-value" id="affected">0</div>
+        <div class="card-label">People Affected</div>
+        <div class="card-trend" id="affectedTrend">--</div>
+    </div>
+</div>
+
+<!-- Alert Banner -->
+<div id="alertBanner" class="alert-banner" style="display: none;">
+    <div class="alert-banner-content">
+        <i class="fas fa-exclamation-triangle"></i>
+        <div class="alert-banner-text">
+            <strong>CRITICAL ALERT</strong>
+            <span id="bannerMessage">Immediate evacuation required in some areas</span>
+        </div>
+        <button onclick="scrollToAlerts()">View Details <i class="fas fa-arrow-right"></i></button>
+    </div>
+</div>
+
+<!-- Map Container -->
+<div class="map-container">
+    <div id="floodMap"></div>
+    <div class="map-controls">
+        <button class="map-btn" onclick="toggleHeatmap()" title="Heatmap"><i class="fas fa-fire"></i></button>
+        <button class="map-btn" onclick="toggleRiskZones()" title="Risk Zones"><i class="fas fa-layer-group"></i></button>
+        <button class="map-btn" onclick="locateMe()" title="My Location"><i class="fas fa-location-dot"></i></button>
+        <button class="map-btn" onclick="showEvacuationRoutes()" title="Evacuation Routes"><i class="fas fa-route"></i></button>
+        <button class="map-btn" onclick="resetMap()" title="Reset View"><i class="fas fa-home"></i></button>
+    </div>
+    <div class="map-legend">
+        <div class="legend-item"><span style="background:#d32f2f"></span> Critical - Evacuate Now</div>
+        <div class="legend-item"><span style="background:#ff9800"></span> High - Prepare to Evacuate</div>
+        <div class="legend-item"><span style="background:#ffeb3b"></span> Medium - Monitor Water</div>
+        <div class="legend-item"><span style="background:#4caf50"></span> Low - Normal Conditions</div>
+        <div class="legend-item"><i class="fas fa-building" style="color:#795548"></i> Evacuation Center</div>
+        <div class="legend-item"><i class="fas fa-microchip" style="color:#9c27b0"></i> Sensor Location</div>
+    </div>
+</div>
+
+<!-- Alerts Section -->
+<div class="alerts-section" id="alertsSection">
+    <div class="section-header">
+        <h2><i class="fas fa-bell"></i> Active Alerts</h2>
+        <button class="mute-btn" id="muteAlerts" onclick="toggleMuteAlerts()"><i class="fas fa-volume-up"></i> Mute</button>
+    </div>
+    <div id="alertsList" class="alerts-container"></div>
+</div>
+
+<!-- Risk Zones Section -->
+<div class="risk-zones-section">
+    <h2><i class="fas fa-map-pin"></i> High Risk Zones</h2>
+    <div class="zones-grid" id="riskZonesGrid"></div>
+</div>
+
+<!-- Evacuation Centers -->
+<div class="evacuation-section">
+    <h2><i class="fas fa-building"></i> Evacuation Centers</h2>
+    <div class="centers-grid" id="evacuationCenters"></div>
+</div>
+
+<!-- Weather Forecast -->
+<div class="weather-section">
+    <h2><i class="fas fa-cloud-sun"></i> 48-Hour Forecast</h2>
+    <div id="weatherForecast" class="weather-forecast"></div>
+</div>
+
+<!-- Community Reporting -->
+<div class="report-section">
+    <h2><i class="fas fa-camera"></i> Report Flooding</h2>
+    <div class="report-form">
+        <div class="form-group">
+            <i class="fas fa-map-marker-alt"></i>
+            <input type="text" id="reportLocation" placeholder="Your location or nearest landmark" required>
+        </div>
+        <div class="form-group">
+            <i class="fas fa-comment"></i>
+            <textarea id="reportDescription" placeholder="Describe the situation (e.g., water level, time, etc.)" rows="3" required></textarea>
+        </div>
+        <div class="form-group">
+            <i class="fas fa-image"></i>
+            <input type="file" id="reportImage" accept="image/*">
+            <small>Upload photo evidence (optional)</small>
+        </div>
+        <div class="form-group">
+            <i class="fas fa-phone"></i>
+            <input type="tel" id="reportPhone" placeholder="Phone number for follow-up (optional)">
+        </div>
+        <button class="btn-primary" onclick="submitReport()"><i class="fas fa-paper-plane"></i> Submit Report</button>
+    </div>
+</div>
+
+<!-- USSD Info -->
+<div class="ussd-info">
+    <div class="ussd-content">
+        <i class="fas fa-mobile-alt"></i>
+        <div>
+            <h3>No Internet? Dial <strong>*384*1234#</strong> for Flood Alerts</h3>
+            <p>Works on all phones • Free of charge • Available in English/Swahili</p>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer>
+    <div class="footer-content">
+        <div class="footer-section">
+            <h4><i class="fas fa-phone-alt"></i> Emergency Contacts</h4>
+            <p>Police: <a href="tel:999">999</a> / <a href="tel:112">112</a></p>
+            <p>Red Cross: <a href="tel:1199">1199</a></p>
+            <p>County Disaster: <a href="tel:0800720720">0800 720 720</a></p>
+            <p>Ambulance: <a href="tel:1515">1515</a></p>
+        </div>
+        <div class="footer-section">
+            <h4><i class="fas fa-link"></i> Quick Links</h4>
+            <a href="#" onclick="showSafetyTips(); return false;">Safety Tips</a>
+            <a href="#" onclick="showEvacuationGuide(); return false;">Evacuation Guide</a>
+            <a href="#" onclick="showEmergencyKit(); return false;">Emergency Kit Checklist</a>
+            <a href="#" onclick="showFloodHistory(); return false;">Flood History</a>
+        </div>
+        <div class="footer-section">
+            <h4><i class="fas fa-share-alt"></i> Follow Us</h4>
+            <div class="social-links">
+                <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                <a href="#" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
+        </div>
+        <div class="footer-section">
+            <h4><i class="fas fa-download"></i> Get App</h4>
+            <p>Add to home screen for PWA</p>
+            <button class="install-btn" onclick="installPWA()"><i class="fab fa-chrome"></i> Install App</button>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>© 2024 Nairobi County Government - Flood Early Warning System | Version 2.0</p>
+        <p>Last Updated: <span id="lastUpdate">--</span></p>
+    </div>
+</footer>
+
+<script>
+    // ========== CONFIGURATION ==========
+    const CONFIG = {
+        NAIROBI_CENTER: [-1.286389, 36.817223],
+        RISK_ZONES: [
+            { name: "Mathare Valley", lat: -1.2583, lng: 36.8347, risk: "critical", population: 198000 },
+            { name: "Kibera", lat: -1.3158, lng: 36.7792, risk: "critical", population: 250000 },
+            { name: "Mukuru kwa Njenga", lat: -1.3097, lng: 36.8708, risk: "high", population: 120000 },
+            { name: "Korogocho", lat: -1.2347, lng: 36.8853, risk: "high", population: 150000 },
+            { name: "Pumwani", lat: -1.2806, lng: 36.8292, risk: "medium", population: 75000 }
+        ],
+        EVACUATION_CENTERS: [
+            { name: "Kasarani Stadium", lat: -1.2267, lng: 36.8969, capacity: 60000, contact: "0700123456" },
+            { name: "Nyayo Stadium", lat: -1.3081, lng: 36.8225, capacity: 30000, contact: "0700123457" },
+            { name: "Moi International Sports Centre", lat: -1.2272, lng: 36.8964, capacity: 80000, contact: "0700123458" },
+            { name: "City Stadium", lat: -1.2851, lng: 36.8251, capacity: 15000, contact: "0700123459" }
+        ]
+    };
+
+    // ========== GLOBAL VARIABLES ==========
+    let map;
+    let riskLayers = [];
+    let heatmapLayer;
+    let currentRiskLevel = 'low';
+    let updateInterval = null;
+    let isMuted = false;
+    let userLocation = null;
+    let speechSynthesis = window.speechSynthesis;
+    let previousAlertIds = new Set();
+
+    // ========== INITIALIZATION ==========
+    document.addEventListener('DOMContentLoaded', async () => {
+        console.log('🚀 Initializing Nairobi Flood Early Warning System');
+        
+        // Hide loading screen
+        setTimeout(() => {
+            const loadingScreen = document.getElementById('loadingScreen');
+            if (loadingScreen) {
+                loadingScreen.classList.add('fade-out');
+                setTimeout(() => loadingScreen.style.display = 'none', 500);
+            }
+        }, 1500);
+        
+        // Initialize map
+        initMap();
+        
+        // Request permissions
+        await requestPermissions();
+        
+        // Load initial data
+        loadInitialData();
+        
+        // Start real-time updates
+        startRealTimeUpdates();
+        
+        // Load risk zones and evacuation centers
+        loadRiskZones();
+        loadEvacuationCenters();
+        loadWeatherForecast();
+        
+        // Update timestamp
+        updateTimestamp();
+        
+        console.log('✅ System ready');
+    });
+
+    // ========== MAP FUNCTIONS ==========
+    function initMap() {
+        map = L.map('floodMap').setView(CONFIG.NAIROBI_CENTER, 12);
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CartoDB',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+        
+        // Add evacuation centers to map
+        CONFIG.EVACUATION_CENTERS.forEach(center => {
+            const marker = L.marker([center.lat, center.lng]).addTo(map);
+            marker.bindPopup(`
+                <b>${center.name}</b><br>
+                Capacity: ${center.capacity.toLocaleString()} people<br>
+                Contact: ${center.contact}<br>
+                <button onclick="getDirectionsToCenter(${center.lat}, ${center.lng})">Get Directions</button>
+            `);
+        });
+        
+        // Add risk zones to map
+        loadRiskZonesToMap();
+    }
+
+    function loadRiskZonesToMap() {
+        CONFIG.RISK_ZONES.forEach(zone => {
+            const color = getRiskColor(zone.risk);
+            // Create a circle marker for the zone
+            const circle = L.circle([zone.lat, zone.lng], {
+                radius: 500,
+                color: color,
+                fillColor: color,
+                fillOpacity: 0.3,
+                weight: 2
+            }).addTo(map);
+            
+            circle.bindPopup(`
+                <b>${zone.name}</b><br>
+                Risk Level: ${zone.risk.toUpperCase()}<br>
+                Population: ${zone.population.toLocaleString()}<br>
+                <button onclick="focusOnZone(${zone.lat}, ${zone.lng}, '${zone.name}')">Focus</button>
+            `);
+            
+            riskLayers.push(circle);
+        });
+    }
+
+    function getRiskColor(risk) {
+        const colors = {
+            'critical': '#d32f2f',
+            'high': '#ff9800',
+            'medium': '#ffeb3b',
+            'low': '#4caf50'
+        };
+        return colors[risk] || '#999';
+    }
+
+    function toggleHeatmap() {
+        if (heatmapLayer) {
+            map.removeLayer(heatmapLayer);
+            heatmapLayer = null;
+        } else {
+            const heatData = CONFIG.RISK_ZONES.map(zone => [zone.lat, zone.lng, zone.risk === 'critical' ? 1 : 0.5]);
+            heatmapLayer = L.heatLayer(heatData, { radius: 25, blur: 15, maxZoom: 10 }).addTo(map);
+        }
+    }
+
+    function toggleRiskZones() {
+        riskLayers.forEach(layer => {
+            if (map.hasLayer(layer)) {
+                map.removeLayer(layer);
+            } else {
+                map.addLayer(layer);
+            }
+        });
+    }
+
+    function locateMe() {
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    userLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
+                    map.setView([userLocation.lat, userLocation.lng], 14);
+                    L.marker([userLocation.lat, userLocation.lng]).addTo(map)
+                        .bindPopup('You are here').openPopup();
+                },
+                (error) => {
+                    showToast('Unable to get your location', 'error');
+                }
+            );
+        } else {
+            showToast('Geolocation not supported', 'error');
+        }
+    }
+
+    function showEvacuationRoutes() {
+        if (userLocation) {
+            const nearestCenter = CONFIG.EVACUATION_CENTERS.reduce((nearest, center) => {
+                const distance = Math.hypot(center.lat - userLocation.lat, center.lng - userLocation.lng);
+                return distance < nearest.distance ? { center, distance } : nearest;
+            }, { center: null, distance: Infinity }).center;
+            
+            if (nearestCenter) {
+                window.open(`https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${nearestCenter.lat},${nearestCenter.lng}`, '_blank');
+            }
+        } else {
+            showToast('Please enable location to find evacuation routes', 'info');
+        }
+    }
+
+    function resetMap() {
+        map.setView(CONFIG.NAIROBI_CENTER, 12);
+    }
+
+    function focusOnZone(lat, lng, name) {
+        map.setView([lat, lng], 14);
+        showToast(`Focusing on ${name}`, 'info');
+    }
+
+    function getDirectionsToCenter(lat, lng) {
+        if (userLocation) {
+            window.open(`https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${lat},${lng}`, '_blank');
+        } else {
+            showToast('Please enable location to get directions', 'info');
+        }
+    }
+
+    // ========== DATA LOADING ==========
+    function loadInitialData() {
+        // Simulate loading data
+        setTimeout(() => {
+            updateRiskDisplay('medium');
+            document.getElementById('rainfall').textContent = '32.5 mm';
+            document.getElementById('riverLevel').textContent = '2.8 m';
+            document.getElementById('affected').textContent = '5,234';
+            
+            updateTrends({ riskTrend: 12, rainTrend: 8, riverTrend: 5 });
+            loadActiveAlerts();
+        }, 500);
+    }
+
+    function updateRiskDisplay(riskLevel) {
+        const riskElement = document.getElementById('currentRisk');
+        riskElement.textContent = riskLevel.toUpperCase();
+        riskElement.className = `card-value risk-${riskLevel}`;
+        
+        document.body.classList.remove('risk-low', 'risk-medium', 'risk-high', 'risk-critical');
+        document.body.classList.add(`risk-${riskLevel}`);
+        
+        currentRiskLevel = riskLevel;
+    }
+
+    function updateTrends(trends) {
+        const riskTrend = document.getElementById('riskTrend');
+        const rainTrend = document.getElementById('rainTrend');
+        const riverTrend = document.getElementById('riverTrend');
+        
+        if (riskTrend) {
+            riskTrend.innerHTML = `${trends.riskTrend > 0 ? '↑' : '↓'} ${Math.abs(trends.riskTrend)}%`;
+            riskTrend.className = `card-trend ${trends.riskTrend > 0 ? 'trend-up' : 'trend-down'}`;
+        }
+        
+        if (rainTrend) {
+            rainTrend.innerHTML = `${trends.rainTrend > 0 ? '↑' : '↓'} ${Math.abs(trends.rainTrend)}%`;
+            rainTrend.className = `card-trend ${trends.rainTrend > 0 ? 'trend-up' : 'trend-down'}`;
+        }
+        
+        if (riverTrend) {
+            riverTrend.innerHTML = `${trends.riverTrend > 0 ? '↑' : '↓'} ${Math.abs(trends.riverTrend)}%`;
+            riverTrend.className = `card-trend ${trends.riverTrend > 0 ? 'trend-up' : 'trend-down'}`;
+        }
+    }
+
+    function loadActiveAlerts() {
+        const alerts = [
+            { id: 1, severity: 'RED', zone: 'Mathare Valley', message: 'IMMEDIATE EVACUATION: Water levels rising rapidly. Move to Kasarani Stadium immediately.', timestamp: new Date() },
+            { id: 2, severity: 'ORANGE', zone: 'Kibera', message: 'Prepare for evacuation. Water levels approaching warning threshold.', timestamp: new Date(Date.now() - 30 * 60000) },
+            { id: 3, severity: 'YELLOW', zone: 'Mukuru', message: 'Monitor water levels. Heavy rainfall expected in the next 6 hours.', timestamp: new Date(Date.now() - 2 * 3600000) }
+        ];
+        
+        displayAlerts(alerts);
+    }
+
+    function displayAlerts(alerts) {
+        const container = document.getElementById('alertsList');
+        if (!container) return;
+        
+        if (alerts.length === 0) {
+            container.innerHTML = '<div class="no-alerts"><i class="fas fa-check-circle"></i><p>✅ No active alerts. Stay safe!</p></div>';
+            return;
+        }
+        
+        container.innerHTML = alerts.map(alert => `
+            <div class="alert alert-${alert.severity.toLowerCase()}">
+                <div class="alert-header">
+                    <span class="alert-severity"><i class="fas ${getSeverityIcon(alert.severity)}"></i> ${alert.severity} ALERT</span>
+                    <span class="alert-time">${formatTime(alert.timestamp)}</span>
+                </div>
+                <div class="alert-content">
+                    <strong>📍 ${alert.zone}</strong>
+                    <p>${alert.message}</p>
+                    ${alert.severity === 'RED' ? `
+                        <div class="alert-actions">
+                            <button class="alert-btn" onclick="getEvacuationRoute('${alert.zone}')"><i class="fas fa-route"></i> Get Evacuation Route</button>
+                            <button class="alert-btn emergency" onclick="callEmergency()"><i class="fas fa-phone"></i> Call for Help</button>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('');
+        
+        checkForNewCriticalAlerts(alerts);
+        
+        const criticalAlerts = alerts.filter(a => a.severity === 'RED');
+        const banner = document.getElementById('alertBanner');
+        if (banner) {
+            banner.style.display = criticalAlerts.length > 0 ? 'block' : 'none';
+            if (criticalAlerts.length > 0) {
+                document.getElementById('bannerMessage').textContent = `${criticalAlerts.length} critical alert${criticalAlerts.length > 1 ? 's' : ''}: ${criticalAlerts.map(a => a.zone).join(', ')}`;
+            }
+        }
+    }
+
+    function checkForNewCriticalAlerts(alerts) {
+        const criticalAlerts = alerts.filter(a => a.severity === 'RED');
+        const currentAlertIds = new Set(criticalAlerts.map(a => a.id));
+        
+        criticalAlerts.forEach(alert => {
+            if (!previousAlertIds.has(alert.id)) {
+                triggerEmergencyAlert(alert);
+            }
+        });
+        
+        previousAlertIds = currentAlertIds;
+    }
+
+    function triggerEmergencyAlert(alert) {
+        console.log('🚨 EMERGENCY ALERT:', alert);
+        
+        if (Notification.permission === 'granted' && !isMuted) {
+            new Notification('🚨 FLOOD EMERGENCY', {
+                body: `${alert.severity} Alert: ${alert.message}`,
+                icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23d32f2f"%3E%3Cpath d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"%3E%3C/path%3E%3C/svg%3E',
+                vibrate: [200, 100, 200],
+                requireInteraction: true
+            });
+        }
+        
+        if (!isMuted) {
+            speakAlert(alert.message);
+        }
+        
+        document.title = `⚠️ ALERT: ${alert.zone} - Nairobi Flood EWS`;
+        flashPage();
+        playAlertSound();
+        showToast(alert.message, 'error');
+    }
+
+    function speakAlert(message) {
+        if (!speechSynthesis) return;
+        
+        speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(message);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.9;
+        utterance.pitch = 1.2;
+        speechSynthesis.speak(utterance);
+    }
+
+    function playAlertSound() {
+        const audio = new Audio('data:audio/wav;base64,U3RlYWx0aCBhbmQgU291bmQ=');
+        audio.play().catch(e => console.log('Audio play failed'));
+    }
+
+    function flashPage() {
+        let flashes = 0;
+        const originalBg = document.body.style.backgroundColor;
+        const interval = setInterval(() => {
+            document.body.style.backgroundColor = flashes % 2 === 0 ? '#ff000020' : originalBg;
+            flashes++;
+            if (flashes >= 6) clearInterval(interval);
+        }, 300);
+    }
+
+    function loadRiskZones() {
+        const grid = document.getElementById('riskZonesGrid');
+        if (!grid) return;
+        
+        grid.innerHTML = CONFIG.RISK_ZONES.map(zone => `
+            <div class="zone-card risk-${zone.risk}" onclick="focusOnZone(${zone.lat}, ${zone.lng}, '${zone.name}')">
+                <h3><i class="fas fa-map-marker-alt"></i> ${zone.name}</h3>
+                <div class="zone-risk">Risk: ${zone.risk.toUpperCase()}</div>
+                <div class="zone-population"><i class="fas fa-users"></i> Population: ${zone.population.toLocaleString()}</div>
+                <button class="zone-btn">View on Map <i class="fas fa-arrow-right"></i></button>
+            </div>
+        `).join('');
+    }
+
+    function loadEvacuationCenters() {
+        const grid = document.getElementById('evacuationCenters');
+        if (!grid) return;
+        
+        grid.innerHTML = CONFIG.EVACUATION_CENTERS.map(center => `
+            <div class="center-card">
+                <h3><i class="fas fa-building"></i> ${center.name}</h3>
+                <div><i class="fas fa-users"></i> Capacity: ${center.capacity.toLocaleString()} people</div>
+                <div><i class="fas fa-phone"></i> Contact: ${center.contact}</div>
+                <div><i class="fas fa-clock"></i> Status: Open 24/7</div>
+                <button class="center-btn" onclick="getDirectionsToCenter(${center.lat}, ${center.lng})"><i class="fas fa-directions"></i> Get Directions</button>
+            </div>
+        `).join('');
+    }
+
+    function loadWeatherForecast() {
+        const container = document.getElementById('weatherForecast');
+        if (!container) return;
+        
+        const days = ['Today', 'Tomorrow', 'Day 3'];
+        const conditions = ['rainy', 'cloudy', 'sunny'];
+        const temps = [24, 26, 27];
+        const rains = [70, 40, 20];
+        
+        container.innerHTML = days.map((day, i) => `
+            <div class="forecast-day">
+                <div class="forecast-date">${day}</div>
+                <i class="fas ${getWeatherIcon(conditions[i])}"></i>
+                <div class="forecast-temp">${temps[i]}°C</div>
+                <div class="forecast-rain"><i class="fas fa-tint"></i> ${rains[i]}%</div>
+            </div>
+        `).join('');
+    }
+
+    function getWeatherIcon(condition) {
+        const icons = { sunny: 'fa-sun', cloudy: 'fa-cloud', rainy: 'fa-cloud-rain', storm: 'fa-cloud-showers-heavy' };
+        return icons[condition] || 'fa-cloud-sun';
+    }
+
+    // ========== USER INTERACTIONS ==========
+    async function requestPermissions() {
+        if ('Notification' in window) {
+            await Notification.requestPermission();
+        }
+        
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    userLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
+                    localStorage.setItem('userLocation', JSON.stringify(userLocation));
+                },
+                () => console.log('Location denied')
+            );
+        }
+    }
+
+    function subscribeAlerts() {
+        const phone = prompt('Enter your phone number for SMS alerts:', '07XXXXXXXX');
+        if (phone && /^07\d{8}$|^01\d{8}$/.test(phone)) {
+            showToast(`Subscribed! You'll receive alerts at ${phone}`, 'success');
+        } else if (phone) {
+            showToast('Invalid phone number', 'error');
+        }
+    }
+
+    function submitReport() {
+        const location = document.getElementById('reportLocation')?.value;
+        const description = document.getElementById('reportDescription')?.value;
+        
+        if (!location || !description) {
+            showToast('Please fill in location and description', 'error');
+            return;
+        }
+        
+        showToast('Report submitted! Thank you for helping keep Nairobi safe.', 'success');
+        document.getElementById('reportLocation').value = '';
+        document.getElementById('reportDescription').value = '';
+        document.getElementById('reportImage').value = '';
+        document.getElementById('reportPhone').value = '';
+    }
+
+    function callEmergency() {
+        if (confirm('Emergency services will be contacted. Do you need immediate assistance?')) {
+            window.location.href = 'tel:999';
+        }
+    }
+
+    function shareSystem() {
+        if (navigator.share) {
+            navigator.share({
+                title: 'Nairobi Flood Early Warning System',
+                text: 'Real-time flood monitoring and alerts for Nairobi County',
+                url: window.location.href
+            });
+        } else {
+            showToast('Copy this link to share: ' + window.location.href, 'info');
+        }
+    }
+
+    function getEvacuationRoute(zone) {
+        const center = CONFIG.EVACUATION_CENTERS[0];
+        if (userLocation) {
+            window.open(`https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${center.lat},${center.lng}`, '_blank');
+        } else {
+            showToast('Please enable location to get directions', 'info');
+        }
+    }
+
+    // ========== UTILITY FUNCTIONS ==========
+    function getSeverityIcon(severity) {
+        const icons = { RED: 'fa-exclamation-triangle', ORANGE: 'fa-exclamation-circle', YELLOW: 'fa-bell' };
+        return icons[severity] || 'fa-info-circle';
+    }
+
+    function formatTime(timestamp) {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diff = Math.floor((now - date) / 1000 / 60);
+        
+        if (diff < 1) return 'Just now';
+        if (diff < 60) return `${diff} minute${diff > 1 ? 's' : ''} ago`;
+        if (diff < 1440) return `${Math.floor(diff / 60)} hour${Math.floor(diff / 60) > 1 ? 's' : ''} ago`;
+        return date.toLocaleDateString();
+    }
+
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i><span>${message}</span>`;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'slideUp 0.3s reverse';
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+    }
+
+    function updateTimestamp() {
+        const el = document.getElementById('lastUpdate');
+        if (el) el.textContent = new Date().toLocaleString();
+    }
+
+    function startRealTimeUpdates() {
+        if (updateInterval) clearInterval(updateInterval);
+        updateInterval = setInterval(() => {
+            console.log('🔄 Refreshing data...');
+            updateTimestamp();
+        }, 300000);
+    }
+
+    // ========== UI CONTROLS ==========
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        localStorage.setItem('darkMode', isDark);
+        const btn = document.querySelector('#darkModeToggle i');
+        if (btn) btn.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+    }
+
+    function toggleMobileMenu() {
+        const navLinks = document.getElementById('navLinks');
+        navLinks.classList.toggle('active');
+    }
+
+    function toggleMuteAlerts() {
+        isMuted = !isMuted;
+        const btn = document.getElementById('muteAlerts');
+        btn.innerHTML = isMuted ? '<i class="fas fa-volume-mute"></i> Unmute' : '<i class="fas fa-volume-up"></i> Mute';
+        showToast(`Alerts ${isMuted ? 'muted' : 'unmuted'}`, 'info');
+    }
+
+    function installPWA() {
+        showToast('Add to home screen from browser menu', 'info');
+    }
+
+    // ========== SCROLL FUNCTIONS ==========
+    function scrollToMap() {
+        document.querySelector('.map-container')?.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function scrollToDashboard() {
+        document.querySelector('.status-cards')?.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function scrollToAlerts() {
+        document.getElementById('alertsSection')?.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ========== SAFETY TIPS ==========
+    function showSafetyTips() {
+        alert('🏠 Before Flood:\n• Prepare an emergency kit\n• Know evacuation routes\n• Keep important documents waterproof\n\n🚨 During Flood:\n• Move to higher ground immediately\n• Avoid walking or driving through flood water\n• Turn off electricity and gas\n\n✅ After Flood:\n• Wait for official all-clear\n• Avoid flood water (may be contaminated)\n• Document damage for insurance');
+    }
+
+    function showEvacuationGuide() {
+        alert('🚶‍♂️ EVACUATION GUIDE:\n\n1. Stay calm and alert others\n2. Grab your emergency kit\n3. Follow marked evacuation routes\n4. Go to nearest evacuation center\n5. Help elderly and disabled persons\n6. Do not use elevators\n7. Listen to official announcements\n8. Do not return until safe\n\n📍 Evacuation Centers:\n• Kasarani Stadium\n• Nyayo Stadium\n• Moi International Sports Centre\n• City Stadium');
+    }
+
+    function showEmergencyKit() {
+        alert('🎒 EMERGENCY KIT CHECKLIST:\n\n✓ Water (3 days supply)\n✓ Non-perishable food\n✓ First aid kit\n✓ Flashlight & batteries\n✓ Whistle to signal for help\n✓ Important documents (waterproof)\n✓ Cash & credit cards\n✓ Phone & charger\n✓ Prescription medications\n✓ Blankets & warm clothes\n✓ Multi-tool\n✓ Radio (battery-powered)');
+    }
+
+    function showFloodHistory() {
+        alert('📊 FLOOD HISTORY - NAIROBI:\n\n2023: Mathare Valley - 15,000 displaced\n2022: Kibera - 20,000 displaced\n2021: Mukuru - 8,000 displaced\n2020: Korogocho - 12,000 displaced\n\nMost affected areas:\n1. Mathare Valley\n2. Kibera\n3. Mukuru kwa Njenga\n4. Korogocho\n5. Pumwani');
+    }
+
+    // Load dark mode preference
+    if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+        const btn = document.querySelector('#darkModeToggle i');
+        if (btn) btn.className = 'fas fa-sun';
+    }
+
+    // Load saved location
+    const savedLocation = localStorage.getItem('userLocation');
+    if (savedLocation) {
+        userLocation = JSON.parse(savedLocation);
+    }
+
+    // Expose functions globally
+    window.toggleHeatmap = toggleHeatmap;
+    window.toggleRiskZones = toggleRiskZones;
+    window.locateMe = locateMe;
+    window.showEvacuationRoutes = showEvacuationRoutes;
+    window.resetMap = resetMap;
+    window.focusOnZone = focusOnZone;
+    window.getDirectionsToCenter = getDirectionsToCenter;
+    window.subscribeAlerts = subscribeAlerts;
+    window.submitReport = submitReport;
+    window.callEmergency = callEmergency;
+    window.shareSystem = shareSystem;
+    window.getEvacuationRoute = getEvacuationRoute;
+    window.toggleDarkMode = toggleDarkMode;
+    window.toggleMobileMenu = toggleMobileMenu;
+    window.toggleMuteAlerts = toggleMuteAlerts;
+    window.installPWA = installPWA;
+    window.scrollToMap = scrollToMap;
+    window.scrollToDashboard = scrollToDashboard;
+    window.scrollToAlerts = scrollToAlerts;
+    window.showSafetyTips = showSafetyTips;
+    window.showEvacuationGuide = showEvacuationGuide;
+    window.showEmergencyKit = showEmergencyKit;
+    window.showFloodHistory = showFloodHistory;
+</script>
+</body>
+</html>
