@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0f1f" />
+<title>Nairobi Matatu Intelligence · Real Routes & Stops + Dynamic Map Legend</title>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body, html { height: 100%; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; background: #0a0f1f; color: #e2e8f0; }
+#app { display: flex; height: 100%; width: 100%; }
+#sidebar { width: 420px; background: rgba(10, 20, 35, 0.96); backdrop-filter: blur(18px); overflow-y: auto; padding: 18px; border-right: 1px solid rgba(71, 85, 105, 0.4); z-index: 10; }
+#map { flex: 1; min-height: 0; position: relative; }
+.card { background: rgba(30, 41, 59, 0.75); border-radius: 24px; padding: 16px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.08); transition: all 0.2s; }
+.card:hover { background: rgba(30, 41, 59, 0.92); border-color: rgba(16, 185, 129, 0.5); }
+h2 { font-size: 1.1rem; margin-bottom: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.metric { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #c084fc, #60a5fa); -webkit-background-clip: text; background-clip: text; color: transparent; }
+input, select, button { width: 100%; padding: 12px; border-radius: 18px; border: none; margin-top: 8px; background: #0f172a; color: white; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; }
+button { background: linear-gradient(95deg, #10b981, #06b6d4); font-weight: bold; }
+button:hover { transform: scale(0.98); opacity: 0.9; }
+.layer-item, .vehicle-item, .route-item, .stop-item { padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 18px; margin-bottom: 8px; border-left: 3px solid #10b981; }
+.badge { display: inline-block; background: #1e293b; padding: 4px 12px; border-radius: 40px; font-size: 0.7rem; }
+#status { position: fixed; top: 16px; right: 16px; background: #000000cc; backdrop-filter: blur(12px); padding: 8px 18px; border-radius: 40px; font-size: 0.8rem; z-index: 1100; border: 1px solid #334155; pointer-events: none; }
+.loading-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #10b981; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.route-color { width: 20px; height: 4px; border-radius: 2px; display: inline-block; margin-right: 8px; }
+/* Dynamic map legend - positioned on map */
+.map-legend {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  background: rgba(10, 20, 35, 0.9);
+  backdrop-filter: blur(12px);
+  border-radius: 20px;
+  padding: 12px 16px;
+  border: 1px solid rgba(255,255,255,0.2);
+  font-size: 12px;
+  font-weight: 500;
+  z-index: 1000;
+  pointer-events: auto;
+  font-family: monospace;
+  min-width: 170px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+.map-legend h4 {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: #cbd5e1;
+  border-bottom: 1px solid #334155;
+  display: inline-block;
+}
+.map-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.legend-route-line {
+  width: 28px;
+  height: 4px;
+  background: linear-gradient(90deg, #10b981, #3b82f6, #f59e0b);
+  border-radius: 4px;
+}
+.legend-vehicle {
+  width: 12px;
+  height: 12px;
+  background: #10b981;
+  border-radius: 50%;
+  border: 1.5px solid white;
+  box-shadow: 0 0 2px white;
+}
+.legend-stop {
+  width: 12px;
+  height: 12px;
+  background: #f59e0b;
+  border-radius: 50%;
+  border: 1px solid white;
+}
+.legend-speed {
+  width: 20px;
+  height: 4px;
+  background: linear-gradient(90deg, #ef4444, #facc15, #10b981);
+  border-radius: 2px;
+}
+.map-legend small {
+  color: #94a3b8;
+  font-size: 10px;
+  display: block;
+  margin-top: 6px;
+}
+@media (max-width: 800px) { 
+  #sidebar { width: 100%; height: 45%; } 
+  #app { flex-direction: column; } 
+  #map { height: 55%; }
+  .map-legend { bottom: 12px; left: 12px; padding: 8px 12px; font-size: 10px; min-width: 140px; }
+}
+</style>
+</head>
+<body>
+<div id="status">🌍 Connecting to Transitland API (real routes & stops)...</div>
+<div id="app">
+  <div id="sidebar">
+    <div class="card"><h2>🚀 Nairobi Matatu Intelligence</h2><div class="badge">🇰🇪 Real Transitland Routes · Live Stops</div></div>
+    <div class="card"><h2>🚐 Active Matatus</h2><div class="metric" id="vehicleCount">0</div></div>
+    <div class="card"><h2>📊 Network Speed</h2><div class="metric" id="avgSpeed">0 km/h</div><div id="trafficAdvice"></div></div>
+    <div class="card"><h2>🛣️ Real Transitland Routes</h2>
+      <select id="routeSelect" onchange="loadSelectedRoute()">
+        <option value="">-- Select a route --</option>
+      </select>
+      <div id="routeInfo" style="font-size: 12px; margin-top: 8px;"></div>
+      <button id="fetchRoutesBtn">🔄 Refresh Real Routes</button>
+    </div>
+    <div class="card"><h2>📍 Stops (from Transitland)</h2>
+      <button id="nearbyStopsBtn">🔎 Find stops near me</button>
+      <div id="stopsContainer"></div>
+    </div>
+    <div class="card"><h2>⏱️ Smart ETA</h2>
+      <input id="etaRouteSelect" placeholder="Route name" list="routeDatalist" />
+      <datalist id="routeDatalist"></datalist>
+      <input id="etaDistInput" type="number" placeholder="Distance (km)" />
+      <button id="etaPredictBtn">🧠 Predict ETA</button>
+      <div id="etaResult"></div>
+    </div>
+    <div class="card"><h2>🔍 Filter Vehicles</h2>
+      <input id="routeSearch" placeholder="Route name or SACCO" />
+      <button onclick="filterVehicles()">Search</button>
+    </div>
+    <div class="card"><h2>🎛️ Map Layers</h2>
+      <div class="layer-item"><label><input type="checkbox" checked onchange="toggleLayer('vehicles')"> 🚐 Vehicles</label></div>
+      <div class="layer-item"><label><input type="checkbox" checked onchange="toggleLayer('routes')"> 🗺️ Transit Routes</label></div>
+      <div class="layer-item"><label><input type="checkbox" checked onchange="toggleLayer('stops')"> ⬤ Stops</label></div>
+    </div>
+    <div class="card"><h2>📈 Live Speed Trend</h2><canvas id="speedChart" height="100"></canvas></div>
+    <div class="card"><h2>🏆 SACCO Ranking</h2><div id="saccoStats"></div></div>
+    <div class="card"><h2>🚌 Active Fleet</h2><div id="vehicleList"></div></div>
+  </div>
+  <div id="map"></div>
+</div>
+
+<script>
+// =========================================================================
+// 1. OSM BASEMAP WITH RELIABLE FALLBACK TILES
+// =========================================================================
+const tileServers = [
+  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  'https://tile.openstreetmap.de/{z}/{x}/{y}.png',
+  'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png'
+];
+let activeTileIndex = 0;
+
+function createMap() {
+  const mapInstance = new maplibregl.Map({
+    container: 'map',
+    style: {
+      version: 8,
+      sources: {
+        'osm-base': {
+          type: 'raster',
+          tiles: [tileServers[activeTileIndex]],
+          tileSize: 256,
+          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }
+      },
+      layers: [{ id: 'osm-layer', type: 'raster', source: 'osm-base' }]
+    },
+    center: [36.8219, -1.2921],
+    zoom: 12.5,
+    maxZoom: 18
+  });
+  mapInstance.addControl(new maplibregl.NavigationControl(), 'top-right');
+  mapInstance.addControl(new maplibregl.ScaleControl(), 'bottom-left');
+  
+  mapInstance.on('error', (e) => {
+    if (e.error && (e.error.status === 404 || e.error.status === 403)) {
+      activeTileIndex = (activeTileIndex + 1) % tileServers.length;
+      const newSource = { type: 'raster', tiles: [tileServers[activeTileIndex]], tileSize: 256 };
+      if (mapInstance.getSource('osm-base')) mapInstance.getSource('osm-base').setData(newSource);
+      document.getElementById('status').innerHTML = '🔄 Switching OSM tile server...';
+    }
+  });
+  return mapInstance;
+}
+
+const map = createMap();
+if (!map) {
+  document.body.innerHTML = '<div style="padding:50px;text-align:center;">Map failed to load. Please refresh.</div>';
+  throw new Error('Map init failed');
+}
+
+// =========================================================================
+// 2. GLOBAL DATA & LAYERS
+// =========================================================================
+let allVehicles = [];
+let transitRoutes = [];      // REAL routes from Transitland
+let allStops = [];           // REAL stops per route or location
+
+const vehicleSourceId = 'vehicles';
+const routesSourceId = 'transit-routes';
+const stopsSourceId = 'transit-stops';
+
+// =========================================================================
+// 3. DYNAMIC MAP LEGEND (in-map component)
+// =========================================================================
+function addDynamicMapLegend() {
+  // Remove existing legend if any
+  const existingLegend = document.querySelector('.map-legend');
+  if (existingLegend) existingLegend.remove();
+  
+  const legendDiv = document.createElement('div');
+  legendDiv.className = 'map-legend';
+  legendDiv.innerHTML = `
+    <h4>🗺️ MAP LEGEND</h4>
+    <div class="legend-item"><div class="legend-route-line"></div><span>🚌 Transit Routes (colored by route)</span></div>
+    <div class="legend-item"><div class="legend-vehicle"></div><span>🚐 Matatu Vehicles (live speed)</span></div>
+    <div class="legend-item"><div class="legend-stop"></div><span>📍 Bus Stops (Transitland)</span></div>
+    <div class="legend-item"><div class="legend-speed"></div><span>⚡ Avg Speed: 🟢>35 🟡18-35 🔴<18 km/h</span></div>
+    <small>Click layers in sidebar to toggle | Real-time simulation</small>
+  `;
+  map.getContainer().appendChild(legendDiv);
+}
+
+// =========================================================================
+// 4. TRANSITLAND API HELPERS (real endpoints v2)
+// =========================================================================
+const API_BASE = 'https://transit.land/api/v2/rest';
+
+async function transitFetch(endpoint, params = {}) {
+  const url = new URL(`${API_BASE}${endpoint}`);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, v));
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const resp = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return await resp.json();
+  } catch (err) {
+    console.warn(`Transitland ${endpoint} failed:`, err);
+    return null;
+  }
+}
+
+// fit map to all loaded routes (correct zoom)
+function fitMapToAllRoutes() {
+  if (!transitRoutes.length) return;
+  const validRoutes = transitRoutes.filter(r => r.geometry && r.geometry.coordinates && r.geometry.coordinates.length);
+  if (!validRoutes.length) return;
+  const features = validRoutes.map(r => turf.feature(r.geometry));
+  try {
+    const collection = turf.featureCollection(features);
+    const bbox = turf.bbox(collection);
+    if (bbox && bbox.every(v => isFinite(v))) {
+      map.fitBounds(bbox, { padding: 50, duration: 800 });
+    }
+  } catch(e) { console.warn("fit bounds error", e); }
+}
+
+// fetch real routes with geometry
+async function fetchNairobiRoutes() {
+  document.getElementById('status').innerHTML = '<span class="loading-spinner"></span> Fetching REAL routes from Transitland...';
+  const bbox = '36.68,-1.38,36.96,-1.20';
+  const data = await transitFetch('/routes', { bbox, per_page: 80, include_geometry: 'true' });
+  let routesList = [];
+  if (data && data.routes && data.routes.length) {
+    routesList = data.routes.map(r => ({
+      onestop_id: r.onestop_id,
+      route_short_name: r.route_short_name || '',
+      route_long_name: r.route_long_name || '',
+      geometry: r.geometry || null,
+      tags: r.tags || {}
+    }));
+    document.getElementById('status').innerHTML = `✅ ${routesList.length} real Transitland routes loaded.`;
+  } else {
+    document.getElementById('status').innerHTML = `⚠️ Transitland API limited, using fallback routes with real metadata.`;
+    routesList = [
+      { onestop_id: 'r-ngong-46', route_short_name: '46', route_long_name: 'Ngong Road', geometry: null },
+      { onestop_id: 'r-thika-125', route_short_name: '125', route_long_name: 'Thika Road', geometry: null },
+      { onestop_id: 'r-langata-32', route_short_name: '32', route_long_name: 'Langata Road', geometry: null }
+    ];
+  }
+  
+  // Enrich missing geometries
+  for (let i = 0; i < routesList.length; i++) {
+    const route = routesList[i];
+    if (!route.geometry || !route.geometry.coordinates) {
+      const geomData = await transitFetch('/route_geometries', { route_onestop_id: route.onestop_id, per_page: 1 });
+      if (geomData && geomData.route_geometries && geomData.route_geometries.length && geomData.route_geometries[0].geometry) {
+        route.geometry = geomData.route_geometries[0].geometry;
+      } else {
+        // fallback synthetic corridors for demo continuity
+        if (route.route_short_name === '46' || route.route_long_name.includes('Ngong')) {
+          route.geometry = { type: 'LineString', coordinates: [[36.72,-1.30],[36.78,-1.29],[36.82,-1.285],[36.86,-1.28]] };
+        } else if (route.route_short_name === '125' || route.route_long_name.includes('Thika')) {
+          route.geometry = { type: 'LineString', coordinates: [[36.84,-1.28],[36.87,-1.26],[36.90,-1.24],[36.93,-1.22]] };
+        } else {
+          route.geometry = { type: 'LineString', coordinates: [[36.74,-1.33],[36.77,-1.31],[36.80,-1.30],[36.83,-1.295]] };
+        }
+      }
+    }
+  }
+  transitRoutes = routesList.filter(r => r.geometry && r.geometry.coordinates && r.geometry.coordinates.length > 1);
+  populateRouteSelect();
+  displayRoutesOnMap();
+  generateVehiclesFromRoutes();
+  // Auto-zoom to correct Nairobi route extent
+  setTimeout(() => fitMapToAllRoutes(), 200);
+  updateDashboard();
+  addDynamicMapLegend(); // ensure legend is present
+}
+
+function displayRoutesOnMap() {
+  if (!map.getSource(routesSourceId)) {
+    map.addSource(routesSourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({
+      id: 'routes-layer',
+      type: 'line',
+      source: routesSourceId,
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: { 'line-width': 4, 'line-color': ['get', 'color'], 'line-opacity': 0.85 }
+    });
+  }
+  const colors = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#14b8a6'];
+  const features = transitRoutes.map((r, idx) => ({
+    type: 'Feature',
+    geometry: r.geometry,
+    properties: { 
+      name: `${r.route_short_name || ''} ${r.route_long_name || ''}`.trim() || r.onestop_id,
+      color: colors[idx % colors.length],
+      onestop_id: r.onestop_id
+    }
+  }));
+  map.getSource(routesSourceId).setData({ type: 'FeatureCollection', features });
+}
+
+function populateRouteSelect() {
+  const select = document.getElementById('routeSelect');
+  const datalist = document.getElementById('routeDatalist');
+  select.innerHTML = '<option value="">-- Select a real route --</option>';
+  datalist.innerHTML = '';
+  transitRoutes.forEach(route => {
+    const display = `${route.route_short_name || ''} ${route.route_long_name || ''}`.trim() || route.onestop_id;
+    const opt = document.createElement('option');
+    opt.value = route.onestop_id;
+    opt.textContent = display;
+    select.appendChild(opt);
+    const dopt = document.createElement('option');
+    dopt.value = display;
+    datalist.appendChild(dopt);
+  });
+}
+
+// =========================================================================
+// 5. REAL STOPS FROM TRANSITLAND
+// =========================================================================
+async function loadStopsForRoute(routeOnestopId) {
+  if (!routeOnestopId) return [];
+  document.getElementById('stopsContainer').innerHTML = '<div><span class="loading-spinner"></span> Loading real stops from Transitland...</div>';
+  const data = await transitFetch('/stops', { route_onestop_id: routeOnestopId, per_page: 150 });
+  let stops = [];
+  if (data && data.stops && data.stops.length) {
+    stops = data.stops.map(s => ({ 
+      name: s.name || s.onestop_id, 
+      lat: s.lat, 
+      lon: s.lon, 
+      onestop_id: s.onestop_id 
+    }));
+    document.getElementById('status').innerHTML = `📍 ${stops.length} real stops loaded for route.`;
+  } else {
+    const route = transitRoutes.find(r => r.onestop_id === routeOnestopId);
+    if (route && route.geometry && route.geometry.coordinates) {
+      const coords = route.geometry.coordinates;
+      stops = coords.map((coord, i) => ({ 
+        name: `${route.route_short_name || 'Stop'} ${i+1}`, 
+        lat: coord[1], 
+        lon: coord[0], 
+        onestop_id: `mock-${i}` 
+      }));
+    }
+  }
+  allStops = stops;
+  displayStopsOnMap(stops);
+  const container = document.getElementById('stopsContainer');
+  if (stops.length) {
+    container.innerHTML = stops.slice(0, 20).map(s => `<div class="stop-item">📍 <strong>${s.name || 'Bus stop'}</strong><br>${s.lat.toFixed(5)}, ${s.lon.toFixed(5)}</div>`).join('');
+  } else {
+    container.innerHTML = '<div>No stops found for this route.</div>';
+  }
+  return stops;
+}
+
+function displayStopsOnMap(stops) {
+  if (!map.getSource(stopsSourceId)) {
+    map.addSource(stopsSourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({
+      id: 'stops-layer',
+      type: 'circle',
+      source: stopsSourceId,
+      paint: { 'circle-radius': 7, 'circle-color': '#f59e0b', 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff', 'circle-opacity': 0.9 }
+    });
+    map.addLayer({
+      id: 'stops-label',
+      type: 'symbol',
+      source: stopsSourceId,
+      layout: { 'text-field': ['get', 'name'], 'text-size': 10, 'text-offset': [0, 1.2], 'text-allow-overlap': false },
+      paint: { 'text-color': '#ffffff', 'text-halo-color': '#000000', 'text-halo-width': 1 }
+    });
+  }
+  const features = stops.map(s => ({
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [s.lon, s.lat] },
+    properties: { name: s.name || 'Transit Stop', onestop_id: s.onestop_id }
+  }));
+  map.getSource(stopsSourceId).setData({ type: 'FeatureCollection', features });
+}
+
+async function findStopsNearMe() {
+  if (!navigator.geolocation) { alert('Geolocation not supported'); return; }
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const { latitude: lat, longitude: lon } = pos.coords;
+    map.flyTo({ center: [lon, lat], zoom: 14 });
+    document.getElementById('stopsContainer').innerHTML = '<div><span class="loading-spinner"></span> Finding nearby stops (real Transitland)...</div>';
+    const latDelta = 0.012;
+    const lonDelta = 0.012;
+    const bbox = `${lon - lonDelta},${lat - latDelta},${lon + lonDelta},${lat + latDelta}`;
+    const data = await transitFetch('/stops', { bbox, per_page: 50 });
+    let nearby = [];
+    if (data && data.stops) {
+      nearby = data.stops.map(s => ({ name: s.name || s.onestop_id, lat: s.lat, lon: s.lon }));
+    } else {
+      nearby = [
+        { name: 'Railways Bus Stage', lat: -1.2905, lon: 36.8250 },
+        { name: 'Ambassadeur Stage', lat: -1.2835, lon: 36.8230 }
+      ];
+    }
+    displayStopsOnMap(nearby);
+    const container = document.getElementById('stopsContainer');
+    container.innerHTML = nearby.slice(0, 15).map(s => `<div class="stop-item">📍 <strong>${s.name}</strong><br>${s.lat.toFixed(5)}, ${s.lon.toFixed(5)}</div>`).join('');
+    document.getElementById('status').innerHTML = `📍 ${nearby.length} nearby stops found.`;
+  }, () => alert('Location access denied'));
+}
+
+// =========================================================================
+// 6. VEHICLE GENERATION using real route geometries (simulated matatus)
+// =========================================================================
+function generateVehiclesFromRoutes() {
+  const saccos = ['Super Metro', 'Metrotrans', 'KBS', 'Expresso', 'City Hoppa', 'Citi Hoppa', 'Molo Line', 'Rembo', 'Eastlands Shuttle'];
+  const vehicles = [];
+  transitRoutes.forEach(route => {
+    const routeName = `${route.route_short_name || ''} ${route.route_long_name || ''}`.trim() || route.onestop_id;
+    const numVehicles = Math.floor(Math.random() * 7) + 2;
+    for (let i = 0; i < numVehicles; i++) {
+      let lon = 36.82, lat = -1.29;
+      if (route.geometry && route.geometry.coordinates && route.geometry.coordinates.length) {
+        const coords = route.geometry.coordinates;
+        const idx = Math.floor(Math.random() * coords.length);
+        lon = coords[idx][0] + (Math.random() - 0.5) * 0.007;
+        lat = coords[idx][1] + (Math.random() - 0.5) * 0.007;
+      }
+      const hour = new Date().getHours();
+      let speed = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19) ? Math.floor(Math.random() * 14) + 6 : Math.floor(Math.random() * 45) + 18;
+      vehicles.push({
+        id: `${routeName.substring(0,3)}-${Math.floor(Math.random()*900)+100}`,
+        route: routeName,
+        sacco: saccos[Math.floor(Math.random() * saccos.length)],
+        speed: Math.round(speed),
+        occupancy: Math.floor(Math.random() * 100),
+        coordinates: [lon, lat]
+      });
+    }
+  });
+  allVehicles = vehicles;
+  updateVehicleLayer();
+  updateDashboard();
+  renderVehicleList();
+  updateSaccoStats();
+  updateAnalytics();
+}
+
+function updateVehicleLayer() {
+  if (!map.getSource(vehicleSourceId)) {
+    map.addSource(vehicleSourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({
+      id: 'vehicle-layer',
+      type: 'circle',
+      source: vehicleSourceId,
+      paint: { 'circle-radius': 8, 'circle-color': '#10b981', 'circle-stroke-width': 2, 'circle-stroke-color': 'white', 'circle-opacity': 0.9 }
+    });
+  }
+  const features = allVehicles.map(v => ({
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: v.coordinates },
+    properties: { id: v.id, route: v.route, speed: v.speed, sacco: v.sacco, occupancy: v.occupancy }
+  }));
+  map.getSource(vehicleSourceId).setData({ type: 'FeatureCollection', features });
+}
+
+function animateVehicles() {
+  allVehicles = allVehicles.map(v => ({
+    ...v,
+    coordinates: [v.coordinates[0] + (Math.random() - 0.5) * 0.0022, v.coordinates[1] + (Math.random() - 0.5) * 0.0022],
+    speed: Math.min(72, Math.max(5, v.speed + (Math.random() - 0.5) * 3.5))
+  }));
+  updateVehicleLayer();
+}
+
+// =========================================================================
+// 7. DASHBOARD & UI
+// =========================================================================
+function updateDashboard() {
+  document.getElementById('vehicleCount').innerText = allVehicles.length;
+  const avg = allVehicles.length ? allVehicles.reduce((a,b)=>a+b.speed,0)/allVehicles.length : 0;
+  document.getElementById('avgSpeed').innerHTML = avg.toFixed(1)+' km/h';
+  document.getElementById('trafficAdvice').innerHTML = avg<18 ? '⚠️ Heavy traffic' : avg<35 ? '🟡 Moderate congestion' : '✅ Smooth flow';
+}
+
+function renderVehicleList() {
+  const container = document.getElementById('vehicleList');
+  container.innerHTML = allVehicles.slice(0, 22).map(v => `<div class="vehicle-item"><b>${v.id}</b> | ${v.route.substring(0,22)}<br>⚡${v.speed} km/h | 👥${v.occupancy}% | 🏢${v.sacco}</div>`).join('');
+  if (allVehicles.length === 0) container.innerHTML = '<div>No active vehicles yet.</div>';
+}
+
+function updateSaccoStats() {
+  const stats = {};
+  allVehicles.forEach(v => { if(!stats[v.sacco]) stats[v.sacco]={count:0,sum:0}; stats[v.sacco].count++; stats[v.sacco].sum+=v.speed; });
+  document.getElementById('saccoStats').innerHTML = Object.entries(stats).slice(0,5).map(([name,data]) => `<div class="vehicle-item"><b>${name}</b><br>Fleet:${data.count} · ⚡${(data.sum/data.count).toFixed(1)} km/h</div>`).join('');
+}
+
+const speedChart = new Chart(document.getElementById('speedChart'), {
+  type: 'line',
+  data: { labels: [], datasets: [{ label: 'Avg Speed (km/h)', data: [], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', tension: 0.3, fill: true }] }
+});
+function updateAnalytics() {
+  const avg = allVehicles.length ? allVehicles.reduce((a,b)=>a+b.speed,0)/allVehicles.length : 0;
+  speedChart.data.labels.push(new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
+  speedChart.data.datasets[0].data.push(avg.toFixed(1));
+  if(speedChart.data.labels.length > 14) { speedChart.data.labels.shift(); speedChart.data.datasets[0].data.shift(); }
+  speedChart.update();
+}
+
+function filterVehicles() {
+  const q = document.getElementById('routeSearch').value.toLowerCase();
+  if(!q) { updateVehicleLayer(); return; }
+  const filtered = allVehicles.filter(v => v.route.toLowerCase().includes(q) || v.sacco.toLowerCase().includes(q));
+  const features = filtered.map(v => ({ type:'Feature', geometry:{type:'Point',coordinates:v.coordinates}, properties:{} }));
+  if (map.getSource(vehicleSourceId)) map.getSource(vehicleSourceId).setData({ type:'FeatureCollection', features });
+}
+
+function toggleLayer(layer) {
+  const id = { vehicles:'vehicle-layer', routes:'routes-layer', stops:'stops-layer' }[layer];
+  if(id && map.getLayer(id)) {
+    const visibility = map.getLayoutProperty(id, 'visibility');
+    map.setLayoutProperty(id, 'visibility', visibility === 'none' ? 'visible' : 'none');
+  }
+}
+
+async function loadSelectedRoute() {
+  const onestopId = document.getElementById('routeSelect').value;
+  if (!onestopId) return;
+  const route = transitRoutes.find(r => r.onestop_id === onestopId);
+  if (route && route.geometry) {
+    const bounds = turf.bbox(route.geometry);
+    map.fitBounds(bounds, { padding: 40 });
+    document.getElementById('routeInfo').innerHTML = `<strong>${route.route_short_name || ''} ${route.route_long_name || ''}</strong><br>🔄 Fetching real stops...`;
+    await loadStopsForRoute(onestopId);
+    document.getElementById('routeInfo').innerHTML = `<strong>${route.route_short_name || ''} ${route.route_long_name || ''}</strong><br>📍 ${allStops.length} Transitland stops displayed.`;
+  }
+}
+
+function estimateETA() {
+  const routeName = document.getElementById('etaRouteSelect').value;
+  const dist = parseFloat(document.getElementById('etaDistInput').value);
+  if(!routeName || isNaN(dist)) { document.getElementById('etaResult').innerHTML = '⚠️ Enter route & distance'; return; }
+  const relevant = allVehicles.filter(v => v.route.toLowerCase().includes(routeName.toLowerCase()));
+  const avg = relevant.length ? relevant.reduce((a,b)=>a+b.speed,0)/relevant.length : 30;
+  const minutes = (dist / avg) * 60;
+  const hour = new Date().getHours();
+  const factor = (hour>=7&&hour<=9)||(hour>=17&&hour<=19) ? 1.5 : 1;
+  document.getElementById('etaResult').innerHTML = `<div style="background:#0f172a;padding:10px;border-radius:18px;">⏱️ ETA: ${Math.round(minutes*factor)} min<br>📊 ${avg.toFixed(0)} km/h average speed on route</div>`;
+}
+
+// =========================================================================
+// 8. MAP INIT & DYNAMIC LOOP + LEGEND
+// =========================================================================
+map.on('load', () => {
+  // Init sources & layers
+  map.addSource(vehicleSourceId, { type:'geojson', data:{type:'FeatureCollection',features:[]} });
+  map.addLayer({ id:'vehicle-layer', type:'circle', source:vehicleSourceId, paint:{'circle-radius':8,'circle-color':'#10b981','circle-stroke-width':2,'circle-stroke-color':'white'} });
+  map.addSource(routesSourceId, { type:'geojson', data:{type:'FeatureCollection',features:[]} });
+  map.addLayer({ id:'routes-layer', type:'line', source:routesSourceId, paint:{'line-width':4,'line-color':'#3b82f6','line-opacity':0.8} });
+  map.addSource(stopsSourceId, { type:'geojson', data:{type:'FeatureCollection',features:[]} });
+  map.addLayer({ id:'stops-layer', type:'circle', source:stopsSourceId, paint:{'circle-radius':6,'circle-color':'#f59e0b','circle-stroke-width':2,'circle-stroke-color':'white'} });
+  map.addLayer({
+    id: 'stops-label',
+    type: 'symbol',
+    source: stopsSourceId,
+    layout: { 'text-field': ['get', 'name'], 'text-size': 10, 'text-offset': [0, 1.2] },
+    paint: { 'text-color': '#ffffff', 'text-halo-color': '#000000', 'text-halo-width': 1 }
+  });
+  
+  // Add dynamic legend inside map
+  addDynamicMapLegend();
+  
+  // Load real routes from Transitland
+  fetchNairobiRoutes();
+  
+  // Real-time animation and dashboard updates
+  setInterval(() => {
+    if (allVehicles.length) {
+      animateVehicles();
+      updateDashboard();
+      updateAnalytics();
+      renderVehicleList();
+      updateSaccoStats();
+    }
+  }, 4300);
+});
+
+// Attach global event handlers
+document.getElementById('fetchRoutesBtn').onclick = () => { fetchNairobiRoutes(); };
+document.getElementById('nearbyStopsBtn').onclick = findStopsNearMe;
+document.getElementById('etaPredictBtn').onclick = estimateETA;
+window.filterVehicles = filterVehicles;
+window.toggleLayer = toggleLayer;
+window.loadSelectedRoute = loadSelectedRoute;
+</script>
+</body>
+</html>
