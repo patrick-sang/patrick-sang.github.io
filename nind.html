@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0f1f" />
+<title>Nairobi Matatu Intelligence · OSM + Transitland + Enhanced Geospatial Suite</title>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body, html { height: 100%; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; background: #0a0f1f; color: #e2e8f0; }
+#app { display: flex; height: 100%; width: 100%; }
+#sidebar { width: 440px; background: rgba(10, 20, 35, 0.96); backdrop-filter: blur(18px); overflow-y: auto; padding: 18px; border-right: 1px solid rgba(71, 85, 105, 0.4); z-index: 10; scrollbar-width: thin; }
+#map { flex: 1; min-height: 0; position: relative; }
+.card { background: rgba(30, 41, 59, 0.75); border-radius: 24px; padding: 16px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.08); transition: all 0.2s; }
+.card:hover { background: rgba(30, 41, 59, 0.9); border-color: rgba(16, 185, 129, 0.4); }
+h2 { font-size: 1.05rem; margin-bottom: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; letter-spacing: -0.2px; }
+.metric { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #c084fc, #60a5fa); -webkit-background-clip: text; background-clip: text; color: transparent; }
+input, select, button { width: 100%; padding: 12px; border-radius: 18px; border: none; margin-top: 8px; background: #0f172a; color: white; font-size: 0.85rem; cursor: pointer; transition: 0.1s; }
+button { background: linear-gradient(95deg, #10b981, #06b6d4); font-weight: bold; }
+button:hover { transform: scale(0.98); opacity: 0.9; }
+.layer-item, .vehicle-item, .route-item, .stop-item { padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 18px; margin-bottom: 8px; border-left: 3px solid #10b981; font-size: 0.85rem; }
+.badge { display: inline-block; background: #1e293b; padding: 4px 12px; border-radius: 40px; font-size: 0.7rem; }
+#status { position: fixed; top: 16px; right: 16px; background: #000000cc; backdrop-filter: blur(12px); padding: 8px 18px; border-radius: 40px; font-size: 0.75rem; z-index: 1100; border: 1px solid #334155; font-weight: 500; }
+.loading-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #10b981; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.route-color { width: 20px; height: 4px; border-radius: 2px; display: inline-block; margin-right: 8px; }
+.basemap-selector { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.basemap-btn { flex: 1; background: #0f172a; padding: 8px; border-radius: 32px; font-size: 0.75rem; text-align: center; cursor: pointer; border: 1px solid #334155; }
+.basemap-btn.active { background: #10b981; border-color: #10b981; color: white; }
+.trip-row { display: flex; gap: 8px; margin-top: 8px; }
+.trip-row select { flex: 1; margin-top: 0; }
+.poi-item { padding: 6px 0; font-size: 0.75rem; border-bottom: 1px solid #334155; }
+.incident-marker { font-weight: bold; }
+@media (max-width: 800px) { #sidebar { width: 100%; height: 45%; } #app { flex-direction: column; } #map { height: 55%; } }
+</style>
+</head>
+<body>
+<div id="status">🗺️ Initializing enhanced Nairobi Transit Suite...</div>
+<div id="app">
+  <div id="sidebar">
+    <div class="card"><h2>🚀 Nairobi Matatu Intelligence</h2><div class="badge">🇰🇪 OSM · Transitland · Routing · POI · Satellites</div></div>
+    <div class="card"><h2>🚐 Active Matatus</h2><div class="metric" id="vehicleCount">0</div></div>
+    <div class="card"><h2>📊 Network Speed</h2><div class="metric" id="avgSpeed">0 km/h</div><div id="trafficAdvice"></div></div>
+    
+    <!-- NEW: BASEMAP PRODUCTS (Satellite, Terrain, Standard) -->
+    <div class="card"><h2>🛰️ Map Products · Basemap Switcher</h2>
+      <div class="basemap-selector" id="basemapSelector">
+        <div data-basemap="osm" class="basemap-btn active">🗺️ OSM Standard</div>
+        <div data-basemap="satellite" class="basemap-btn">🛰️ ESRI Satellite</div>
+        <div data-basemap="terrain" class="basemap-btn">⛰️ Stamen Terrain</div>
+      </div>
+      <div style="font-size: 11px; margin-top: 8px; opacity: 0.7;">📡 High-res satellite & terrain layers</div>
+    </div>
+
+    <div class="card"><h2>🛣️ Transitland Routes</h2>
+      <select id="routeSelect" onchange="loadSelectedRoute()">
+        <option value="">-- Select a route --</option>
+      </select>
+      <div id="routeInfo" style="font-size: 12px; margin-top: 8px;"></div>
+      <button id="fetchRoutesBtn">🔄 Refresh Routes</button>
+    </div>
+    <div class="card"><h2>📍 Stops (from Transitland)</h2>
+      <button id="nearbyStopsBtn">🔎 Find stops near me</button>
+      <div id="stopsContainer"></div>
+    </div>
+    
+    <!-- NEW: TRIP PLANNER (OSRM routing product) -->
+    <div class="card"><h2>🧭 Trip Planner · OSRM Routing</h2>
+      <div class="trip-row"><select id="startStopSelect"><option value="">📍 From stop</option></select><select id="endStopSelect"><option value="">🏁 To stop</option></select></div>
+      <button id="planRouteBtn">🚗 Plan Route (Driving)</button>
+      <div id="routeSummary" style="font-size: 12px; margin-top: 6px;"></div>
+    </div>
+
+    <!-- NEW: LIVE POI (Points of Interest from OSM) -->
+    <div class="card"><h2>📍 Nearby Points of Interest</h2>
+      <button id="searchPoiBtn">🏪 Find Stages / Hospitals / Markets</button>
+      <div id="poiContainer" style="max-height: 140px; overflow-y: auto;"></div>
+    </div>
+
+    <!-- NEW: TRAFFIC INCIDENTS (Simulated but value-add map layer) -->
+    <div class="card"><h2>⚠️ Live Incidents & Road Alerts</h2>
+      <button id="refreshIncidentsBtn">🔄 Refresh Incidents (simulated)</button>
+      <div id="incidentList"></div>
+    </div>
+
+    <div class="card"><h2>⏱️ Smart ETA</h2>
+      <input id="etaRouteSelect" placeholder="Route name" list="routeDatalist" />
+      <datalist id="routeDatalist"></datalist>
+      <input id="etaDistInput" type="number" placeholder="Distance (km)" />
+      <button id="etaPredictBtn">🧠 Predict ETA</button>
+      <div id="etaResult"></div>
+    </div>
+    <div class="card"><h2>🔍 Filter Vehicles</h2>
+      <input id="routeSearch" placeholder="Route name or SACCO" />
+      <button onclick="filterVehicles()">Search</button>
+    </div>
+    <div class="card"><h2>🎛️ Map Layers</h2>
+      <div class="layer-item"><label><input type="checkbox" checked onchange="toggleLayer('vehicles')"> 🚐 Vehicles</label></div>
+      <div class="layer-item"><label><input type="checkbox" checked onchange="toggleLayer('routes')"> 🗺️ Transit Routes</label></div>
+      <div class="layer-item"><label><input type="checkbox" checked onchange="toggleLayer('stops')"> ⬤ Stops</label></div>
+      <div class="layer-item"><label><input type="checkbox" checked onchange="toggleLayer('poi')"> 🏪 POI Markers</label></div>
+      <div class="layer-item"><label><input type="checkbox" checked onchange="toggleLayer('incidents')"> ⚠️ Incidents</label></div>
+      <div class="layer-item"><label><input type="checkbox" onchange="toggleLayer('routePlan')"> 🧭 Planned Route</label></div>
+    </div>
+    <div class="card"><h2>📈 Live Speed Trend</h2><canvas id="speedChart" height="100"></canvas></div>
+    <div class="card"><h2>🏆 SACCO Ranking</h2><div id="saccoStats"></div></div>
+    <div class="card"><h2>🚌 Active Fleet</h2><div id="vehicleList"></div></div>
+  </div>
+  <div id="map"></div>
+</div>
+
+<script>
+// =========================================================================
+// 1. OSM BASEMAP + ENHANCED MULTI-PRODUCT (Satellite, Terrain, OSM)
+// =========================================================================
+const tileServers = {
+  osm: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  satellite: 'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  terrain: 'https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}{r}.png'
+};
+let currentBasemap = 'osm';
+let map;
+
+function createMap() {
+  const mapInstance = new maplibregl.Map({
+    container: 'map',
+    style: {
+      version: 8,
+      sources: {
+        'osm-base': { type: 'raster', tiles: [tileServers.osm], tileSize: 256, attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a>' },
+        'satellite-base': { type: 'raster', tiles: [tileServers.satellite], tileSize: 256, attribution: '© ESRI' },
+        'terrain-base': { type: 'raster', tiles: [tileServers.terrain], tileSize: 256, attribution: '© Stamen & OSM' }
+      },
+      layers: [
+        { id: 'osm-layer', type: 'raster', source: 'osm-base', visible: true },
+        { id: 'satellite-layer', type: 'raster', source: 'satellite-base', visible: false },
+        { id: 'terrain-layer', type: 'raster', source: 'terrain-base', visible: false }
+      ]
+    },
+    center: [36.8219, -1.2921],
+    zoom: 12.5,
+    maxZoom: 18
+  });
+  mapInstance.addControl(new maplibregl.NavigationControl(), 'top-right');
+  mapInstance.addControl(new maplibregl.ScaleControl(), 'bottom-left');
+  return mapInstance;
+}
+
+function switchBasemap(type) {
+  if (!map) return;
+  const layers = ['osm-layer', 'satellite-layer', 'terrain-layer'];
+  layers.forEach(layer => {
+    if (map.getLayer(layer)) map.setLayoutProperty(layer, 'visibility', 'none');
+  });
+  let targetLayer = '';
+  if (type === 'osm') targetLayer = 'osm-layer';
+  if (type === 'satellite') targetLayer = 'satellite-layer';
+  if (type === 'terrain') targetLayer = 'terrain-layer';
+  if (targetLayer && map.getLayer(targetLayer)) map.setLayoutProperty(targetLayer, 'visibility', 'visible');
+  currentBasemap = type;
+  document.querySelectorAll('.basemap-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelector(`.basemap-btn[data-basemap="${type}"]`).classList.add('active');
+}
+
+map = createMap();
+if (!map) throw new Error('Map init failed');
+
+// =========================================================================
+// 2. GLOBAL DATA STRUCTURES (retain original)
+// =========================================================================
+let allVehicles = [];
+let transitRoutes = [];
+let allStops = [];            // stops from Transitland for selected route
+let poiMarkers = [];
+let incidentMarkers = [];
+let currentRouteLayerId = 'planned-route-line';
+
+const vehicleSourceId = 'vehicles';
+const routesSourceId = 'transit-routes';
+const stopsSourceId = 'transit-stops';
+const poiSourceId = 'poi-source';
+const incidentsSourceId = 'incidents-source';
+
+// =========================================================================
+// 3. TRANSITLAND API (unchanged but fully retained)
+// =========================================================================
+const API_BASE = 'https://transit.land/api/v2/rest';
+async function transitFetch(endpoint, params = {}) {
+  const url = new URL(`${API_BASE}${endpoint}`);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, v));
+  try {
+    const resp = await fetch(url, { timeout: 8000 });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return await resp.json();
+  } catch (err) { console.warn(`Transitland error:`, err); return null; }
+}
+
+async function fetchNairobiRoutes() {
+  document.getElementById('status').innerHTML = '<span class="loading-spinner"></span> Fetching Transitland routes...';
+  const bbox = '36.68,-1.38,36.96,-1.20';
+  const data = await transitFetch('/routes', { bbox, per_page: 60 });
+  if (data && data.routes && data.routes.length) {
+    transitRoutes = data.routes;
+    document.getElementById('status').innerHTML = `✅ ${transitRoutes.length} Transitland routes loaded`;
+  } else {
+    transitRoutes = [
+      { onestop_id: 'r-ngong-46', route_short_name: '46', route_long_name: 'Ngong Road', geometry: { type: 'LineString', coordinates: [[36.72,-1.30],[36.78,-1.29],[36.82,-1.285],[36.86,-1.28]] } },
+      { onestop_id: 'r-thika-125', route_short_name: '125', route_long_name: 'Thika Road', geometry: { type: 'LineString', coordinates: [[36.84,-1.28],[36.87,-1.26],[36.90,-1.24],[36.93,-1.22]] } },
+      { onestop_id: 'r-langata-32', route_short_name: '32', route_long_name: 'Langata Road', geometry: { type: 'LineString', coordinates: [[36.74,-1.33],[36.77,-1.31],[36.80,-1.30]] } },
+      { onestop_id: 'r-mombasa-11', route_short_name: '11', route_long_name: 'Mombasa Road', geometry: { type: 'LineString', coordinates: [[36.82,-1.29],[36.86,-1.31],[36.90,-1.32]] } },
+      { onestop_id: 'r-waiyaki-24', route_short_name: '24', route_long_name: 'Waiyaki Way', geometry: { type: 'LineString', coordinates: [[36.74,-1.28],[36.78,-1.27],[36.82,-1.275]] } }
+    ];
+    document.getElementById('status').innerHTML = '⚠️ Using mock routes (Transitland limit)';
+  }
+  populateRouteSelect();
+  displayRoutesOnMap();
+  generateVehiclesFromRoutes();
+}
+
+function displayRoutesOnMap() {
+  if (!map.getSource(routesSourceId)) {
+    map.addSource(routesSourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({ id: 'routes-layer', type: 'line', source: routesSourceId, layout: { 'line-join': 'round' }, paint: { 'line-width': 4, 'line-color': ['get', 'color'], 'line-opacity': 0.85 } });
+  }
+  const colors = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+  const features = transitRoutes.filter(r => r.geometry && r.geometry.coordinates).map((r, idx) => ({ type: 'Feature', geometry: r.geometry, properties: { name: r.route_short_name || r.route_long_name, color: colors[idx % colors.length], onestop_id: r.onestop_id } }));
+  map.getSource(routesSourceId).setData({ type: 'FeatureCollection', features });
+}
+
+function populateRouteSelect() {
+  const select = document.getElementById('routeSelect');
+  const datalist = document.getElementById('routeDatalist');
+  select.innerHTML = '<option value="">-- Select a route --</option>';
+  datalist.innerHTML = '';
+  transitRoutes.forEach(route => {
+    const display = `${route.route_short_name || ''} ${route.route_long_name || ''}`.trim() || route.onestop_id;
+    const opt = document.createElement('option'); opt.value = route.onestop_id; opt.textContent = display; select.appendChild(opt);
+    const dopt = document.createElement('option'); dopt.value = display; datalist.appendChild(dopt);
+  });
+}
+
+async function loadStopsForRoute(routeOnestopId) {
+  if (!routeOnestopId) return [];
+  document.getElementById('stopsContainer').innerHTML = '<div><span class="loading-spinner"></span> Loading stops...</div>';
+  const data = await transitFetch('/stops-for-route', { route_onestop_id: routeOnestopId, per_page: 100 });
+  let stops = [];
+  if (data && data.stops) stops = data.stops.map(s => ({ name: s.name, lat: s.lat, lon: s.lon, onestop_id: s.onestop_id }));
+  else {
+    const route = transitRoutes.find(r => r.onestop_id === routeOnestopId);
+    if (route && route.geometry && route.geometry.coordinates) stops = route.geometry.coordinates.map((coord, i) => ({ name: `Stop ${i+1}`, lat: coord[1], lon: coord[0], onestop_id: `mock-${i}` }));
+  }
+  allStops = stops;
+  displayStopsOnMap(stops);
+  updateStopDropdowns(stops);
+  const container = document.getElementById('stopsContainer');
+  container.innerHTML = stops.length ? stops.slice(0, 15).map(s => `<div class="stop-item">📍 <strong>${s.name || 'Unnamed stop'}</strong><br>${s.lat.toFixed(4)}, ${s.lon.toFixed(4)}</div>`).join('') : '<div>No stops found.</div>';
+  return stops;
+}
+
+function displayStopsOnMap(stops) {
+  if (!map.getSource(stopsSourceId)) {
+    map.addSource(stopsSourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({ id: 'stops-layer', type: 'circle', source: stopsSourceId, paint: { 'circle-radius': 7, 'circle-color': '#f59e0b', 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff' } });
+    map.addLayer({ id: 'stops-label', type: 'symbol', source: stopsSourceId, layout: { 'text-field': ['get', 'name'], 'text-size': 10, 'text-offset': [0, 1.2] }, paint: { 'text-color': '#ffffff', 'text-halo-color': '#000000' } });
+  }
+  const features = stops.map(s => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [s.lon, s.lat] }, properties: { name: s.name || 'Stop' } }));
+  map.getSource(stopsSourceId).setData({ type: 'FeatureCollection', features });
+}
+
+function updateStopDropdowns(stops) {
+  const startSelect = document.getElementById('startStopSelect');
+  const endSelect = document.getElementById('endStopSelect');
+  startSelect.innerHTML = '<option value="">📍 From stop</option>';
+  endSelect.innerHTML = '<option value="">🏁 To stop</option>';
+  stops.forEach((stop, idx) => {
+    const label = stop.name || `Stop ${idx}`;
+    startSelect.innerHTML += `<option value="${stop.lon},${stop.lat}">${label}</option>`;
+    endSelect.innerHTML += `<option value="${stop.lon},${stop.lat}">${label}</option>`;
+  });
+}
+
+// =========================================================================
+// 4. VEHICLE SIMULATION (original)
+// =========================================================================
+function generateVehiclesFromRoutes() {
+  const saccos = ['Super Metro', 'Metrotrans', 'KBS', 'Expresso', 'City Hoppa', 'Citi Hoppa', 'Molo Line'];
+  const vehicles = [];
+  transitRoutes.forEach(route => {
+    const routeName = route.route_short_name || route.route_long_name || 'Unknown';
+    const num = Math.floor(Math.random() * 7) + 3;
+    for (let i = 0; i < num; i++) {
+      let lon = 36.78, lat = -1.29;
+      if (route.geometry && route.geometry.coordinates && route.geometry.coordinates.length) {
+        const coords = route.geometry.coordinates;
+        const idx = Math.floor(Math.random() * coords.length);
+        lon = coords[idx][0] + (Math.random() - 0.5) * 0.008;
+        lat = coords[idx][1] + (Math.random() - 0.5) * 0.008;
+      }
+      const hour = new Date().getHours();
+      let speed = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19) ? Math.floor(Math.random() * 14) + 6 : Math.floor(Math.random() * 40) + 20;
+      vehicles.push({ id: `${routeName.substring(0,3)}-${Math.floor(Math.random()*900)+100}`, route: routeName, sacco: saccos[Math.floor(Math.random() * saccos.length)], speed: Math.round(speed), occupancy: Math.floor(Math.random() * 100), coordinates: [lon, lat] });
+    }
+  });
+  allVehicles = vehicles;
+  updateVehicleLayer();
+  updateDashboard();
+  renderVehicleList();
+  updateSaccoStats();
+}
+
+function updateVehicleLayer() {
+  if (!map.getSource(vehicleSourceId)) {
+    map.addSource(vehicleSourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({ id: 'vehicle-layer', type: 'circle', source: vehicleSourceId, paint: { 'circle-radius': 8, 'circle-color': '#10b981', 'circle-stroke-width': 2, 'circle-stroke-color': 'white' } });
+  }
+  const features = allVehicles.map(v => ({ type: 'Feature', geometry: { type: 'Point', coordinates: v.coordinates }, properties: { id: v.id, route: v.route, speed: v.speed, sacco: v.sacco } }));
+  map.getSource(vehicleSourceId).setData({ type: 'FeatureCollection', features });
+}
+
+function animateVehicles() {
+  allVehicles = allVehicles.map(v => ({ ...v, coordinates: [v.coordinates[0] + (Math.random() - 0.5) * 0.0025, v.coordinates[1] + (Math.random() - 0.5) * 0.0025], speed: Math.min(72, Math.max(5, v.speed + (Math.random() - 0.5) * 4)) }));
+  updateVehicleLayer();
+}
+
+function updateDashboard() { document.getElementById('vehicleCount').innerText = allVehicles.length; const avg = allVehicles.length ? allVehicles.reduce((a,b)=>a+b.speed,0)/allVehicles.length : 0; document.getElementById('avgSpeed').innerHTML = avg.toFixed(1)+' km/h'; document.getElementById('trafficAdvice').innerHTML = avg<18 ? '⚠️ Heavy traffic' : avg<35 ? '🟡 Moderate' : '✅ Smooth flow'; }
+function renderVehicleList() { document.getElementById('vehicleList').innerHTML = allVehicles.slice(0,25).map(v => `<div class="vehicle-item"><b>${v.id}</b> | ${v.route}<br>⚡${v.speed} km/h | 👥${v.occupancy}% | 🏢${v.sacco}</div>`).join(''); }
+function updateSaccoStats() { const stats = {}; allVehicles.forEach(v => { if(!stats[v.sacco]) stats[v.sacco]={count:0,sum:0}; stats[v.sacco].count++; stats[v.sacco].sum+=v.speed; }); document.getElementById('saccoStats').innerHTML = Object.entries(stats).slice(0,5).map(([name,data]) => `<div class="vehicle-item"><b>${name}</b><br>Fleet:${data.count} · ⚡${(data.sum/data.count).toFixed(1)} km/h</div>`).join(''); }
+
+const speedChart = new Chart(document.getElementById('speedChart'), { type: 'line', data: { labels: [], datasets: [{ label: 'Avg Speed (km/h)', data: [], borderColor: '#10b981', tension: 0.3 }] } });
+function updateAnalytics() { const avg = allVehicles.length ? allVehicles.reduce((a,b)=>a+b.speed,0)/allVehicles.length : 0; speedChart.data.labels.push(new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})); speedChart.data.datasets[0].data.push(avg.toFixed(1)); if(speedChart.data.labels.length > 12) { speedChart.data.labels.shift(); speedChart.data.datasets[0].data.shift(); } speedChart.update(); }
+function filterVehicles() { const q = document.getElementById('routeSearch').value.toLowerCase(); if(!q) return updateVehicleLayer(); const filtered = allVehicles.filter(v => v.route.toLowerCase().includes(q) || v.sacco.toLowerCase().includes(q)); const features = filtered.map(v => ({ type:'Feature', geometry:{type:'Point',coordinates:v.coordinates}, properties:{} })); if(map.getSource(vehicleSourceId)) map.getSource(vehicleSourceId).setData({ type:'FeatureCollection', features }); }
+function toggleLayer(layer) { const id = { vehicles:'vehicle-layer', routes:'routes-layer', stops:'stops-layer', poi:'poi-layer', incidents:'incidents-layer', routePlan:'planned-route-line' }[layer]; if(id && map.getLayer(id)) { const vis = map.getLayoutProperty(id,'visibility'); map.setLayoutProperty(id,'visibility', vis === 'none' ? 'visible' : 'none'); } }
+async function loadSelectedRoute() { const onestopId = document.getElementById('routeSelect').value; if (!onestopId) return; const route = transitRoutes.find(r => r.onestop_id === onestopId); if (route && route.geometry) { map.fitBounds(turf.bbox(route.geometry), { padding: 40 }); await loadStopsForRoute(onestopId); document.getElementById('routeInfo').innerHTML = `<strong>${route.route_short_name || ''} ${route.route_long_name || ''}</strong><br>${allStops.length} stops loaded.`; } }
+function estimateETA() { const routeName = document.getElementById('etaRouteSelect').value; const dist = parseFloat(document.getElementById('etaDistInput').value); if(!routeName || isNaN(dist)) { document.getElementById('etaResult').innerHTML = '⚠️ Enter route & distance'; return; } const relevant = allVehicles.filter(v => v.route.toLowerCase().includes(routeName.toLowerCase())); const avg = relevant.length ? relevant.reduce((a,b)=>a+b.speed,0)/relevant.length : 30; const minutes = (dist / avg) * 60; const hour = new Date().getHours(); const factor = (hour>=7&&hour<=9)||(hour>=17&&hour<=19) ? 1.5 : 1; document.getElementById('etaResult').innerHTML = `<div style="background:#0f172a;padding:10px;border-radius:18px;">⏱️ ETA: ${Math.round(minutes*factor)} min<br>📊 ${avg.toFixed(0)} km/h avg</div>`; }
+
+// ========== NEW ENHANCED PRODUCTS ==========
+// OSRM Routing (Trip Planner)
+async function planRoute() {
+  const startVal = document.getElementById('startStopSelect').value;
+  const endVal = document.getElementById('endStopSelect').value;
+  if (!startVal || !endVal) { alert('Select start and end stops'); return; }
+  const [lon1, lat1] = startVal.split(',').map(Number);
+  const [lon2, lat2] = endVal.split(',').map(Number);
+  const url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson`;
+  try {
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (data.code === 'Ok') {
+      const routeGeo = data.routes[0].geometry;
+      const duration = data.routes[0].duration / 60;
+      const distanceKm = data.routes[0].distance / 1000;
+      if (map.getSource('planned-route')) map.removeLayer('planned-route-line').removeSource('planned-route');
+      map.addSource('planned-route', { type: 'geojson', data: { type: 'Feature', geometry: routeGeo, properties: {} } });
+      map.addLayer({ id: 'planned-route-line', type: 'line', source: 'planned-route', paint: { 'line-color': '#f97316', 'line-width': 5, 'line-dasharray': [2, 2] } });
+      document.getElementById('routeSummary').innerHTML = `🚗 ${distanceKm.toFixed(1)} km · ⏱️ ${duration.toFixed(0)} min drive`;
+      map.fitBounds(turf.bbox(routeGeo), { padding: 50 });
+    } else { document.getElementById('routeSummary').innerHTML = 'Routing failed.'; }
+  } catch(e) { document.getElementById('routeSummary').innerHTML = 'OSRM error.'; }
+}
+
+// POI from Overpass (Stages, hospitals, markets)
+async function fetchNearbyPOI() {
+  const center = map.getCenter();
+  const bbox = `${center.lng-0.05},${center.lat-0.05},${center.lng+0.05},${center.lat+0.05}`;
+  const query = `[out:json][timeout:15];(node["amenity"]({{bbox}});node["highway"="bus_stop"]({{bbox}});node["shop"="supermarket"]({{bbox}});node["amenity"="hospital"]({{bbox}}););out body;`;
+  const overpassUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query.replace(/{{bbox}}/g, bbox))}`;
+  try {
+    const resp = await fetch(overpassUrl);
+    const data = await resp.json();
+    const features = data.elements.filter(el => el.lat && el.lon).map(el => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [el.lon, el.lat] }, properties: { name: el.tags.name || (el.tags.amenity || el.tags.highway || 'POI'), type: el.tags.amenity || el.tags.shop } }));
+    if (!map.getSource(poiSourceId)) {
+      map.addSource(poiSourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addLayer({ id: 'poi-layer', type: 'circle', source: poiSourceId, paint: { 'circle-radius': 6, 'circle-color': '#a855f7', 'circle-stroke-width': 1, 'circle-stroke-color': 'white' } });
+    }
+    map.getSource(poiSourceId).setData({ type: 'FeatureCollection', features });
+    document.getElementById('poiContainer').innerHTML = features.slice(0,12).map(f => `<div class="poi-item">📍 ${f.properties.name || 'Unnamed'} (${f.properties.type || 'facility'})</div>`).join('');
+  } catch(e) { document.getElementById('poiContainer').innerHTML = 'POI service unavailable'; }
+}
+
+// Simulated traffic incidents (value-add map layer)
+function generateIncidents() {
+  const incidents = [
+    { name: 'Accident near Mombasa Road', lat: -1.301, lon: 36.845, severity: 'High' },
+    { name: 'Roadworks Thika Rd', lat: -1.258, lon: 36.882, severity: 'Medium' },
+    { name: 'Heavy congestion CBD', lat: -1.284, lon: 36.822, severity: 'High' },
+    { name: 'Matatu stage overflow at Ambassadeur', lat: -1.283, lon: 36.826, severity: 'Medium' }
+  ];
+  const features = incidents.map(i => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [i.lon, i.lat] }, properties: { description: i.name, severity: i.severity } }));
+  if (!map.getSource(incidentsSourceId)) {
+    map.addSource(incidentsSourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({ id: 'incidents-layer', type: 'circle', source: incidentsSourceId, paint: { 'circle-radius': 10, 'circle-color': '#ef4444', 'circle-stroke-width': 2, 'circle-stroke-color': '#fff' } });
+  }
+  map.getSource(incidentsSourceId).setData({ type: 'FeatureCollection', features });
+  document.getElementById('incidentList').innerHTML = incidents.map(i => `<div class="incident-marker">⚠️ ${i.name} (${i.severity})</div>`).join('');
+}
+
+// =========================================================================
+// 5. INITIALIZE EVERYTHING + ANIMATION
+// =========================================================================
+map.on('load', () => {
+  // Add essential sources
+  map.addSource(vehicleSourceId, { type:'geojson', data:{type:'FeatureCollection',features:[]} });
+  map.addLayer({ id:'vehicle-layer', type:'circle', source:vehicleSourceId, paint:{'circle-radius':8,'circle-color':'#10b981','circle-stroke-width':2,'circle-stroke-color':'white'} });
+  map.addSource(routesSourceId, { type:'geojson', data:{type:'FeatureCollection',features:[]} });
+  map.addLayer({ id:'routes-layer', type:'line', source:routesSourceId, paint:{'line-width':4,'line-color':'#3b82f6','line-opacity':0.8} });
+  map.addSource(stopsSourceId, { type:'geojson', data:{type:'FeatureCollection',features:[]} });
+  map.addLayer({ id:'stops-layer', type:'circle', source:stopsSourceId, paint:{'circle-radius':6,'circle-color':'#f59e0b','circle-stroke-width':2,'circle-stroke-color':'white'} });
+  map.addLayer({ id:'stops-label', type:'symbol', source:stopsSourceId, layout:{ 'text-field': ['get', 'name'], 'text-size': 10, 'text-offset': [0, 1.2] }, paint:{ 'text-color': '#ffffff' } });
+  
+  fetchNairobiRoutes();
+  generateIncidents();
+  setInterval(() => { if(allVehicles.length) { animateVehicles(); updateDashboard(); updateAnalytics(); renderVehicleList(); updateSaccoStats(); } }, 4200);
+});
+
+// Attach new product handlers
+document.getElementById('fetchRoutesBtn').onclick = fetchNairobiRoutes;
+document.getElementById('nearbyStopsBtn').onclick = () => { if(navigator.geolocation) navigator.geolocation.getCurrentPosition(async (pos) => { map.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 14 }); const data = await transitFetch('/stops-for-location', { lat: pos.coords.latitude, lon: pos.coords.longitude, r: 800 }); let nearby = []; if(data?.stops) nearby = data.stops.map(s => ({ name: s.name, lat: s.lat, lon: s.lon })); else nearby = [{ name: 'Railways Bus Stage', lat: -1.2905, lon: 36.8250 }]; displayStopsOnMap(nearby); document.getElementById('stopsContainer').innerHTML = nearby.map(s => `<div class="stop-item">📍 ${s.name}<br>${s.lat.toFixed(4)}, ${s.lon.toFixed(4)}</div>`).join(''); }); };
+document.getElementById('etaPredictBtn').onclick = estimateETA;
+document.getElementById('planRouteBtn').onclick = planRoute;
+document.getElementById('searchPoiBtn').onclick = fetchNearbyPOI;
+document.getElementById('refreshIncidentsBtn').onclick = generateIncidents;
+document.querySelectorAll('.basemap-btn').forEach(btn => btn.addEventListener('click', (e) => switchBasemap(btn.dataset.basemap)));
+window.filterVehicles = filterVehicles; window.toggleLayer = toggleLayer; window.loadSelectedRoute = loadSelectedRoute;
+</script>
+</body>
+</html>
