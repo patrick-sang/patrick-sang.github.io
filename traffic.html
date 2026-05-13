@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0f1f" />
+<title>Nairobi Matatu Intelligence · Live Flow + Animations · Directions</title>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body, html { height: 100%; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; background: #0a0f1f; color: #e2e8f0; }
+#app { display: flex; height: 100%; width: 100%; }
+#sidebar { width: 440px; background: rgba(10, 20, 35, 0.96); backdrop-filter: blur(18px); overflow-y: auto; padding: 18px; border-right: 1px solid rgba(71, 85, 105, 0.4); z-index: 10; scrollbar-width: thin; }
+#map { flex: 1; min-height: 0; position: relative; }
+.card { background: rgba(30, 41, 59, 0.75); border-radius: 24px; padding: 16px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.08); transition: all 0.2s; }
+.card:hover { background: rgba(30, 41, 59, 0.9); border-color: rgba(16, 185, 129, 0.4); }
+h2 { font-size: 1.05rem; margin-bottom: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; letter-spacing: -0.2px; }
+.metric { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #c084fc, #60a5fa); -webkit-background-clip: text; background-clip: text; color: transparent; }
+input, select, button { width: 100%; padding: 12px; border-radius: 18px; border: none; margin-top: 8px; background: #0f172a; color: white; font-size: 0.85rem; cursor: pointer; transition: 0.1s; }
+button { background: linear-gradient(95deg, #10b981, #06b6d4); font-weight: bold; }
+button:hover { transform: scale(0.98); opacity: 0.9; }
+.layer-item, .vehicle-item, .route-item, .stop-item { padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 18px; margin-bottom: 8px; border-left: 3px solid #10b981; font-size: 0.85rem; }
+.badge { display: inline-block; background: #1e293b; padding: 4px 12px; border-radius: 40px; font-size: 0.7rem; }
+#status { position: fixed; top: 16px; right: 16px; background: #000000cc; backdrop-filter: blur(12px); padding: 8px 18px; border-radius: 40px; font-size: 0.75rem; z-index: 1100; border: 1px solid #334155; font-weight: 500; }
+.loading-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #10b981; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.route-color { width: 20px; height: 4px; border-radius: 2px; display: inline-block; margin-right: 8px; }
+.basemap-selector { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.basemap-btn { flex: 1; background: #0f172a; padding: 8px; border-radius: 32px; font-size: 0.75rem; text-align: center; cursor: pointer; border: 1px solid #334155; }
+.basemap-btn.active { background: #10b981; border-color: #10b981; color: white; }
+.trip-row { display: flex; gap: 8px; margin-top: 8px; }
+.trip-row select { flex: 1; margin-top: 0; }
+.poi-item { padding: 6px 0; font-size: 0.75rem; border-bottom: 1px solid #334155; }
+.incident-marker { font-weight: bold; }
+.directions-step { padding: 12px; border-bottom: 1px solid #334155; display: flex; gap: 12px; align-items: center; font-size: 0.8rem; }
+.directions-step-icon { font-size: 1.2rem; min-width: 28px; text-align: center; }
+.directions-step-text { flex: 1; }
+.directions-step-dist { font-family: monospace; background: #1e293b; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; }
+#directionsList { max-height: 240px; overflow-y: auto; margin-top: 8px; border-radius: 20px; background: #0f172a80; }
+@keyframes pulse { 0% { opacity: 0.6; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1.2); } }
+@media (max-width: 800px) { #sidebar { width: 100%; height: 45%; } #app { flex-direction: column; } #map { height: 55%; } }
+</style>
+</head>
+<body>
+<div id="status">🚀 Initializing live animations + traffic flow on map...</div>
+<div id="app">
+  <div id="sidebar">
+    <div class="card"><h2>🚀 Nairobi Matatu Intelligence</h2><div class="badge">🇰🇪 Live Flow · Animated Vehicles · Directions · POI</div></div>
+    <div class="card"><h2>🚐 Active Matatus</h2><div class="metric" id="vehicleCount">0</div></div>
+    <div class="card"><h2>📊 Network Speed</h2><div class="metric" id="avgSpeed">0 km/h</div><div id="trafficAdvice"></div></div>
+    
+    <div class="card"><h2>🛰️ Map Products · Basemap Switcher</h2>
+      <div class="basemap-selector" id="basemapSelector">
+        <div data-basemap="osm" class="basemap-btn active">🗺️ OSM Standard</div>
+        <div data-basemap="satellite" class="basemap-btn">🛰️ ESRI Satellite</div>
+        <div data-basemap="terrain" class="basemap-btn">⛰️ Stamen Terrain</div>
+      </div>
+    </div>
+
+    <div class="card"><h2>🛣️ Transitland Routes</h2>
+      <select id="routeSelect" onchange="loadSelectedRoute()"><option value="">-- Select a route --</option></select>
+      <div id="routeInfo" style="font-size: 12px; margin-top: 8px;"></div>
+      <button id="fetchRoutesBtn">🔄 Refresh Routes</button>
+    </div>
+    <div class="card"><h2>📍 Stops (from Transitland)</h2>
+      <button id="nearbyStopsBtn">🔎 Find stops near me</button>
+      <div id="stopsContainer"></div>
+    </div>
+    
+    <div class="card"><h2>🧭 Trip Planner · OSRM Routing</h2>
+      <div class="trip-row"><select id="startStopSelect"><option value="">📍 From stop</option></select><select id="endStopSelect"><option value="">🏁 To stop</option></select></div>
+      <button id="planRouteBtn">🚗 Plan Route & Get Directions</button>
+      <div id="routeSummary" style="font-size: 12px; margin-top: 6px;"></div>
+    </div>
+    
+    <div class="card"><h2>📋 Step-by-Step Directions</h2>
+      <div id="directionsList">✨ Select start & end stops, then click "Plan Route".</div>
+      <button id="clearDirectionsBtn" style="background:#4b5563; margin-top: 12px;">🗑️ Clear Route</button>
+    </div>
+
+    <div class="card"><h2>📍 Nearby Points of Interest</h2>
+      <button id="searchPoiBtn">🏪 Find Stages / Hospitals / Markets</button>
+      <div id="poiContainer" style="max-height: 140px; overflow-y: auto;"></div>
+    </div>
+
+    <div class="card"><h2>⚠️ Live Incidents & Road Alerts</h2>
+      <button id="refreshIncidentsBtn">🔄 Refresh Incidents (simulated)</button>
+      <div id="incidentList"></div>
+    </div>
+
+    <div class="card"><h2>⏱️ Smart ETA</h2>
+      <input id="etaRouteSelect" placeholder="Route name" list="routeDatalist" />
+      <datalist id="routeDatalist"></datalist>
+      <input id="etaDistInput" type="number" placeholder="Distance (km)" />
+      <button id="etaPredictBtn">🧠 Predict ETA</button>
+      <div id="etaResult"></div>
+    </div>
+    <div class="card"><h2>🔍 Filter Vehicles</h2>
+      <input id="routeSearch" placeholder="Route name or SACCO" />
+      <button onclick="filterVehicles()">Search</button>
+    </div>
+    <div class="card"><h2>🎛️ Map Layers</h2>
+      <div class="layer-item"><label><input type="checkbox" checked onchange="toggleLayer('vehicles')"> 🚐 Vehicles (animated)</label></div>
+      <div class="layer-item"><label><input type="checkbox" checked onchange="toggleLayer('routes')"> 🗺️ Transit Routes</label></div>
+      <div class="layer-item"><label><input type="checkbox" checked onchange="toggleLayer('flow')"> 🌊 Traffic Flow (live particles)</label></div>
+      <div class="layer-item"><label><input type="checkbox" checked onchange="toggleLayer('stops')"> ⬤ Stops</label></div>
+      <div class="layer-item"><label><input type="checkbox" checked onchange="toggleLayer('poi')"> 🏪 POI Markers</label></div>
+      <div class="layer-item"><label><input type="checkbox" checked onchange="toggleLayer('incidents')"> ⚠️ Incidents</label></div>
+      <div class="layer-item"><label><input type="checkbox" onchange="toggleLayer('routePlan')"> 🧭 Planned Route</label></div>
+    </div>
+    <div class="card"><h2>📈 Live Speed Trend</h2><canvas id="speedChart" height="100"></canvas></div>
+    <div class="card"><h2>🏆 SACCO Ranking</h2><div id="saccoStats"></div></div>
+    <div class="card"><h2>🚌 Active Fleet</h2><div id="vehicleList"></div></div>
+  </div>
+  <div id="map"></div>
+</div>
+
+<script>
+// ======================== 1. BASEMAP (Multi-Product) ========================
+const tileServers = {
+  osm: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  satellite: 'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  terrain: 'https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}{r}.png'
+};
+let map;
+function createMap() {
+  const instance = new maplibregl.Map({
+    container: 'map',
+    style: {
+      version: 8,
+      sources: {
+        'osm-base': { type: 'raster', tiles: [tileServers.osm], tileSize: 256, attribution: '© OSM' },
+        'satellite-base': { type: 'raster', tiles: [tileServers.satellite], tileSize: 256, attribution: '© ESRI' },
+        'terrain-base': { type: 'raster', tiles: [tileServers.terrain], tileSize: 256, attribution: '© Stamen' }
+      },
+      layers: [
+        { id: 'osm-layer', type: 'raster', source: 'osm-base', visible: true },
+        { id: 'satellite-layer', type: 'raster', source: 'satellite-base', visible: false },
+        { id: 'terrain-layer', type: 'raster', source: 'terrain-base', visible: false }
+      ]
+    },
+    center: [36.8219, -1.2921], zoom: 12.5, maxZoom: 18
+  });
+  instance.addControl(new maplibregl.NavigationControl(), 'top-right');
+  instance.addControl(new maplibregl.ScaleControl(), 'bottom-left');
+  return instance;
+}
+map = createMap();
+
+function switchBasemap(type) {
+  ['osm-layer','satellite-layer','terrain-layer'].forEach(l => { if(map.getLayer(l)) map.setLayoutProperty(l, 'visibility', 'none'); });
+  let target = type === 'osm' ? 'osm-layer' : (type === 'satellite' ? 'satellite-layer' : 'terrain-layer');
+  if(map.getLayer(target)) map.setLayoutProperty(target, 'visibility', 'visible');
+  document.querySelectorAll('.basemap-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelector(`.basemap-btn[data-basemap="${type}"]`).classList.add('active');
+}
+
+// ======================== 2. GLOBAL DATA ========================
+let allVehicles = [];        // each: {id, route, sacco, speed, progress, routeGeom, speedFactor}
+let transitRoutes = [];
+let allStops = [];
+let flowParticles = [];      // array of {lng, lat, routeId, progress, direction}
+let animationFrameId = null;
+let lastTimestamp = 0;
+
+const vehicleSourceId = 'vehicles';
+const routesSourceId = 'transit-routes';
+const stopsSourceId = 'transit-stops';
+const poiSourceId = 'poi-source';
+const incidentsSourceId = 'incidents-source';
+const flowSourceId = 'flow-particles';
+
+// ======================== 3. TRANSITLAND (unchanged core) ========================
+const API_BASE = 'https://transit.land/api/v2/rest';
+async function transitFetch(endpoint, params = {}) {
+  const url = new URL(`${API_BASE}${endpoint}`);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.append(k,v));
+  try { const resp = await fetch(url, { timeout: 8000 }); if(!resp.ok) throw new Error(); return await resp.json(); } catch(e) { return null; }
+}
+
+async function fetchNairobiRoutes() {
+  document.getElementById('status').innerHTML = '<span class="loading-spinner"></span> Fetching routes...';
+  const data = await transitFetch('/routes', { bbox: '36.68,-1.38,36.96,-1.20', per_page: 60 });
+  if(data && data.routes && data.routes.length) transitRoutes = data.routes;
+  else {
+    transitRoutes = [
+      { onestop_id: 'r-ngong-46', route_short_name: '46', route_long_name: 'Ngong Road', geometry: { type: 'LineString', coordinates: [[36.72,-1.30],[36.78,-1.29],[36.82,-1.285],[36.86,-1.28]] } },
+      { onestop_id: 'r-thika-125', route_short_name: '125', route_long_name: 'Thika Road', geometry: { type: 'LineString', coordinates: [[36.84,-1.28],[36.87,-1.26],[36.90,-1.24],[36.93,-1.22]] } },
+      { onestop_id: 'r-langata-32', route_short_name: '32', route_long_name: 'Langata Road', geometry: { type: 'LineString', coordinates: [[36.74,-1.33],[36.77,-1.31],[36.80,-1.30]] } },
+      { onestop_id: 'r-mombasa-11', route_short_name: '11', route_long_name: 'Mombasa Road', geometry: { type: 'LineString', coordinates: [[36.82,-1.29],[36.86,-1.31],[36.90,-1.32]] } },
+      { onestop_id: 'r-waiyaki-24', route_short_name: '24', route_long_name: 'Waiyaki Way', geometry: { type: 'LineString', coordinates: [[36.74,-1.28],[36.78,-1.27],[36.82,-1.275]] } }
+    ];
+    document.getElementById('status').innerHTML = '⚠️ Using demo routes';
+  }
+  populateRouteSelect();
+  displayRoutesOnMap();
+  generateVehiclesAndFlowFromRoutes();  // enhanced: creates vehicles + flow particles
+}
+
+function displayRoutesOnMap() {
+  if(!map.getSource(routesSourceId)) {
+    map.addSource(routesSourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({ id: 'routes-layer', type: 'line', source: routesSourceId, paint: { 'line-width': 4, 'line-color': ['get', 'color'], 'line-opacity': 0.85 } });
+  }
+  const colors = ['#10b981','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4'];
+  const features = transitRoutes.filter(r => r.geometry?.coordinates).map((r, idx) => ({ type: 'Feature', geometry: r.geometry, properties: { name: r.route_short_name || r.route_long_name, color: colors[idx % colors.length] } }));
+  map.getSource(routesSourceId).setData({ type: 'FeatureCollection', features });
+}
+
+function populateRouteSelect() {
+  const select = document.getElementById('routeSelect');
+  const datalist = document.getElementById('routeDatalist');
+  select.innerHTML = '<option value="">-- Select a route --</option>';
+  datalist.innerHTML = '';
+  transitRoutes.forEach(route => {
+    const display = `${route.route_short_name || ''} ${route.route_long_name || ''}`.trim() || route.onestop_id;
+    select.appendChild(new Option(display, route.onestop_id));
+    datalist.appendChild(new Option(display));
+  });
+}
+
+async function loadStopsForRoute(routeOnestopId) {
+  if(!routeOnestopId) return [];
+  const data = await transitFetch('/stops-for-route', { route_onestop_id: routeOnestopId, per_page: 100 });
+  let stops = [];
+  if(data?.stops) stops = data.stops.map(s => ({ name: s.name, lat: s.lat, lon: s.lon }));
+  else {
+    const route = transitRoutes.find(r => r.onestop_id === routeOnestopId);
+    if(route?.geometry?.coordinates) stops = route.geometry.coordinates.map((coord,i) => ({ name: `Stop ${i+1}`, lat: coord[1], lon: coord[0] }));
+  }
+  allStops = stops;
+  displayStopsOnMap(stops);
+  updateStopDropdowns(stops);
+  document.getElementById('stopsContainer').innerHTML = stops.slice(0,15).map(s => `<div class="stop-item">📍 <strong>${s.name}</strong><br>${s.lat.toFixed(4)}, ${s.lon.toFixed(4)}</div>`).join('') || '<div>No stops</div>';
+  return stops;
+}
+
+function displayStopsOnMap(stops) {
+  if(!map.getSource(stopsSourceId)) {
+    map.addSource(stopsSourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({ id: 'stops-layer', type: 'circle', source: stopsSourceId, paint: { 'circle-radius': 7, 'circle-color': '#f59e0b', 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff' } });
+    map.addLayer({ id: 'stops-label', type: 'symbol', source: stopsSourceId, layout: { 'text-field': ['get', 'name'], 'text-size': 10, 'text-offset': [0, 1.2] }, paint: { 'text-color': '#ffffff' } });
+  }
+  const features = stops.map(s => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [s.lon, s.lat] }, properties: { name: s.name || 'Stop' } }));
+  map.getSource(stopsSourceId).setData({ type: 'FeatureCollection', features });
+}
+
+function updateStopDropdowns(stops) {
+  const startSel = document.getElementById('startStopSelect');
+  const endSel = document.getElementById('endStopSelect');
+  startSel.innerHTML = '<option value="">📍 From stop</option>';
+  endSel.innerHTML = '<option value="">🏁 To stop</option>';
+  stops.forEach((s,i) => {
+    const label = s.name || `Stop ${i}`;
+    startSel.innerHTML += `<option value="${s.lon},${s.lat}">${label}</option>`;
+    endSel.innerHTML += `<option value="${s.lon},${s.lat}">${label}</option>`;
+  });
+}
+
+// ======================== 4. ENHANCED VEHICLES + FLOW PARTICLES (LIVE ANIMATIONS) ========================
+function generateVehiclesAndFlowFromRoutes() {
+  const saccos = ['Super Metro', 'Metrotrans', 'KBS', 'Expresso', 'City Hoppa', 'Citi Hoppa', 'Molo Line'];
+  const newVehicles = [];
+  const newFlowParticles = [];
+  
+  transitRoutes.forEach(route => {
+    if(!route.geometry || !route.geometry.coordinates || route.geometry.coordinates.length < 2) return;
+    const lineString = turf.lineString(route.geometry.coordinates);
+    const lengthKm = turf.length(lineString, { units: 'kilometers' });
+    const routeName = route.route_short_name || route.route_long_name || 'Unknown';
+    
+    // create 4-8 vehicles per route
+    const numVehicles = Math.floor(Math.random() * 6) + 4;
+    for(let i = 0; i < numVehicles; i++) {
+      const progress = Math.random(); // 0-1 along route
+      const point = turf.along(lineString, progress * lengthKm, { units: 'kilometers' });
+      const speedBase = (Math.random() * 35) + 15; // km/h
+      const hour = new Date().getHours();
+      let speed = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19) ? Math.min(28, speedBase * 0.6) : speedBase;
+      speed = Math.round(speed);
+      // speed factor: fraction of route length per second = speed (km/h) / (lengthKm * 3600) 
+      const speedFactor = (speed / 1000) / (lengthKm * 3600); // progress per second (rough)
+      newVehicles.push({
+        id: `${routeName.substring(0,3)}-${Math.floor(Math.random()*900)+100}`,
+        route: routeName,
+        sacco: saccos[Math.floor(Math.random() * saccos.length)],
+        speed: speed,
+        occupancy: Math.floor(Math.random() * 100),
+        progress: progress,
+        routeLine: lineString,
+        routeLengthKm: lengthKm,
+        speedFactor: speedFactor,
+        routeId: route.onestop_id
+      });
+    }
+    
+    // Create flow particles (8-12 per route) for visual traffic flow in both directions
+    const numParticles = Math.floor(Math.random() * 10) + 8;
+    for(let p = 0; p < numParticles; p++) {
+      const direction = Math.random() > 0.5 ? 1 : -1; // 1 = forward, -1 = backward
+      let progress = Math.random();
+      if(direction === -1) progress = 1 - progress;
+      newFlowParticles.push({
+        routeId: route.onestop_id,
+        routeLine: lineString,
+        routeLengthKm: lengthKm,
+        progress: progress,
+        direction: direction,
+        speed: (Math.random() * 0.02) + 0.008 // progress per second
+      });
+    }
+  });
+  
+  allVehicles = newVehicles;
+  flowParticles = newFlowParticles;
+  updateVehicleLayer();
+  updateDashboard();
+  renderVehicleList();
+  updateSaccoStats();
+  // start animation loop if not running
+  if(!animationFrameId) startAnimationLoop();
+}
+
+function updateVehicleLayer() {
+  if(!map.getSource(vehicleSourceId)) {
+    map.addSource(vehicleSourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({ id: 'vehicle-layer', type: 'circle', source: vehicleSourceId, paint: { 'circle-radius': 9, 'circle-color': '#10b981', 'circle-stroke-width': 2, 'circle-stroke-color': 'white', 'circle-opacity': 0.9 } });
+  }
+  const features = allVehicles.map(v => {
+    try {
+      const point = turf.along(v.routeLine, v.progress * v.routeLengthKm, { units: 'kilometers' });
+      return { type: 'Feature', geometry: { type: 'Point', coordinates: point.geometry.coordinates }, properties: { id: v.id, route: v.route, speed: v.speed, sacco: v.sacco } };
+    } catch(e) { return null; }
+  }).filter(f => f);
+  map.getSource(vehicleSourceId).setData({ type: 'FeatureCollection', features: features });
+}
+
+// Flow particles layer with animated positions
+function updateFlowLayer() {
+  if(!map.getSource(flowSourceId)) {
+    map.addSource(flowSourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({ id: 'flow-layer', type: 'circle', source: flowSourceId, paint: { 'circle-radius': 4, 'circle-color': '#38bdf8', 'circle-opacity': 0.8, 'circle-blur': 0.3 } });
+  }
+  const features = [];
+  for(let p of flowParticles) {
+    try {
+      let progress = p.progress;
+      if(p.direction === 1 && progress > 1) progress = 0;
+      if(p.direction === -1 && progress < 0) progress = 1;
+      const point = turf.along(p.routeLine, progress * p.routeLengthKm, { units: 'kilometers' });
+      features.push({ type: 'Feature', geometry: { type: 'Point', coordinates: point.geometry.coordinates }, properties: { direction: p.direction } });
+    } catch(e) {}
+  }
+  if(map.getSource(flowSourceId)) map.getSource(flowSourceId).setData({ type: 'FeatureCollection', features });
+}
+
+function animateVehiclesAndFlow(deltaTimeSec = 0.05) {
+  // update vehicle progress
+  let anyChanged = false;
+  for(let v of allVehicles) {
+    let newProgress = v.progress + v.speedFactor * deltaTimeSec;
+    if(newProgress > 1) newProgress = 0;
+    if(newProgress < 0) newProgress = 1;
+    if(Math.abs(newProgress - v.progress) > 0.0001) anyChanged = true;
+    v.progress = newProgress;
+    // small speed variation to simulate traffic
+    if(Math.random() < 0.02) v.speed = Math.min(65, Math.max(8, v.speed + (Math.random() - 0.5) * 4));
+    v.speedFactor = (v.speed / 1000) / (v.routeLengthKm * 3600);
+  }
+  // update flow particles
+  for(let p of flowParticles) {
+    let step = p.speed * deltaTimeSec * p.direction;
+    let newProgress = p.progress + step;
+    if(p.direction === 1 && newProgress > 1) newProgress = 0;
+    if(p.direction === -1 && newProgress < 0) newProgress = 1;
+    p.progress = newProgress;
+  }
+  if(anyChanged) {
+    updateVehicleLayer();
+    updateFlowLayer();
+    updateDashboard(); // speed avg etc
+    updateAnalytics();
+    renderVehicleList();
+    updateSaccoStats();
+  } else {
+    updateFlowLayer(); // keep flow moving even if vehicles stable
+  }
+}
+
+let lastFrameTime = 0;
+function startAnimationLoop() {
+  function frame(now) {
+    if(!lastFrameTime) lastFrameTime = now;
+    let delta = Math.min(0.1, (now - lastFrameTime) / 1000);
+    if(delta > 0.01) {
+      animateVehiclesAndFlow(delta);
+      lastFrameTime = now;
+    }
+    animationFrameId = requestAnimationFrame(frame);
+  }
+  animationFrameId = requestAnimationFrame(frame);
+}
+
+function updateDashboard() {
+  document.getElementById('vehicleCount').innerText = allVehicles.length;
+  const avg = allVehicles.length ? allVehicles.reduce((a,b)=>a+b.speed,0)/allVehicles.length : 0;
+  document.getElementById('avgSpeed').innerHTML = avg.toFixed(1)+' km/h';
+  document.getElementById('trafficAdvice').innerHTML = avg<18 ? '⚠️ Heavy traffic' : avg<35 ? '🟡 Moderate' : '✅ Smooth flow';
+}
+function renderVehicleList() {
+  document.getElementById('vehicleList').innerHTML = allVehicles.slice(0,25).map(v => `<div class="vehicle-item"><b>${v.id}</b> | ${v.route}<br>⚡${v.speed} km/h | 👥${v.occupancy}% | 🏢${v.sacco}</div>`).join('');
+}
+function updateSaccoStats() {
+  const stats = {};
+  allVehicles.forEach(v => { if(!stats[v.sacco]) stats[v.sacco]={count:0,sum:0}; stats[v.sacco].count++; stats[v.sacco].sum+=v.speed; });
+  document.getElementById('saccoStats').innerHTML = Object.entries(stats).slice(0,5).map(([name,data]) => `<div class="vehicle-item"><b>${name}</b><br>Fleet:${data.count} · ⚡${(data.sum/data.count).toFixed(1)} km/h</div>`).join('');
+}
+const speedChart = new Chart(document.getElementById('speedChart'), { type: 'line', data: { labels: [], datasets: [{ label: 'Avg Speed (km/h)', data: [], borderColor: '#10b981', tension: 0.3 }] } });
+function updateAnalytics() {
+  const avg = allVehicles.length ? allVehicles.reduce((a,b)=>a+b.speed,0)/allVehicles.length : 0;
+  speedChart.data.labels.push(new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
+  speedChart.data.datasets[0].data.push(avg.toFixed(1));
+  if(speedChart.data.labels.length > 12) { speedChart.data.labels.shift(); speedChart.data.datasets[0].data.shift(); }
+  speedChart.update();
+}
+function filterVehicles() {
+  const q = document.getElementById('routeSearch').value.toLowerCase();
+  if(!q) { updateVehicleLayer(); return; }
+  const filtered = allVehicles.filter(v => v.route.toLowerCase().includes(q) || v.sacco.toLowerCase().includes(q));
+  const features = filtered.map(v => {
+    const pt = turf.along(v.routeLine, v.progress * v.routeLengthKm, { units: 'kilometers' });
+    return { type: 'Feature', geometry: pt.geometry, properties: {} };
+  });
+  if(map.getSource(vehicleSourceId)) map.getSource(vehicleSourceId).setData({ type: 'FeatureCollection', features });
+}
+function toggleLayer(layer) {
+  const idMap = { vehicles:'vehicle-layer', routes:'routes-layer', flow:'flow-layer', stops:'stops-layer', poi:'poi-layer', incidents:'incidents-layer', routePlan:'planned-route-line' };
+  const id = idMap[layer];
+  if(id && map.getLayer(id)) {
+    const vis = map.getLayoutProperty(id, 'visibility');
+    map.setLayoutProperty(id, 'visibility', vis === 'none' ? 'visible' : 'none');
+  }
+}
+async function loadSelectedRoute() {
+  const id = document.getElementById('routeSelect').value;
+  const route = transitRoutes.find(r => r.onestop_id === id);
+  if(route && route.geometry) {
+    map.fitBounds(turf.bbox(route.geometry), { padding: 40 });
+    await loadStopsForRoute(id);
+    document.getElementById('routeInfo').innerHTML = `<strong>${route.route_short_name || ''} ${route.route_long_name || ''}</strong><br>${allStops.length} stops.`;
+  }
+}
+function estimateETA() {
+  const routeName = document.getElementById('etaRouteSelect').value;
+  const dist = parseFloat(document.getElementById('etaDistInput').value);
+  if(!routeName || isNaN(dist)) { document.getElementById('etaResult').innerHTML = '⚠️ Enter route & distance'; return; }
+  const relevant = allVehicles.filter(v => v.route.toLowerCase().includes(routeName.toLowerCase()));
+  const avg = relevant.length ? relevant.reduce((a,b)=>a+b.speed,0)/relevant.length : 30;
+  const minutes = (dist / avg) * 60;
+  const hour = new Date().getHours();
+  const factor = (hour>=7&&hour<=9)||(hour>=17&&hour<=19) ? 1.5 : 1;
+  document.getElementById('etaResult').innerHTML = `<div style="background:#0f172a;padding:10px;border-radius:18px;">⏱️ ETA: ${Math.round(minutes*factor)} min<br>📊 ${avg.toFixed(0)} km/h avg</div>`;
+}
+// ========== ROUTING & DIRECTIONS (unchanged) ==========
+async function planRouteWithDirections() {
+  const startVal = document.getElementById('startStopSelect').value;
+  const endVal = document.getElementById('endStopSelect').value;
+  if(!startVal || !endVal) { alert('Select start and end stops'); return; }
+  const [lon1, lat1] = startVal.split(',').map(Number);
+  const [lon2, lat2] = endVal.split(',').map(Number);
+  const url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson&steps=true`;
+  document.getElementById('directionsList').innerHTML = '<div class="loading-spinner"></div> Fetching route...';
+  try {
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if(data.code === 'Ok') {
+      const route = data.routes[0];
+      if(map.getLayer('planned-route-line')) map.removeLayer('planned-route-line');
+      if(map.getSource('planned-route')) map.removeSource('planned-route');
+      map.addSource('planned-route', { type: 'geojson', data: { type: 'Feature', geometry: route.geometry } });
+      map.addLayer({ id: 'planned-route-line', type: 'line', source: 'planned-route', paint: { 'line-color': '#f97316', 'line-width': 5, 'line-dasharray': [2, 2] } });
+      document.getElementById('routeSummary').innerHTML = `🚗 ${(route.distance/1000).toFixed(1)} km · ⏱️ ${(route.duration/60).toFixed(1)} min`;
+      map.fitBounds(turf.bbox(route.geometry), { padding: 50 });
+      let html = `<div style="padding:6px 0;">Total ${(route.distance/1000).toFixed(1)} km · ${(route.duration/60).toFixed(0)} min</div>`;
+      route.legs[0].steps.forEach(step => {
+        const inst = step.maneuver.instruction || step.name;
+        const distTxt = step.distance >= 1000 ? `${(step.distance/1000).toFixed(1)} km` : `${Math.round(step.distance)} m`;
+        html += `<div class="directions-step"><div class="directions-step-icon">🚗</div><div class="directions-step-text">${inst}</div><div class="directions-step-dist">${distTxt}</div></div>`;
+      });
+      document.getElementById('directionsList').innerHTML = html;
+    } else throw new Error();
+  } catch(e) { document.getElementById('directionsList').innerHTML = '❌ Routing error'; }
+}
+function clearPlannedRoute() {
+  if(map.getLayer('planned-route-line')) map.removeLayer('planned-route-line');
+  if(map.getSource('planned-route')) map.removeSource('planned-route');
+  document.getElementById('directionsList').innerHTML = '✨ Route cleared. Select stops again.';
+  document.getElementById('routeSummary').innerHTML = '';
+}
+async function fetchNearbyPOI() {
+  const c = map.getCenter();
+  const bbox = `${c.lng-0.05},${c.lat-0.05},${c.lng+0.05},${c.lat+0.05}`;
+  const query = `[out:json][timeout:15];(node["amenity"]({{bbox}});node["highway"="bus_stop"]({{bbox}});node["shop"="supermarket"]({{bbox}});node["amenity"="hospital"]({{bbox}}););out body;`;
+  const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query.replace(/{{bbox}}/g, bbox))}`;
+  try {
+    const resp = await fetch(url);
+    const data = await resp.json();
+    const features = data.elements.filter(el => el.lat && el.lon).map(el => ({ type:'Feature', geometry:{ type:'Point', coordinates:[el.lon, el.lat] }, properties:{ name: el.tags.name || el.tags.amenity || 'POI' } }));
+    if(!map.getSource(poiSourceId)) { map.addSource(poiSourceId, { type:'geojson', data:{ type:'FeatureCollection', features:[] } }); map.addLayer({ id:'poi-layer', type:'circle', source:poiSourceId, paint:{ 'circle-radius':6, 'circle-color':'#a855f7' } }); }
+    map.getSource(poiSourceId).setData({ type:'FeatureCollection', features });
+    document.getElementById('poiContainer').innerHTML = features.slice(0,12).map(f => `<div class="poi-item">📍 ${f.properties.name || 'Unnamed'}</div>`).join('');
+  } catch(e) { document.getElementById('poiContainer').innerHTML = 'POI error'; }
+}
+function generateIncidents() {
+  const incidents = [
+    { name: 'Accident near Mombasa Road', lat: -1.301, lon: 36.845, severity: 'High' },
+    { name: 'Roadworks Thika Rd', lat: -1.258, lon: 36.882, severity: 'Medium' },
+    { name: 'Heavy congestion CBD', lat: -1.284, lon: 36.822, severity: 'High' }
+  ];
+  const features = incidents.map(i => ({ type:'Feature', geometry:{ type:'Point', coordinates:[i.lon, i.lat] }, properties:{ description: i.name } }));
+  if(!map.getSource(incidentsSourceId)) { map.addSource(incidentsSourceId, { type:'geojson', data:{ type:'FeatureCollection', features:[] } }); map.addLayer({ id:'incidents-layer', type:'circle', source:incidentsSourceId, paint:{ 'circle-radius':10, 'circle-color':'#ef4444' } }); }
+  map.getSource(incidentsSourceId).setData({ type:'FeatureCollection', features });
+  document.getElementById('incidentList').innerHTML = incidents.map(i => `<div>⚠️ ${i.name}</div>`).join('');
+}
+
+// ======================== 5. INIT & EVENT HANDLERS ========================
+map.on('load', () => {
+  fetchNairobiRoutes();
+  generateIncidents();
+  document.querySelectorAll('.basemap-btn').forEach(btn => btn.addEventListener('click', () => switchBasemap(btn.dataset.basemap)));
+  document.getElementById('fetchRoutesBtn').onclick = fetchNairobiRoutes;
+  document.getElementById('nearbyStopsBtn').onclick = () => { if(navigator.geolocation) navigator.geolocation.getCurrentPosition(async(pos) => { map.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 14 }); const fake = [{ name: 'Your Location Stage', lat: pos.coords.latitude, lon: pos.coords.longitude }]; displayStopsOnMap(fake); document.getElementById('stopsContainer').innerHTML = `<div class="stop-item">📍 ${fake[0].name}<br>${fake[0].lat.toFixed(4)}, ${fake[0].lon.toFixed(4)}</div>`; }); };
+  document.getElementById('etaPredictBtn').onclick = estimateETA;
+  document.getElementById('planRouteBtn').onclick = planRouteWithDirections;
+  document.getElementById('searchPoiBtn').onclick = fetchNearbyPOI;
+  document.getElementById('refreshIncidentsBtn').onclick = generateIncidents;
+  document.getElementById('clearDirectionsBtn').onclick = clearPlannedRoute;
+  window.filterVehicles = filterVehicles;
+  window.toggleLayer = toggleLayer;
+  window.loadSelectedRoute = loadSelectedRoute;
+});
+</script>
+</body>
+</html>
