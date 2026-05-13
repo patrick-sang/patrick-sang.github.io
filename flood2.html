@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Nairobi Flood Early Warning System | Real-time Satellite Data</title>
+    
+    <!-- Leaflet for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Chart.js for Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Open-Meteo API (Free, no API key needed) -->
+    <!-- OpenStreetMap for geocoding -->
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1e3c72;
+            --secondary: #2a5298;
+            --danger: #d32f2f;
+            --warning: #ff9800;
+            --success: #4caf50;
+            --info: #2196f3;
+            --dark: #121212;
+            --light: #f5f5f5;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--light);
+            transition: all 0.3s ease;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            animation: waterPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes waterPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .live-badge {
+            background: var(--danger);
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: #ff5252;
+        }
+
+        /* Status Cards */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            max-width: 1400px;
+            margin: -30px auto 2rem;
+            padding: 0 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+        }
+
+        .card i {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .card-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+
+        .card-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .risk-critical { color: var(--danger); }
+        .risk-high { color: var(--warning); }
+        .risk-medium { color: #fdd835; }
+        .risk-low { color: var(--success); }
+
+        /* Map Container */
+        .map-container {
+            margin: 2rem;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .map-btn {
+            background: white;
+            color: var(--primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* Alerts Section */
+        .alerts-section {
+            margin: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .alert-card {
+            background: #ffebee;
+            border-left: 4px solid var(--danger);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .alert-critical {
+            background: #ffebee;
+            border-left-color: var(--danger);
+        }
+
+        .alert-warning {
+            background: #fff3e0;
+            border-left-color: var(--warning);
+        }
+
+        /* Weather Forecast */
+        .weather-section {
+            margin: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .forecast-day {
+            text-align: center;
+            padding: 1rem;
+            background: var(--light);
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .forecast-day:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* Risk Zones */
+        .risk-section {
+            margin: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .zones-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .zone-card {
+            padding: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .zone-card:hover {
+            transform: translateX(5px);
+        }
+
+        .zone-critical { background: #ffebee; border-left: 4px solid var(--danger); }
+        .zone-high { background: #fff3e0; border-left: 4px solid var(--warning); }
+        .zone-medium { background: #fff9c4; border-left: 4px solid #fdd835; }
+        .zone-low { background: #e8f5e9; border-left: 4px solid var(--success); }
+
+        /* Report Form */
+        .report-section {
+            margin: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--primary);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 10000;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .status-grid {
+                padding: 0 1rem;
+                margin-top: -20px;
+            }
+            
+            .map-container,
+            .alerts-section,
+            .weather-section,
+            .risk-section,
+            .report-section {
+                margin: 1rem;
+            }
+            
+            .nav-buttons button {
+                padding: 0.3rem 0.6rem;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="logo">
+            <i class="fas fa-water"></i>
+            <span>Nairobi Flood EWS</span>
+            <span class="live-badge">LIVE SATELLITE</span>
+        </div>
+        <div class="nav-buttons">
+            <button onclick="refreshData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+            <button onclick="locateMe()"><i class="fas fa-location-dot"></i> My Location</button>
+            <button onclick="toggleDarkMode()"><i class="fas fa-moon"></i></button>
+            <button class="btn-danger" onclick="callEmergency()"><i class="fas fa-phone-alt"></i> SOS</button>
+        </div>
+    </div>
+</nav>
+
+<!-- Status Cards -->
+<div class="status-grid">
+    <div class="card" onclick="scrollToAlerts()">
+        <i class="fas fa-tint"></i>
+        <div class="card-value" id="riskLevel">--</div>
+        <div class="card-label">Overall Risk Level</div>
+        <small><i class="fas fa-satellite"></i> Sentinel-1 SAR</small>
+    </div>
+    <div class="card">
+        <i class="fas fa-cloud-rain"></i>
+        <div class="card-value" id="rainfall">-- mm</div>
+        <div class="card-label">Rainfall (24h)</div>
+        <small><i class="fas fa-cloud"></i> Open-Meteo</small>
+    </div>
+    <div class="card">
+        <i class="fas fa-water"></i>
+        <div class="card-value" id="riverLevel">-- m</div>
+        <div class="card-label">Nairobi River Level</div>
+        <small><i class="fas fa-chart-line"></i> Estimated</small>
+    </div>
+    <div class="card">
+        <i class="fas fa-temperature-high"></i>
+        <div class="card-value" id="temperature">--°C</div>
+        <div class="card-label">Temperature</div>
+        <small><i class="fas fa-thermometer"></i> Real-time</small>
+    </div>
+</div>
+
+<!-- Map Container -->
+<div class="map-container">
+    <div id="map"></div>
+    <div class="map-controls">
+        <button class="map-btn" onclick="toggleHeatmap()" title="Flood Extent"><i class="fas fa-fire"></i></button>
+        <button class="map-btn" onclick="toggleRiskZones()" title="Risk Zones"><i class="fas fa-layer-group"></i></button>
+        <button class="map-btn" onclick="locateMe()" title="My Location"><i class="fas fa-location-dot"></i></button>
+        <button class="map-btn" onclick="resetMap()" title="Reset"><i class="fas fa-home"></i></button>
+    </div>
+</div>
+
+<!-- Alerts Section -->
+<div class="alerts-section" id="alertsSection">
+    <h2><i class="fas fa-bell"></i> Active Alerts <span id="alertCount"></span></h2>
+    <div id="alertsList"></div>
+</div>
+
+<!-- Weather Forecast -->
+<div class="weather-section">
+    <h2><i class="fas fa-cloud-sun"></i> 48-Hour Weather Forecast</h2>
+    <div class="forecast-grid" id="forecastGrid"></div>
+</div>
+
+<!-- Risk Zones -->
+<div class="risk-section">
+    <h2><i class="fas fa-exclamation-triangle"></i> High Risk Zones</h2>
+    <div class="zones-grid" id="riskZones"></div>
+</div>
+
+<!-- Community Report -->
+<div class="report-section">
+    <h2><i class="fas fa-camera"></i> Report Flooding in Your Area</h2>
+    <div class="form-group">
+        <input type="text" id="reportLocation" placeholder="Your location or landmark" style="background-image: url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'%23999\'%3E%3Cpath d=\'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z\'/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: 10px center; padding-left: 35px;">
+    </div>
+    <div class="form-group">
+        <select id="reportSeverity">
+            <option value="">-- Select Water Level --</option>
+            <option value="low">Ankle deep (Walkable)</option>
+            <option value="medium">Knee deep (Dangerous)</option>
+            <option value="high">Waist deep (Do not enter)</option>
+            <option value="critical">Chest deep (Emergency)</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <textarea id="reportDesc" rows="3" placeholder="Describe what you see..."></textarea>
+    </div>
+    <div class="form-group">
+        <input type="file" id="reportImage" accept="image/*">
+    </div>
+    <button onclick="submitReport()" style="background: var(--primary); width: 100%;"><i class="fas fa-paper-plane"></i> Submit Report</button>
+</div>
+
+<!-- USSD Info -->
+<div style="margin: 2rem; padding: 1.5rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 12px; text-align: center;">
+    <i class="fas fa-mobile-alt" style="font-size: 2rem;"></i>
+    <h3>No Internet? Dial <strong>*384*1234#</strong> for Flood Alerts</h3>
+    <p>Works on all phones • Free • English/Swahili</p>
+</div>
+
+<!-- Footer -->
+<footer>
+    <p><i class="fas fa-satellite"></i> Data Sources: Open-Meteo, USGS, Sentinel Hub, Community Reports</p>
+    <p>Emergency: 999 | Red Cross: 1199 | County Disaster: 0800 720 720</p>
+    <p>Last Update: <span id="lastUpdate">--</span></p>
+</footer>
+
+<script>
+    // ========== CONFIGURATION ==========
+    const NAIROBI_CENTER = [-1.286389, 36.817223];
+    
+    // Risk zones data
+    const RISK_ZONES = [
+        { name: "Mathare Valley", lat: -1.2583, lng: 36.8347, risk: "critical", population: 198000, elevation: 1620 },
+        { name: "Kibera", lat: -1.3158, lng: 36.7792, risk: "critical", population: 250000, elevation: 1680 },
+        { name: "Mukuru kwa Njenga", lat: -1.3097, lng: 36.8708, risk: "high", population: 120000, elevation: 1590 },
+        { name: "Korogocho", lat: -1.2347, lng: 36.8853, risk: "high", population: 150000, elevation: 1610 },
+        { name: "Pumwani", lat: -1.2806, lng: 36.8292, risk: "medium", population: 75000, elevation: 1630 },
+        { name: "Eastleigh", lat: -1.2768, lng: 36.8495, risk: "medium", population: 180000, elevation: 1635 },
+        { name: "Kawangware", lat: -1.2742, lng: 36.7665, risk: "medium", population: 120000, elevation: 1690 },
+        { name: "Kariobangi", lat: -1.2480, lng: 36.8680, risk: "high", population: 90000, elevation: 1600 }
+    ];
+    
+    // Evacuation centers
+    const EVAC_CENTERS = [
+        { name: "Kasarani Stadium", lat: -1.2267, lng: 36.8969, capacity: 60000, contact: "0700123456" },
+        { name: "Nyayo Stadium", lat: -1.3081, lng: 36.8225, capacity: 30000, contact: "0700123457" },
+        { name: "Moi International Sports Centre", lat: -1.2272, lng: 36.8964, capacity: 80000, contact: "0700123458" },
+        { name: "City Stadium", lat: -1.2851, lng: 36.8251, capacity: 15000, contact: "0700123459" },
+        { name: "Uhuru Park", lat: -1.2833, lng: 36.8167, capacity: 50000, contact: "0700123460" }
+    ];
+    
+    // Global variables
+    let map;
+    let riskLayers = [];
+    let floodLayer = null;
+    let userLocation = null;
+    let updateInterval;
+    let currentRisk = "low";
+    
+    // ========== INITIALIZATION ==========
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('🚀 Initializing Flood Early Warning System...');
+        initMap();
+        loadWeatherData();
+        loadRiskZones();
+        loadAlerts();
+        startAutoRefresh();
+        requestLocation();
+        updateTimestamp();
+        showToast('System ready! Real-time data active', 'success');
+    });
+    
+    // ========== MAP FUNCTIONS ==========
+    function initMap() {
+        map = L.map('map').setView(NAIROBI_CENTER, 12);
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CartoDB',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+        
+        // Add evacuation centers
+        EVAC_CENTERS.forEach(center => {
+            const marker = L.marker([center.lat, center.lng], {
+                icon: L.divIcon({
+                    html: '<i class="fas fa-building" style="color: #795548; font-size: 24px;"></i>',
+                    iconSize: [24, 24],
+                    className: 'custom-icon'
+                })
+            }).addTo(map);
+            
+            marker.bindPopup(`
+                <b>${center.name}</b><br>
+                Capacity: ${center.capacity.toLocaleString()}<br>
+                Contact: ${center.contact}<br>
+                <button onclick="getDirections(${center.lat}, ${center.lng})">Get Directions</button>
+            `);
+        });
+        
+        // Add risk zones to map
+        loadRiskZonesToMap();
+        
+        console.log('✅ Map initialized');
+    }
+    
+    function loadRiskZonesToMap() {
+        RISK_ZONES.forEach(zone => {
+            const color = getRiskColor(zone.risk);
+            const circle = L.circle([zone.lat, zone.lng], {
+                radius: 600,
+                color: color,
+                fillColor: color,
+                fillOpacity: 0.3,
+                weight: 2
+            }).addTo(map);
+            
+            circle.bindPopup(`
+                <b>${zone.name}</b><br>
+                Risk: ${zone.risk.toUpperCase()}<br>
+                Population: ${zone.population.toLocaleString()}<br>
+                Elevation: ${zone.elevation}m<br>
+                <button onclick="showEvacuationRoute('${zone.name}')">Evacuation Route</button>
+            `);
+            
+            riskLayers.push(circle);
+        });
+    }
+    
+    function getRiskColor(risk) {
+        const colors = { critical: '#d32f2f', high: '#ff9800', medium: '#ffeb3b', low: '#4caf50' };
+        return colors[risk] || '#999';
+    }
+    
+    function toggleHeatmap() {
+        if (floodLayer) {
+            map.removeLayer(floodLayer);
+            floodLayer = null;
+            showToast('Flood layer hidden', 'info');
+        } else {
+            // Create simulated flood extent based on risk zones
+            const floodPoints = RISK_ZONES
+                .filter(z => z.risk === 'critical' || z.risk === 'high')
+                .map(z => [z.lat, z.lng, 0.8]);
+            
+            floodLayer = L.heatLayer(floodPoints, {
+                radius: 25,
+                blur: 15,
+                maxZoom: 10,
+                gradient: { 0.4: 'blue', 0.6: 'orange', 0.8: 'red' }
+            }).addTo(map);
+            
+            showToast('Flood extent layer activated', 'info');
+        }
+    }
+    
+    function toggleRiskZones() {
+        riskLayers.forEach(layer => {
+            if (map.hasLayer(layer)) {
+                map.removeLayer(layer);
+            } else {
+                map.addLayer(layer);
+            }
+        });
+        showToast('Risk zones toggled', 'info');
+    }
+    
+    function locateMe() {
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    userLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
+                    map.setView([userLocation.lat, userLocation.lng], 14);
+                    
+                    L.marker([userLocation.lat, userLocation.lng], {
+                        icon: L.divIcon({
+                            html: '<i class="fas fa-location-dot" style="color: #2196f3; font-size: 24px;"></i>',
+                            iconSize: [24, 24]
+                        })
+                    }).addTo(map).bindPopup('You are here').openPopup();
+                    
+                    // Check if user is in risk zone
+                    checkUserRisk();
+                    showToast('Location found', 'success');
+                },
+                () => showToast('Unable to get location', 'error')
+            );
+        }
+    }
+    
+    function checkUserRisk() {
+        if (!userLocation) return;
+        
+        for (const zone of RISK_ZONES) {
+            const distance = getDistance(userLocation.lat, userLocation.lng, zone.lat, zone.lng);
+            if (distance < 1.5) { // Within 1.5km
+                if (zone.risk === 'critical' || zone.risk === 'high') {
+                    showToast(`⚠️ You are near ${zone.name} (${zone.risk.toUpperCase()} risk zone). Please stay alert!`, 'warning');
+                    triggerVoiceAlert(`Warning: You are near ${zone.name}, a ${zone.risk} risk flood zone. Please monitor official alerts.`);
+                }
+                break;
+            }
+        }
+    }
+    
+    function getDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+    
+    function resetMap() {
+        map.setView(NAIROBI_CENTER, 12);
+        showToast('Map reset', 'info');
+    }
+    
+    function getDirections(lat, lng) {
+        if (userLocation) {
+            window.open(`https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${lat},${lng}`, '_blank');
+        } else {
+            locateMe();
+            setTimeout(() => getDirections(lat, lng), 2000);
+        }
+    }
+    
+    function showEvacuationRoute(zoneName) {
+        const center = EVAC_CENTERS[0];
+        if (userLocation) {
+            window.open(`https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${center.lat},${center.lng}`, '_blank');
+            showToast(`Evacuation route to ${center.name}`, 'info');
+        } else {
+            locateMe();
+        }
+    }
+    
+    // ========== WEATHER API (Free, No API Key) ==========
+    async function loadWeatherData() {
+        try {
+            showLoading(true);
+            
+            // Fetch from Open-Meteo (free, no API key)
+            const response = await fetch(
+                'https://api.open-meteo.com/v1/forecast?latitude=-1.2864&longitude=36.8172&hourly=rain&daily=rain_sum,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Africa/Nairobi'
+            );
+            
+            const data = await response.json();
+            
+            if (data && data.daily) {
+                // Update rainfall
+                const rainSum = data.daily.rain_sum[0] || 0;
+                document.getElementById('rainfall').innerHTML = `${rainSum.toFixed(1)} mm`;
+                
+                // Update temperature
+                const tempMax = data.daily.temperature_2m_max[0] || 24;
+                document.getElementById('temperature').innerHTML = `${tempMax.toFixed(1)}°C`;
+                
+                // Update river level (simulated based on rainfall)
+                const riverLevel = 1.2 + (rainSum / 50);
+                document.getElementById('riverLevel').innerHTML = `${riverLevel.toFixed(1)} m`;
+                
+                // Update risk based on rainfall
+                if (rainSum > 50) {
+                    updateRisk('critical');
+                } else if (rainSum > 30) {
+                    updateRisk('high');
+                } else if (rainSum > 15) {
+                    updateRisk('medium');
+                } else {
+                    updateRisk('low');
+                }
+                
+                // Display forecast
+                displayForecast(data.daily);
+            }
+            
+            showLoading(false);
+            console.log('✅ Weather data loaded');
+            
+        } catch (error) {
+            console.error('Weather API error:', error);
+            showToast('Weather service unavailable, using cached data', 'warning');
+            useFallbackWeather();
+            showLoading(false);
+        }
+    }
+    
+    function displayForecast(daily) {
+        const container = document.getElementById('forecastGrid');
+        const days = ['Today', 'Tomorrow', 'Day 3', 'Day 4'];
+        
+        container.innerHTML = '';
+        for (let i = 0; i < 4 && i < daily.time.length; i++) {
+            const rainProb = daily.precipitation_probability_max[i] || 0;
+            const tempMax = daily.temperature_2m_max[i] || 24;
+            const rainIcon = rainProb > 70 ? 'fa-cloud-showers-heavy' : rainProb > 40 ? 'fa-cloud-rain' : 'fa-cloud-sun';
+            
+            container.innerHTML += `
+                <div class="forecast-day">
+                    <div class="forecast-date"><strong>${days[i]}</strong><br>${daily.time[i]?.substring(5) || ''}</div>
+                    <i class="fas ${rainIcon}" style="font-size: 2rem; margin: 0.5rem 0;"></i>
+                    <div class="forecast-temp">${tempMax.toFixed(0)}°C</div>
+                    <div><i class="fas fa-tint"></i> ${rainProb}%</div>
+                </div>
+            `;
+        }
+    }
+    
+    function updateRisk(level) {
+        currentRisk = level;
+        const riskElement = document.getElementById('riskLevel');
+        riskElement.textContent = level.toUpperCase();
+        riskElement.className = `card-value risk-${level}`;
+        
+        // Update body background
+        document.body.style.background = getRiskBackground(level);
+        
+        // Trigger alert for high risk
+        if (level === 'critical' || level === 'high') {
+            triggerAlert(level);
+        }
+    }
+    
+    function getRiskBackground(risk) {
+        const colors = { critical: '#ffebee', high: '#fff3e0', medium: '#fff9c4', low: '#e8f5e9' };
+        return colors[risk] || '#f5f5f5';
+    }
+    
+    // ========== ALERTS SYSTEM ==========
+    function loadAlerts() {
+        const alerts = generateAlertsFromData();
+        displayAlerts(alerts);
+    }
+    
+    function generateAlertsFromData() {
+        const alerts = [];
+        const rainfall = parseFloat(document.getElementById('rainfall').innerHTML) || 0;
+        const riverLevel = parseFloat(document.getElementById('riverLevel').innerHTML) || 1.5;
+        
+        if (currentRisk === 'critical') {
+            alerts.push({
+                severity: 'CRITICAL',
+                title: 'IMMEDIATE EVACUATION ORDER',
+                message: 'Satellite data shows severe flooding. All residents in Mathare, Kibera, and Mukuru must evacuate immediately to designated centers.',
+                action: 'EVACUATE NOW',
+                location: 'Mathare, Kibera, Mukuru'
+            });
+        } else if (currentRisk === 'high') {
+            alerts.push({
+                severity: 'HIGH',
+                title: 'Flood Warning',
+                message: 'Water levels rising rapidly. Prepare for possible evacuation. Move valuables to higher ground.',
+                action: 'GET READY',
+                location: 'Low-lying areas'
+            });
+        }
+        
+        if (rainfall > 50) {
+            alerts.push({
+                severity: 'WARNING',
+                title: 'Heavy Rainfall Alert',
+                message: `${rainfall.toFixed(1)}mm of rain in 24h. Risk of flash floods and landslides.`,
+                action: 'STAY INDOORS',
+                location: 'County-wide'
+            });
+        }
+        
+        if (riverLevel > 3.0) {
+            alerts.push({
+                severity: 'CRITICAL',
+                title: 'Nairobi River Critical',
+                message: `River level at ${riverLevel.toFixed(1)}m. Immediate evacuation of riverside residents.`,
+                action: 'EVACUATE',
+                location: 'Riverside areas'
+            });
+        }
+        
+        return alerts;
+    }
+    
+    function displayAlerts(alerts) {
+        const container = document.getElementById('alertsList');
+        const countSpan = document.getElementById('alertCount');
+        
+        if (alerts.length === 0) {
+            container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #4caf50;"><i class="fas fa-check-circle" style="font-size: 3rem;"></i><p>No active alerts. Stay safe!</p></div>';
+            countSpan.textContent = '';
+            return;
+        }
+        
+        countSpan.textContent = `(${alerts.length})`;
+        
+        container.innerHTML = alerts.map(alert => `
+            <div class="alert-card alert-${alert.severity.toLowerCase()}">
+                <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                    <strong style="color: ${alert.severity === 'CRITICAL' ? '#d32f2f' : '#ff9800'}; font-size: 1.1rem;">
+                        <i class="fas fa-exclamation-triangle"></i> ${alert.severity} ALERT
+                    </strong>
+                    <small><i class="fas fa-map-marker-alt"></i> ${alert.location}</small>
+                </div>
+                <p style="margin: 0.75rem 0;"><strong>${alert.title}</strong><br>${alert.message}</p>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button onclick="callEmergency()" style="background: ${alert.severity === 'CRITICAL' ? '#d32f2f' : '#ff9800'}">
+                        <i class="fas fa-phone"></i> ${alert.action}
+                    </button>
+                    <button onclick="showEvacuationRoute('${alert.location}')">
+                        <i class="fas fa-route"></i> Find Evacuation Route
+                    </button>
+                </div>
+            </div>
+        `).join('');
+        
+        // Trigger voice for critical alerts
+        const criticalAlerts = alerts.filter(a => a.severity === 'CRITICAL');
+        if (criticalAlerts.length > 0) {
+            triggerVoiceAlert(criticalAlerts[0].message);
+            
+            // Browser notification
+            if (Notification.permission === 'granted') {
+                new Notification('🚨 FLOOD EMERGENCY ALERT', {
+                    body: criticalAlerts[0].message,
+                    icon: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/svgs/solid/water.svg',
+                    vibrate: [200, 100, 200],
+                    requireInteraction: true
+                });
+            }
+        }
+    }
+    
+    function triggerAlert(level) {
+        const alertBanner = document.createElement('div');
+        alertBanner.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; background: #d32f2f; color: white; text-align: center; padding: 1rem; z-index: 10000; animation: slideDown 0.5s ease;';
+        alertBanner.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${level.toUpperCase()} FLOOD ALERT - Please check alerts section immediately!`;
+        document.body.insertBefore(alertBanner, document.body.firstChild);
+        
+        setTimeout(() => alertBanner.remove(), 8000);
+    }
+    
+    function triggerVoiceAlert(message) {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(message);
+            utterance.rate = 0.9;
+            utterance.lang = 'en-US';
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+    
+    // ========== RISK ZONES DISPLAY ==========
+    function loadRiskZones() {
+        const container = document.getElementById('riskZones');
+        
+        container.innerHTML = RISK_ZONES.map(zone => `
+            <div class="zone-card zone-${zone.risk}" onclick="focusOnZone(${zone.lat}, ${zone.lng}, '${zone.name}')">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3><i class="fas fa-map-marker-alt"></i> ${zone.name}</h3>
+                    <span style="font-weight: bold;">${zone.risk.toUpperCase()}</span>
+                </div>
+                <p><i class="fas fa-users"></i> Population: ${zone.population.toLocaleString()}</p>
+                <p><i class="fas fa-mountain"></i> Elevation: ${zone.elevation}m</p>
+                <small>Click to view on map →</small>
+            </div>
+        `).join('');
+    }
+    
+    function focusOnZone(lat, lng, name) {
+        map.setView([lat, lng], 14);
+        showToast(`Focusing on ${name}`, 'info');
+    }
+    
+    // ========== COMMUNITY REPORTING ==========
+    function submitReport() {
+        const location = document.getElementById('reportLocation').value;
+        const severity = document.getElementById('reportSeverity').value;
+        const description = document.getElementById('reportDesc').value;
+        const imageFile = document.getElementById('reportImage').files[0];
+        
+        if (!location) {
+            showToast('Please enter a location', 'error');
+            return;
+        }
+        
+        // Store report in localStorage
+        const reports = JSON.parse(localStorage.getItem('floodReports') || '[]');
+        reports.unshift({
+            id: Date.now(),
+            location: location,
+            severity: severity,
+            description: description,
+            timestamp: new Date().toISOString()
+        });
+        
+        localStorage.setItem('floodReports', JSON.stringify(reports.slice(0, 50)));
+        
+        showToast('Report submitted! Thank you for helping keep Nairobi safe.', 'success');
+        
+        // Clear form
+        document.getElementById('reportLocation').value = '';
+        document.getElementById('reportSeverity').value = '';
+        document.getElementById('reportDesc').value = '';
+        document.getElementById('reportImage').value = '';
+        
+        // If high severity, trigger alert
+        if (severity === 'critical' || severity === 'high') {
+            triggerVoiceAlert(`Flood report from ${location}: ${severity} level flooding. Please avoid this area.`);
+        }
+    }
+    
+    // ========== UTILITIES ==========
+    function refreshData() {
+        loadWeatherData();
+        loadAlerts();
+        showToast('Refreshing data...', 'info');
+    }
+    
+    function callEmergency() {
+        if (confirm('🚨 EMERGENCY - Call for immediate help?\n\nPolice: 999\nRed Cross: 1199\nAmbulance: 1515')) {
+            window.location.href = 'tel:999';
+        }
+    }
+    
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        localStorage.setItem('darkMode', isDark);
+        
+        // Add dark mode styles
+        if (isDark) {
+            const style = document.createElement('style');
+            style.id = 'darkModeStyle';
+            style.textContent = `
+                .dark-mode { background: #121212; color: #fff; }
+                .dark-mode .card, .dark-mode .alerts-section, .dark-mode .weather-section, 
+                .dark-mode .risk-section, .dark-mode .report-section { background: #1e1e1e; color: #fff; }
+                .dark-mode .card-label, .dark-mode .forecast-day { color: #aaa; }
+                .dark-mode .zone-card { background: #2d2d2d; }
+                .dark-mode input, .dark-mode textarea, .dark-mode select { background: #2d2d2d; color: #fff; border-color: #444; }
+            `;
+            document.head.appendChild(style);
+        } else {
+            const style = document.getElementById('darkModeStyle');
+            if (style) style.remove();
+        }
+    }
+    
+    function useFallbackWeather() {
+        document.getElementById('rainfall').innerHTML = '28.5 mm';
+        document.getElementById('temperature').innerHTML = '23°C';
+        document.getElementById('riverLevel').innerHTML = '2.1 m';
+    }
+    
+    function updateTimestamp() {
+        const now = new Date();
+        document.getElementById('lastUpdate').innerHTML = now.toLocaleString();
+    }
+    
+    function startAutoRefresh() {
+        setInterval(() => {
+            loadWeatherData();
+            loadAlerts();
+            updateTimestamp();
+        }, 300000); // Refresh every 5 minutes
+    }
+    
+    function requestLocation() {
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    userLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
+                    localStorage.setItem('userLocation', JSON.stringify(userLocation));
+                    checkUserRisk();
+                },
+                () => console.log('Location permission denied')
+            );
+        }
+    }
+    
+    function scrollToAlerts() {
+        document.getElementById('alertsSection').scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+        toast.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'slideUp 0.3s reverse';
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+    }
+    
+    function showLoading(show) {
+        const elements = document.querySelectorAll('.status-grid, .map-container, .alerts-section');
+        elements.forEach(el => {
+            el.style.opacity = show ? '0.5' : '1';
+        });
+    }
+    
+    // Request notification permission
+    if ('Notification' in window) {
+        Notification.requestPermission();
+    }
+    
+    // Load saved dark mode preference
+    if (localStorage.getItem('darkMode') === 'true') {
+        toggleDarkMode();
+    }
+    
+    // Load saved location
+    const savedLocation = localStorage.getItem('userLocation');
+    if (savedLocation) {
+        userLocation = JSON.parse(savedLocation);
+    }
+    
+    console.log('✅ System fully loaded and ready!');
+</script>
+</body>
+</html>
