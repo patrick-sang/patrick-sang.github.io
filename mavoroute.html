@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Nairobi GIS Platform | File Upload + MAVO GitHub Backend</title>
+    <!-- Leaflet CSS + JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet Routing Machine -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <!-- Turf.js -->
+    <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+    <!-- MAVO with GitHub backend -->
+    <script src="https://get.mavo.io/mavo.min.js"></script>
+    <link rel="stylesheet" href="https://get.mavo.io/mavo.css" />
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            z-index: 10;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .header h1 {
+            font-size: 1.3rem;
+        }
+        .stats {
+            font-size: 0.8rem;
+            background: #34495e;
+            padding: 5px 12px;
+            border-radius: 20px;
+        }
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        #map {
+            flex: 3;
+            height: 100%;
+            background: #c8e0e8;
+        }
+        .sidebar {
+            flex: 1;
+            background: #f8f9fa;
+            border-left: 1px solid #ddd;
+            overflow-y: auto;
+            padding: 15px;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+            z-index: 5;
+        }
+        .section {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 12px;
+        }
+        .section h3 {
+            font-size: 1rem;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            border-left: 4px solid #27ae60;
+            padding-left: 8px;
+        }
+        .btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-danger {
+            background: #e67e22;
+        }
+        .btn-primary {
+            background: #3498db;
+        }
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 0.7rem;
+        }
+        .btn:hover {
+            opacity: 0.85;
+            transform: translateY(-1px);
+        }
+        .geojson-list {
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 0.8rem;
+        }
+        .geojson-item {
+            background: white;
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 6px;
+            border-left: 3px solid #3498db;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.2s;
+        }
+        .geojson-item:hover {
+            background: #ecf0f1;
+            transform: translateX(2px);
+        }
+        .file-upload-area {
+            border: 2px dashed #3498db;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            margin: 10px 0;
+            background: #f0f8ff;
+            transition: 0.2s;
+        }
+        .file-upload-area.drag-over {
+            background: #e3f2fd;
+            border-color: #27ae60;
+        }
+        .file-upload-area input {
+            display: none;
+        }
+        .upload-label {
+            cursor: pointer;
+            color: #3498db;
+            font-weight: bold;
+        }
+        .layer-control {
+            margin-top: 8px;
+        }
+        .layer-control label {
+            display: block;
+            font-size: 0.8rem;
+            margin: 5px 0;
+        }
+        .status {
+            background: #e9ecef;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            margin-top: 10px;
+            word-break: break-word;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 3px solid #28a745;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 3px solid #dc3545;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+            display: none;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #27ae60;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            background: #2c3e50;
+            color: #aaa;
+            padding: 5px;
+        }
+        .login-prompt {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        @media (max-width: 768px) {
+            .main-container { flex-direction: column; }
+            .sidebar { max-height: 45%; }
+            #map { min-height: 50vh; }
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>🏙️ Nairobi GIS Platform | GeoJSON File Upload + MAVO GitHub</h1>
+    <div class="stats">📊 498k Buildings | 700 km² | 🟢 Green: 738 km² | 💧 Water: 2.58 km²</div>
+</div>
+<div class="main-container">
+    <div id="map"></div>
+    <div class="sidebar" mv-app="nairobi_geojson" mv-storage="https://github.com/patrick-sang/nairobi_gis_data/" mv-plugins="github">
+        
+        <!-- MAVO Login Status -->
+        <div class="login-prompt" mv-if="!mavo.user">
+            <i class="fas fa-sign-in-alt"></i> <strong>MAVO Login Required</strong><br>
+            Click the <i class="fas fa-user-circle"></i> icon above to login with GitHub to enable file uploads and save data.
+        </div>
+        <div class="login-prompt success" mv-if="mavo.user" style="background:#d4edda; border-color:#28a745;">
+            <i class="fab fa-github"></i> ✅ Logged in as: <strong>{{ mavo.user.login }}</strong> | Data will sync to github.com/patrick-sang/nairobi_gis_data/
+        </div>
+
+        <div class="section">
+            <h3><i class="fas fa-upload"></i> 📁 Upload GeoJSON Files</h3>
+            
+            <!-- File Upload Area -->
+            <div class="file-upload-area" id="dropZone">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 24px; color: #3498db;"></i>
+                <p>Drag & Drop GeoJSON files here or <label class="upload-label"><input type="file" id="fileInput" accept=".geojson,.json" multiple> click to browse</label></p>
+                <small>Supported: .geojson, .json (FeatureCollection format)</small>
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+            
+            <!-- Quick Upload Buttons for Metadata Files -->
+            <div style="margin: 10px 0;">
+                <button class="btn btn-sm" onclick="loadSampleFromMetadata('green_spaces')" style="background:#2ecc71;">
+                    <i class="fas fa-leaf"></i> Add Green Spaces Sample
+                </button>
+                <button class="btn btn-sm" onclick="loadSampleFromMetadata('water_bodies')" style="background:#3498db;">
+                    <i class="fas fa-water"></i> Add Water Bodies Sample
+                </button>
+                <button class="btn btn-sm" onclick="loadSampleFromMetadata('land_use')" style="background:#f39c12;">
+                    <i class="fas fa-map"></i> Add Land Use Sample
+                </button>
+                <button class="btn btn-sm" onclick="loadSampleFromMetadata('pois')" style="background:#e84393;">
+                    <i class="fas fa-location-dot"></i> Add POIs Sample
+                </button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3><i class="fas fa-layer-group"></i> 🗂️ Managed GeoJSON Layers</h3>
+            <div class="geojson-list" id="geojsonList">
+                <div mv-repeat="item in schema">
+                    <div class="geojson-item">
+                        <span mv-click="loadLayer(item)">
+                            <i class="fas fa-draw-polygon"></i> {{ item.name }}
+                            <small style="color:#666;">({{ item.geojson.features.length }} features)</small>
+                        </span>
+                        <div>
+                            <button class="btn btn-sm" mv-click="editGeoJSON(item)" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" mv-click="deleteLayer(item)" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div mv-if="item.editing" style="background:#fff3cd; padding:8px; margin-bottom:8px; border-radius:6px;">
+                        <textarea mv-attribute="item.geojsonString" style="font-family:monospace; height:120px; width:100%;">{{ JSON.stringify(item.geojson, null, 2) }}</textarea>
+                        <button class="btn btn-sm" mv-click="saveGeoJSON(item)">💾 Save</button>
+                        <button class="btn btn-sm" mv-click="cancelEdit(item)">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3><i class="fas fa-map-marked-alt"></i> 🗺️ Map Controls</h3>
+            <div class="layer-control">
+                <label><input type="radio" name="basemap" checked onclick="changeBasemap('osm')"> OpenStreetMap</label>
+                <label><input type="radio" name="basemap" onclick="changeBasemap('satellite')"> Satellite</label>
+                <label><input type="radio" name="basemap" onclick="changeBasemap('dark')"> Dark Mode</label>
+            </div>
+            <div>
+                <button id="routeBtn" class="btn"><i class="fas fa-route"></i> Start Routing</button>
+                <button id="clearRouteBtn" class="btn btn-danger btn-sm"><i class="fas fa-times"></i> Clear Route</button>
+            </div>
+            <div id="routeStatus" class="status">Click "Start Routing", then click map for start + end points</div>
+        </div>
+
+        <div class="section">
+            <h3><i class="fas fa-chart-bar"></i> 📊 Nairobi Statistics</h3>
+            <div class="status">
+                <strong>🏘️ Buildings:</strong> 498,881<br>
+                <strong>🌳 Green space:</strong> 738 km² (105.3%)<br>
+                <strong>💧 Water:</strong> 2.58 km² (0.37%)<br>
+                <strong>🗺️ Landuse:</strong> Residential 33.7%, Farmland 32.8%<br>
+                <strong>📍 POIs:</strong> 8,269 amenities<br>
+                <strong>🚌 Transit:</strong> 323 pts | 🚶 Paths: 3,026 edges
+            </div>
+        </div>
+        
+        <div id="globalStatus" class="status">✅ Ready. Login with GitHub to upload GeoJSON files.</div>
+    </div>
+</div>
+<footer>🌍 Nairobi, Kenya | Data from OpenStreetMap | MAVO GitHub Backend (patrick-sang) | Drag & Drop GeoJSON Upload</footer>
+
+<script>
+    // --------------------- MAP INITIALIZATION ---------------------
+    let map = L.map('map').setView([-1.286389, 36.817223], 12);
+    
+    // Base layers
+    let osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    });
+    let satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri'
+    });
+    let darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CartoDB'
+    });
+    
+    osmLayer.addTo(map);
+    
+    window.changeBasemap = function(type) {
+        map.removeLayer(osmLayer);
+        map.removeLayer(satelliteLayer);
+        map.removeLayer(darkLayer);
+        if (type === 'osm') osmLayer.addTo(map);
+        if (type === 'satellite') satelliteLayer.addTo(map);
+        if (type === 'dark') darkLayer.addTo(map);
+    };
+    
+    // Layer management
+    let layerControl = {};
+    
+    function addGeojsonToMap(name, geojsonData, color = '#3388ff') {
+        if (layerControl[name]) {
+            map.removeLayer(layerControl[name]);
+            delete layerControl[name];
+        }
+        if (!geojsonData || !geojsonData.features || geojsonData.features.length === 0) {
+            updateStatus(`⚠️ Layer "${name}" has no features.`, 'error');
+            return;
+        }
+        
+        let layer = L.geoJSON(geojsonData, {
+            style: function(feature) {
+                let geomType = feature.geometry.type;
+                if (geomType === 'Point' || geomType === 'MultiPoint') {
+                    return { color: '#ff7800' };
+                }
+                return { color: color, weight: 2, opacity: 0.7, fillOpacity: 0.3, fillColor: color };
+            },
+            pointToLayer: function(feature, latlng) {
+                return L.circleMarker(latlng, { radius: 5, color: '#ff7800', weight: 1, fillOpacity: 0.7 });
+            },
+            onEachFeature: function(feature, layerEl) {
+                let props = feature.properties || {};
+                let popupContent = `<b>${name}</b><br>${JSON.stringify(props).substring(0, 300)}`;
+                layerEl.bindPopup(popupContent);
+            }
+        });
+        
+        layer.addTo(map);
+        layerControl[name] = layer;
+        updateStatus(`✅ Loaded "${name}" (${geojsonData.features.length} features)`, 'success');
+        
+        // Fit bounds if first layer
+        if (Object.keys(layerControl).length === 1) {
+            map.fitBounds(layer.getBounds());
+        }
+    }
+    
+    function updateStatus(message, type = 'info') {
+        let statusDiv = document.getElementById('globalStatus');
+        statusDiv.innerHTML = message;
+        statusDiv.className = `status ${type === 'success' ? 'success' : (type === 'error' ? 'error' : '')}`;
+        setTimeout(() => {
+            if (statusDiv.className !== 'status') {
+                setTimeout(() => {
+                    statusDiv.className = 'status';
+                }, 3000);
+            }
+        }, 3000);
+    }
+    
+    // --------------------- FILE UPLOAD HANDLER ---------------------
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const progressBar = document.getElementById('progressBar');
+    const progressFill = document.getElementById('progressFill');
+    
+    function handleGeoJSONFiles(files) {
+        Array.from(files).forEach(file => {
+            if (file.name.endsWith('.geojson') || file.name.endsWith('.json')) {
+                uploadAndAddGeoJSON(file);
+            } else {
+                updateStatus(`❌ ${file.name} is not a GeoJSON file`, 'error');
+            }
+        });
+    }
+    
+    function uploadAndAddGeoJSON(file) {
+        progressBar.style.display = 'block';
+        progressFill.style.width = '50%';
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const geojson = JSON.parse(e.target.result);
+                
+                // Validate GeoJSON structure
+                if (geojson.type !== 'FeatureCollection') {
+                    throw new Error('GeoJSON must be a FeatureCollection');
+                }
+                
+                progressFill.style.width = '100%';
+                
+                // Generate layer name from filename
+                let layerName = file.name.replace('.geojson', '').replace('.json', '');
+                layerName = layerName.replace(/_/g, ' ').replace(/-/g, ' ');
+                layerName = layerName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                
+                // Add to MAVO schema
+                addLayerToMAVO(layerName, geojson);
+                
+                setTimeout(() => {
+                    progressBar.style.display = 'none';
+                    progressFill.style.width = '0%';
+                }, 500);
+                
+            } catch (error) {
+                progressBar.style.display = 'none';
+                updateStatus(`❌ Error parsing ${file.name}: ${error.message}`, 'error');
+            }
+        };
+        reader.onerror = function() {
+            progressBar.style.display = 'none';
+            updateStatus(`❌ Error reading ${file.name}`, 'error');
+        };
+        reader.readAsText(file);
+    }
+    
+    function addLayerToMAVO(name, geojson) {
+        const app = document.querySelector('[mv-app="nairobi_geojson"]');
+        if (!app || !app.state || !app.state.schema) {
+            updateStatus('❌ MAVO not initialized. Please ensure you are logged in.', 'error');
+            return;
+        }
+        
+        const newLayer = {
+            id: `layer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            name: name,
+            geojson: geojson,
+            editing: false
+        };
+        
+        app.state.schema.push(newLayer);
+        Mavo.save();
+        updateStatus(`✅ Added "${name}" with ${geojson.features.length} features. Click layer to display on map.`, 'success');
+        
+        // Automatically display the layer
+        setTimeout(() => {
+            loadLayer(newLayer);
+        }, 500);
+    }
+    
+    // Drag & Drop handlers
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+    
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('drag-over');
+    });
+    
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const files = e.dataTransfer.files;
+        handleGeoJSONFiles(files);
+    });
+    
+    fileInput.addEventListener('change', (e) => {
+        handleGeoJSONFiles(e.target.files);
+        fileInput.value = ''; // Reset so same file can be uploaded again
+    });
+    
+    // --------------------- MAVO METHODS ---------------------
+    window.loadLayer = function(item) {
+        if (item.geojson && item.geojson.features) {
+            let colorMap = {
+                'Buildings': '#2c3e50', 'Green Spaces': '#2ecc71', 'Water Bodies': '#3498db',
+                'Land Use': '#f39c12', 'Points of Interest': '#e84393', 'Pedestrian Paths': '#9b59b6',
+                'Transit Points': '#1abc9c'
+            };
+            let color = '#27ae60';
+            for (let [key, val] of Object.entries(colorMap)) {
+                if (item.name.toLowerCase().includes(key.toLowerCase())) {
+                    color = val;
+                    break;
+                }
+            }
+            addGeojsonToMap(item.name, item.geojson, color);
+        } else {
+            updateStatus(`❌ "${item.name}" has no GeoJSON data. Use Edit button to add content.`, 'error');
+        }
+    };
+    
+    window.editGeoJSON = function(item) {
+        item.editing = true;
+        item.geojsonString = JSON.stringify(item.geojson, null, 2);
+        Mavo.refresh();
+    };
+    
+    window.saveGeoJSON = function(item) {
+        try {
+            let parsed = JSON.parse(item.geojsonString);
+            if (parsed.type !== 'FeatureCollection') throw new Error('Must be FeatureCollection');
+            item.geojson = parsed;
+            item.editing = false;
+            delete item.geojsonString;
+            Mavo.save();
+            updateStatus(`✅ Saved "${item.name}" to GitHub`, 'success');
+            if (layerControl[item.name]) {
+                addGeojsonToMap(item.name, item.geojson);
+            }
+        } catch(e) {
+            updateStatus(`❌ Invalid GeoJSON: ${e.message}`, 'error');
+        }
+    };
+    
+    window.cancelEdit = function(item) {
+        item.editing = false;
+        delete item.geojsonString;
+        Mavo.refresh();
+    };
+    
+    window.deleteLayer = function(item) {
+        if (confirm(`Delete "${item.name}" from GitHub storage?`)) {
+            const app = document.querySelector('[mv-app="nairobi_geojson"]');
+            const index = app.state.schema.findIndex(l => l.id === item.id);
+            if (index !== -1) {
+                app.state.schema.splice(index, 1);
+                Mavo.save();
+                if (layerControl[item.name]) {
+                    map.removeLayer(layerControl[item.name]);
+                    delete layerControl[item.name];
+                }
+                updateStatus(`✅ Deleted "${item.name}"`, 'success');
+            }
+        }
+    };
+    
+    // Sample data from metadata
+    window.loadSampleFromMetadata = function(type) {
+        let sampleData;
+        let layerName;
+        
+        if (type === 'green_spaces') {
+            layerName = 'Green Spaces (Nairobi)';
+            sampleData = {
+                type: "FeatureCollection",
+                features: [
+                    { type: "Feature", geometry: { type: "Polygon", coordinates: [[[36.75,-1.27],[36.78,-1.27],[36.78,-1.30],[36.75,-1.30],[36.75,-1.27]]] }, properties: { name: "Karura Forest", leisure: "nature_reserve" } },
+                    { type: "Feature", geometry: { type: "Polygon", coordinates: [[[36.82,-1.22],[36.85,-1.22],[36.85,-1.25],[36.82,-1.25],[36.82,-1.22]]] }, properties: { name: "Nairobi Arboretum", leisure: "park" } },
+                    { type: "Feature", geometry: { type: "Polygon", coordinates: [[[36.78,-1.35],[36.80,-1.35],[36.80,-1.37],[36.78,-1.37],[36.78,-1.35]]] }, properties: { name: "Uhuru Park", leisure: "park" } }
+                ]
+            };
+        } else if (type === 'water_bodies') {
+            layerName = 'Water Bodies (Nairobi)';
+            sampleData = {
+                type: "FeatureCollection",
+                features: [
+                    { type: "Feature", geometry: { type: "Polygon", coordinates: [[[36.80,-1.30],[36.82,-1.30],[36.82,-1.31],[36.80,-1.31],[36.80,-1.30]]] }, properties: { name: "Nairobi Dam", water: "reservoir" } }
+                ]
+            };
+        } else if (type === 'land_use') {
+            layerName = 'Land Use (Nairobi)';
+            sampleData = {
+                type: "FeatureCollection",
+                features: [
+                    { type: "Feature", geometry: { type: "Polygon", coordinates: [[[36.75,-1.33],[36.79,-1.33],[36.79,-1.36],[36.75,-1.36],[36.75,-1.33]]] }, properties: { landuse: "residential", name: "Residential Area" } },
+                    { type: "Feature", geometry: { type: "Polygon", coordinates: [[[36.83,-1.20],[36.87,-1.20],[36.87,-1.23],[36.83,-1.23],[36.83,-1.20]]] }, properties: { landuse: "farmland", name: "Agricultural Zone" } }
+                ]
+            };
+        } else if (type === 'pois') {
+            layerName = 'Points of Interest (Nairobi)';
+            sampleData = {
+                type: "FeatureCollection",
+                features: [
+                    { type: "Feature", geometry: { type: "Point", coordinates: [36.8219, -1.2833] }, properties: { name: "Nairobi CBD", amenity: "city_center" } },
+                    { type: "Feature", geometry: { type: "Point", coordinates: [36.8167, -1.2869] }, properties: { name: "Kenyatta International Convention Centre", tourism: "attraction" } },
+                    { type: "Feature", geometry: { type: "Point", coordinates: [36.8275, -1.2755] }, properties: { name: "Nairobi National Museum", tourism: "museum" } }
+                ]
+            };
+        }
+        
+        if (sampleData) {
+            addLayerToMAVO(layerName, sampleData);
+        }
+    };
+    
+    // --------------------- ROUTING ---------------------
+    let routingControl = null;
+    let routingActive = false;
+    
+    function clearRouting() {
+        if (routingControl) {
+            map.removeControl(routingControl);
+            routingControl = null;
+        }
+        routingActive = false;
+        document.getElementById('routeStatus').innerHTML = 'Routing cleared. Click "Start Routing" then click map for start/end.';
+    }
+    
+    function initRouting() {
+        clearRouting();
+        routingActive = true;
+        document.getElementById('routeStatus').innerHTML = '🟢 Routing mode: click map for START point, then click for END point.';
+        let tempPoints = [];
+        
+        let clickHandler = function(e) {
+            if (!routingActive) return;
+            tempPoints.push(e.latlng);
+            L.marker(e.latlng).addTo(map).bindPopup(`Point ${tempPoints.length}`).openPopup();
+            
+            if (tempPoints.length === 2) {
+                routingControl = L.Routing.control({
+                    waypoints: tempPoints,
+                    routeWhileDragging: true,
+                    showAlternatives: true,
+                    lineOptions: { styles: [{ color: '#3498db', weight: 5 }] },
+                    router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1/' })
+                }).addTo(map);
+                document.getElementById('routeStatus').innerHTML = '✅ Route calculated. Use Clear Route button.';
+                routingActive = false;
+                map.off('click', clickHandler);
+            }
+        };
+        map.on('click', clickHandler);
+        window.activeRoutingHandler = clickHandler;
+    }
+    
+    document.getElementById('routeBtn').addEventListener('click', initRouting);
+    document.getElementById('clearRouteBtn').addEventListener('click', clearRouting);
+    
+    // Initial demo layers
+    setTimeout(() => {
+        let demoBuildings = {
+            type: "FeatureCollection",
+            features: []
+        };
+        for (let i = 0; i < 100; i++) {
+            demoBuildings.features.push({
+                type: "Feature",
+                geometry: { type: "Point", coordinates: [36.80 + Math.random() * 0.12, -1.28 + Math.random() * 0.1] },
+                properties: { building: "yes", type: "demo" }
+            });
+        }
+        addLayerToMAVO("🏘️ Demo Buildings (Sample)", demoBuildings);
+    }, 1000);
+</script>
+</body>
+</html>
