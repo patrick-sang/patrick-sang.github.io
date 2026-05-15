@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Nairobi GIS Platform | Fixed GeoJSON Display on Map</title>
+    <!-- Leaflet CSS + JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet Routing Machine -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <!-- MAVO with GitHub backend -->
+    <script src="https://get.mavo.io/mavo.min.js"></script>
+    <link rel="stylesheet" href="https://get.mavo.io/mavo.css" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; height: 100vh; display: flex; flex-direction: column; }
+        .header { background: #2c3e50; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .header h1 { font-size: 1.3rem; }
+        .stats { font-size: 0.8rem; background: #34495e; padding: 5px 12px; border-radius: 20px; }
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+        #map { flex: 3; height: 100%; background: #c8e0e8; }
+        .sidebar { flex: 1; background: #f8f9fa; border-left: 1px solid #ddd; overflow-y: auto; padding: 15px; max-height: 100vh; }
+        .section { margin-bottom: 20px; border-bottom: 1px solid #e9ecef; padding-bottom: 12px; }
+        .section h3 { font-size: 1rem; color: #2c3e50; margin-bottom: 8px; border-left: 4px solid #27ae60; padding-left: 8px; }
+        .btn { background: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; margin: 5px 5px 5px 0; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-danger { background: #e67e22; }
+        .btn-primary { background: #3498db; }
+        .btn-sm { padding: 4px 8px; font-size: 0.7rem; }
+        .file-upload-area { border: 2px dashed #3498db; border-radius: 8px; padding: 15px; text-align: center; margin: 10px 0; background: #f0f8ff; cursor: pointer; }
+        .file-upload-area:hover { background: #e3f2fd; border-color: #27ae60; }
+        .geojson-list { max-height: 350px; overflow-y: auto; font-size: 0.8rem; }
+        .geojson-item { background: white; margin: 5px 0; padding: 8px; border-radius: 6px; border-left: 3px solid #3498db; display: flex; justify-content: space-between; align-items: center; }
+        .geojson-item:hover { background: #ecf0f1; }
+        .geojson-name { cursor: pointer; flex: 1; font-weight: 500; }
+        .geojson-name:hover { color: #3498db; }
+        .status { background: #e9ecef; padding: 8px; border-radius: 6px; font-size: 0.75rem; margin-top: 10px; word-break: break-word; }
+        .status.success { background: #d4edda; color: #155724; border-left: 3px solid #28a745; }
+        .status.error { background: #f8d7da; color: #721c24; border-left: 3px solid #dc3545; }
+        .status.warning { background: #fff3cd; color: #856404; border-left: 3px solid #ffc107; }
+        .progress-bar { width: 100%; height: 4px; background: #e0e0e0; border-radius: 2px; overflow: hidden; margin-top: 8px; display: none; }
+        .progress-fill { height: 100%; background: #27ae60; width: 0%; transition: width 0.3s; }
+        footer { font-size: 0.7rem; text-align: center; background: #2c3e50; color: #aaa; padding: 5px; }
+        .layer-badge { display: inline-block; background: #27ae60; color: white; border-radius: 10px; padding: 2px 6px; font-size: 0.65rem; margin-left: 5px; }
+        @media (max-width: 768px) { .main-container { flex-direction: column; } .sidebar { max-height: 45%; } #map { min-height: 50vh; } }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>🏙️ Nairobi GIS | GeoJSON File Upload + MAVO GitHub</h1>
+    <div class="stats">📊 498k Buildings | 700 km² | 🌳 738 km² Green</div>
+</div>
+<div class="main-container">
+    <div id="map"></div>
+    <div class="sidebar" mv-app="nairobi_geojson" mv-storage="https://github.com/patrick-sang/nairobi_gis_data/" mv-plugins="github" mv-init="initializeApp">
+        
+        <!-- MAVO Login Status -->
+        <div class="status" mv-if="!mavo.user" style="background:#fff3cd;">
+            <i class="fas fa-sign-in-alt"></i> <strong>Login Required</strong> - Click the <i class="fas fa-user-circle"></i> icon above to login with GitHub
+        </div>
+        <div class="status success" mv-if="mavo.user" style="background:#d4edda;">
+            <i class="fab fa-github"></i> ✅ Logged in as: <strong>{{ mavo.user.login }}</strong>
+        </div>
+
+        <div class="section">
+            <h3><i class="fas fa-upload"></i> Upload GeoJSON Files</h3>
+            <div class="file-upload-area" id="dropZone">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 28px; color: #3498db;"></i>
+                <p><strong>Drag & Drop GeoJSON files here</strong><br>or <label style="color:#3498db; cursor:pointer;"><input type="file" id="fileInput" accept=".geojson,.json" multiple style="display:none;"> click to browse</label></p>
+                <small>Supported: .geojson, .json (FeatureCollection)</small>
+                <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+            </div>
+            
+            <!-- Quick add sample data -->
+            <div>
+                <button class="btn btn-sm" onclick="quickAddSample('green')" style="background:#2ecc71;"><i class="fas fa-leaf"></i> Sample Green Spaces</button>
+                <button class="btn btn-sm" onclick="quickAddSample('water')" style="background:#3498db;"><i class="fas fa-water"></i> Sample Water</button>
+                <button class="btn btn-sm" onclick="quickAddSample('pois')" style="background:#e84393;"><i class="fas fa-location-dot"></i> Sample POIs</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3><i class="fas fa-layer-group"></i> My GeoJSON Layers</h3>
+            <div class="geojson-list" id="geojsonList">
+                <div mv-repeat="item in schema" mv-if="item.geojson">
+                    <div class="geojson-item">
+                        <div class="geojson-name" mv-click="displayLayerOnMap(item)">
+                            <i class="fas fa-map-marker-alt"></i> {{ item.name }}
+                            <span class="layer-badge">{{ item.geojson.features.length }} features</span>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm" mv-click="editLayer(item)" title="Edit"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-danger" mv-click="deleteLayer(item)" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <!-- Edit mode -->
+                    <div mv-if="item.editing" style="background:#fff3cd; padding:10px; margin:5px 0; border-radius:6px;">
+                        <textarea mv-attribute="item.geojsonString" style="width:100%; height:120px; font-family:monospace; font-size:11px;"></textarea>
+                        <button class="btn btn-sm" mv-click="saveLayerEdit(item)"><i class="fas fa-save"></i> Save</button>
+                        <button class="btn btn-sm" mv-click="cancelLayerEdit(item)">Cancel</button>
+                    </div>
+                </div>
+                <div mv-if="!schema.length" style="text-align:center; padding:20px; color:#999;">
+                    <i class="fas fa-inbox"></i> No layers yet.<br>Upload a GeoJSON file to get started!
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3><i class="fas fa-map-marked-alt"></i> Map Controls</h3>
+            <div>
+                <label><input type="radio" name="basemap" checked onclick="changeBasemap('osm')"> OpenStreetMap</label>
+                <label><input type="radio" name="basemap" onclick="changeBasemap('satellite')"> Satellite</label>
+                <label><input type="radio" name="basemap" onclick="changeBasemap('dark')"> Dark</label>
+            </div>
+            <button id="routeBtn" class="btn"><i class="fas fa-route"></i> Start Routing</button>
+            <button id="clearRouteBtn" class="btn btn-danger btn-sm"><i class="fas fa-times"></i> Clear Route</button>
+            <div id="routeStatus" class="status">Click Start Routing, then click map for start/end points</div>
+        </div>
+
+        <div class="section">
+            <h3><i class="fas fa-chart-bar"></i> Nairobi Metadata</h3>
+            <div class="status">
+                <strong>🏘️ Buildings:</strong> 498,881 | <strong>🌳 Green:</strong> 738 km²<br>
+                <strong>💧 Water:</strong> 2.58 km² | <strong>🗺️ Landuse:</strong> Residential 33.7%<br>
+                <strong>📍 POIs:</strong> 8,269 | <strong>🚌 Transit:</strong> 323 pts | 🚶 Paths: 3,026
+            </div>
+        </div>
+        
+        <div id="globalStatus" class="status">✅ Ready. Login with GitHub, then drag/drop GeoJSON files.</div>
+    </div>
+</div>
+<footer>🌍 Nairobi, Kenya | Data from OpenStreetMap | MAVO GitHub Backend (patrick-sang) | Layers auto-display on map</footer>
+
+<script>
+    // --------------------- MAP INITIALIZATION ---------------------
+    let map = L.map('map').setView([-1.286389, 36.817223], 12);
+    
+    let osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' });
+    let satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles &copy; Esri' });
+    let darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; CartoDB' });
+    osmLayer.addTo(map);
+    
+    window.changeBasemap = function(type) {
+        map.removeLayer(osmLayer);
+        map.removeLayer(satelliteLayer);
+        map.removeLayer(darkLayer);
+        if (type === 'osm') osmLayer.addTo(map);
+        if (type === 'satellite') satelliteLayer.addTo(map);
+        if (type === 'dark') darkLayer.addTo(map);
+    };
+    
+    // Store active layers on map
+    let activeLayers = {};
+    
+    // Function to display any GeoJSON on map
+    window.displayGeoJSONOnMap = function(layerName, geojsonData, color = null) {
+        // Remove existing layer if already displayed
+        if (activeLayers[layerName]) {
+            map.removeLayer(activeLayers[layerName]);
+            delete activeLayers[layerName];
+        }
+        
+        if (!geojsonData || !geojsonData.features || geojsonData.features.length === 0) {
+            updateStatus(`⚠️ "${layerName}" has no features to display`, 'warning');
+            return false;
+        }
+        
+        // Auto-assign colors based on layer name
+        const colorMap = {
+            'green': '#2ecc71', 'water': '#3498db', 'building': '#e67e22',
+            'poi': '#e84393', 'transit': '#f39c12', 'pedestrian': '#9b59b6',
+            'land': '#27ae60'
+        };
+        
+        if (!color) {
+            let lowerName = layerName.toLowerCase();
+            for (let [key, val] of Object.entries(colorMap)) {
+                if (lowerName.includes(key)) { color = val; break; }
+            }
+            color = color || '#3498db';
+        }
+        
+        let layer = L.geoJSON(geojsonData, {
+            style: { color: color, weight: 2, opacity: 0.7, fillOpacity: 0.3, fillColor: color },
+            pointToLayer: function(feature, latlng) {
+                return L.circleMarker(latlng, { radius: 6, color: color, weight: 2, fillOpacity: 0.7 });
+            },
+            onEachFeature: function(feature, layerEl) {
+                let props = feature.properties || {};
+                let popupHtml = `<b>${layerName}</b><br>`;
+                for (let [k, v] of Object.entries(props).slice(0, 5)) {
+                    popupHtml += `<small>${k}: ${JSON.stringify(v).substring(0, 100)}</small><br>`;
+                }
+                layerEl.bindPopup(popupHtml);
+            }
+        });
+        
+        layer.addTo(map);
+        activeLayers[layerName] = layer;
+        
+        // Fit bounds if this is the first layer
+        if (Object.keys(activeLayers).length === 1) {
+            map.fitBounds(layer.getBounds());
+        }
+        
+        updateStatus(`✅ Displayed "${layerName}" on map (${geojsonData.features.length} features)`, 'success');
+        return true;
+    };
+    
+    function updateStatus(message, type = 'info') {
+        let statusDiv = document.getElementById('globalStatus');
+        statusDiv.innerHTML = `<i class="fas fa-info-circle"></i> ${message}`;
+        statusDiv.className = `status ${type}`;
+        setTimeout(() => {
+            if (document.getElementById('globalStatus')) {
+                setTimeout(() => { statusDiv.className = 'status'; }, 3000);
+            }
+        }, 4000);
+    }
+    
+    // --------------------- FILE UPLOAD HANDLER ---------------------
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const progressBar = document.getElementById('progressBar');
+    const progressFill = document.getElementById('progressFill');
+    
+    function processGeoJSONFile(file) {
+        progressBar.style.display = 'block';
+        progressFill.style.width = '30%';
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const geojson = JSON.parse(e.target.result);
+                
+                if (geojson.type !== 'FeatureCollection') {
+                    throw new Error('GeoJSON must be a FeatureCollection type');
+                }
+                
+                progressFill.style.width = '100%';
+                
+                // Generate nice layer name from filename
+                let layerName = file.name.replace(/\.(geojson|json)$/i, '');
+                layerName = layerName.replace(/[_-]/g, ' ');
+                layerName = layerName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                
+                // Add to MAVO schema
+                addLayerToMAVOStorage(layerName, geojson);
+                
+                setTimeout(() => {
+                    progressBar.style.display = 'none';
+                    progressFill.style.width = '0%';
+                }, 500);
+                
+            } catch (error) {
+                progressBar.style.display = 'none';
+                updateStatus(`❌ Error parsing ${file.name}: ${error.message}`, 'error');
+            }
+        };
+        reader.onerror = function() {
+            progressBar.style.display = 'none';
+            updateStatus(`❌ Error reading ${file.name}`, 'error');
+        };
+        reader.readAsText(file);
+    }
+    
+    function addLayerToMAVOStorage(name, geojson) {
+        const app = document.querySelector('[mv-app="nairobi_geojson"]');
+        if (!app || !app.state) {
+            updateStatus('❌ MAVO not ready. Please refresh and login first.', 'error');
+            return;
+        }
+        
+        // Initialize schema array if it doesn't exist
+        if (!app.state.schema) {
+            app.state.schema = [];
+        }
+        
+        const newLayer = {
+            id: 'layer_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8),
+            name: name,
+            geojson: geojson,
+            editing: false
+        };
+        
+        app.state.schema.push(newLayer);
+        
+        // Force MAVO to save
+        if (typeof Mavo !== 'undefined' && Mavo.save) {
+            Mavo.save();
+        }
+        
+        updateStatus(`✅ Added "${name}" to storage (${geojson.features.length} features). Displaying on map...`, 'success');
+        
+        // IMPORTANT: Display the layer immediately on map
+        setTimeout(() => {
+            displayGeoJSONOnMap(name, geojson);
+        }, 100);
+    }
+    
+    // Drag & Drop handlers
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.background = '#e3f2fd';
+        dropZone.style.borderColor = '#27ae60';
+    });
+    
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.style.background = '#f0f8ff';
+        dropZone.style.borderColor = '#3498db';
+    });
+    
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.background = '#f0f8ff';
+        dropZone.style.borderColor = '#3498db';
+        const files = e.dataTransfer.files;
+        Array.from(files).forEach(file => {
+            if (file.name.match(/\.(geojson|json)$/i)) {
+                processGeoJSONFile(file);
+            } else {
+                updateStatus(`⚠️ ${file.name} is not a GeoJSON file`, 'warning');
+            }
+        });
+    });
+    
+    dropZone.addEventListener('click', () => {
+        fileInput.click();
+    });
+    
+    fileInput.addEventListener('change', (e) => {
+        Array.from(e.target.files).forEach(file => processGeoJSONFile(file));
+        fileInput.value = '';
+    });
+    
+    // --------------------- MAVO METHODS (called from HTML) ---------------------
+    
+    // Initialize app - load existing layers from storage and display them
+    window.initializeApp = function() {
+        console.log('MAVO App initialized');
+        const app = document.querySelector('[mv-app="nairobi_geojson"]');
+        if (app && app.state && app.state.schema) {
+            // Auto-display any layers that were previously saved
+            setTimeout(() => {
+                const layers = app.state.schema;
+                if (layers && layers.length > 0) {
+                    updateStatus(`📂 Found ${layers.length} saved layers. Click any layer to display on map.`, 'success');
+                }
+            }, 500);
+        }
+    };
+    
+    // Display layer on map when clicked
+    window.displayLayerOnMap = function(item) {
+        if (item.geojson && item.geojson.features && item.geojson.features.length > 0) {
+            displayGeoJSONOnMap(item.name, item.geojson);
+        } else {
+            updateStatus(`❌ "${item.name}" has no GeoJSON data. Use Edit to add content.`, 'error');
+        }
+    };
+    
+    window.editLayer = function(item) {
+        item.editing = true;
+        item.geojsonString = JSON.stringify(item.geojson, null, 2);
+        Mavo.refresh();
+    };
+    
+    window.saveLayerEdit = function(item) {
+        try {
+            let parsed = JSON.parse(item.geojsonString);
+            if (parsed.type !== 'FeatureCollection') throw new Error('Must be FeatureCollection');
+            item.geojson = parsed;
+            item.editing = false;
+            delete item.geojsonString;
+            Mavo.save();
+            updateStatus(`✅ Saved "${item.name}" to GitHub`, 'success');
+            // Update map if this layer is currently displayed
+            if (activeLayers[item.name]) {
+                displayGeoJSONOnMap(item.name, item.geojson);
+            }
+        } catch(e) {
+            updateStatus(`❌ Invalid GeoJSON: ${e.message}`, 'error');
+        }
+    };
+    
+    window.cancelLayerEdit = function(item) {
+        item.editing = false;
+        delete item.geojsonString;
+        Mavo.refresh();
+    };
+    
+    window.deleteLayer = function(item) {
+        if (confirm(`Delete "${item.name}" permanently?`)) {
+            const app = document.querySelector('[mv-app="nairobi_geojson"]');
+            const index = app.state.schema.findIndex(l => l.id === item.id);
+            if (index !== -1) {
+                app.state.schema.splice(index, 1);
+                Mavo.save();
+                // Remove from map if displayed
+                if (activeLayers[item.name]) {
+                    map.removeLayer(activeLayers[item.name]);
+                    delete activeLayers[item.name];
+                }
+                updateStatus(`✅ Deleted "${item.name}"`, 'success');
+            }
+        }
+    };
+    
+    // Quick add sample data for testing
+    window.quickAddSample = function(type) {
+        let sampleData, layerName;
+        
+        if (type === 'green') {
+            layerName = 'Green Spaces (Nairobi)';
+            sampleData = {
+                type: "FeatureCollection",
+                features: [
+                    { type: "Feature", geometry: { type: "Polygon", coordinates: [[[36.75,-1.27],[36.78,-1.27],[36.78,-1.30],[36.75,-1.30],[36.75,-1.27]]] }, properties: { name: "Karura Forest", type: "forest" } },
+                    { type: "Feature", geometry: { type: "Polygon", coordinates: [[[36.82,-1.22],[36.85,-1.22],[36.85,-1.25],[36.82,-1.25],[36.82,-1.22]]] }, properties: { name: "Nairobi Arboretum", type: "park" } }
+                ]
+            };
+        } else if (type === 'water') {
+            layerName = 'Water Bodies';
+            sampleData = {
+                type: "FeatureCollection",
+                features: [
+                    { type: "Feature", geometry: { type: "Polygon", coordinates: [[[36.80,-1.30],[36.82,-1.30],[36.82,-1.31],[36.80,-1.31],[36.80,-1.30]]] }, properties: { name: "Nairobi Dam" } }
+                ]
+            };
+        } else if (type === 'pois') {
+            layerName = 'Points of Interest';
+            sampleData = {
+                type: "FeatureCollection",
+                features: [
+                    { type: "Feature", geometry: { type: "Point", coordinates: [36.8219, -1.2833] }, properties: { name: "Nairobi CBD", category: "amenity" } },
+                    { type: "Feature", geometry: { type: "Point", coordinates: [36.8167, -1.2869] }, properties: { name: "KICC", category: "landmark" } }
+                ]
+            };
+        }
+        
+        if (sampleData) {
+            addLayerToMAVOStorage(layerName, sampleData);
+        }
+    };
+    
+    // --------------------- ROUTING ---------------------
+    let routingControl = null;
+    let routingActive = false;
+    
+    function clearRouting() {
+        if (routingControl) { map.removeControl(routingControl); routingControl = null; }
+        routingActive = false;
+        document.getElementById('routeStatus').innerHTML = 'Routing cleared. Click Start Routing then click map for start/end.';
+    }
+    
+    function initRouting() {
+        clearRouting();
+        routingActive = true;
+        document.getElementById('routeStatus').innerHTML = '🟢 Click map for START point, then click for END point.';
+        let points = [];
+        let handler = function(e) {
+            if (!routingActive) return;
+            points.push(e.latlng);
+            L.marker(e.latlng).addTo(map).bindPopup(`Point ${points.length}`).openPopup();
+            if (points.length === 2) {
+                routingControl = L.Routing.control({
+                    waypoints: points,
+                    routeWhileDragging: true,
+                    showAlternatives: true,
+                    lineOptions: { styles: [{ color: '#3498db', weight: 5 }] },
+                    router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1/' })
+                }).addTo(map);
+                document.getElementById('routeStatus').innerHTML = '✅ Route calculated.';
+                routingActive = false;
+                map.off('click', handler);
+            }
+        };
+        map.on('click', handler);
+        window.routeHandler = handler;
+    }
+    
+    document.getElementById('routeBtn')?.addEventListener('click', initRouting);
+    document.getElementById('clearRouteBtn')?.addEventListener('click', clearRouting);
+    
+    // Check for existing layers on page load
+    setTimeout(() => {
+        const app = document.querySelector('[mv-app="nairobi_geojson"]');
+        if (app && app.state && app.state.schema && app.state.schema.length > 0) {
+            updateStatus(`📁 Found ${app.state.schema.length} saved layers. Click on any layer to display on map.`, 'success');
+        }
+    }, 1500);
+</script>
+</body>
+</html>
