@@ -504,19 +504,19 @@
             <span class="post-category" property="category"></span>
             <h2 class="post-title" property="title"></h2>
             <div class="post-meta">
-              <span><i class="far fa-user"></i> <span property="author">Patrick Sang</span></span>
-              <span><i class="far fa-calendar-alt"></i> <time property="date"></time></span>
-              <span><i class="far fa-clock"></i> <span class="read-time"></span></span>
-              <span><i class="fas fa-eye"></i> <span class="view-count">0</span></span>
+              <span><span property="author"></span></span>
+              <span> <time property="date"></time></span>
+              <span> <span class="read-time"></span></span>
+              <span> <span class="view-count"></span></span>
             </div>
             <div class="post-excerpt" property="excerpt"></div>
             <div property="fullContent" style="display:none;"></div>
             <div class="tag-cloud"></div>
             <div class="action-icons">
-              <button class="stat-icon-btn like-btn"><i class="far fa-heart"></i> <span class="like-count"></span></button>
+              <button class="stat-icon-btn like-btn"> <span class="like-count"></span></button>
               <button class="stat-icon-btn bookmark-btn"></button>
               <button class="stat-icon-btn share-twitter"></button>
-              <button class="stat-icon-btn full-post-btn"><i class="fas fa-expand-alt"></i> </button>
+              <button class="stat-icon-btn full-post-btn"> </button>
             </div>
             <div class="admin-inline">
               <button class="btn-sm" mv-action="edit()">✏️ Edit</button>
@@ -529,7 +529,7 @@
 
     <aside class="sidebar">
       <div class="sidebar-widget">
-        <h3><i class="fas fa-search"></i> Search</h3>
+        <h3> Search</h3>
         <input type="text" id="searchInput" class="search-box" placeholder="">
       </div>
       <div class="sidebar-widget">
@@ -543,9 +543,9 @@
       <div class="sidebar-widget">
         <h3></h3>
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <span class="stat-badge"><i class="fas fa-layer-group"></i> <span id="totalPosts">0</span> Posts</span>
-          <span class="stat-badge"><i class="fas fa-heart"></i> <span id="totalLikes"></span></span>
-          <span class="stat-badge"><i class="fas fa-tags"></i> <span id="totalTags"></span> Tags</span>
+          <span class="stat-badge"><span id="totalPosts"></span></span>
+          <span class="stat-badge"> <span id="totalLikes"></span></span>
+          <span class="stat-badge"> <span id="totalTags"></span> </span>
         </div>
       </div>
       <div class="sidebar-widget">
@@ -557,7 +557,7 @@
 
   <div class="admin-panel admin-only" id="adminPanelTarget">
     <div class="admin-header" onclick="document.getElementById('adminPanelTarget').classList.toggle('open')">
-      <span><i class="fas fa-feather-alt"></i> ✍️ Write new post (SVG‑enabled editors)</span>
+      <span> ✍️ Write new post (SVG‑enabled editors)</span>
       <i class="fas fa-chevron-down"></i>
     </div>
     <div class="admin-content">
