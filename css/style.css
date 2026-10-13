@@ -58,6 +58,11 @@
     visibility: visible;
     opacity: 1;
 }
+.timeline{margin-top:34px;border-left:2px solid var(--accent);padding-left:26px;display:grid;gap:30px}
+.timeline li{list-style:none;position:relative}
+.timeline li::before{content:"";position:absolute;left:-34px;top:8px;width:14px;height:14px;background:var(--bg);border:3px solid var(--accent);border-radius:50%}
+.timeline time{font-weight:500;color:var(--accent)}
+.timeline{padding-left:26px;margin-left:0}
 
 
 /*** Heading ***/
