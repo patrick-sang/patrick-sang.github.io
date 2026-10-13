@@ -147,3 +147,71 @@ document.querySelectorAll('.faq-item h3, .faq-item .faq-toggle').forEach((faqIte
     faqItem.parentNode.classList.toggle('faq-active');
   });
 });
+<script>
+/* ===== EDIT YOUR CONTENT HERE ===== */
+const JOURNEY=[
+  {when:"2020",title:"Where it started",text:"Add the moment you first got into maps, GIS or surveying."},
+  {when:"Year",title:"First professional GIS role",text:"Add the organisation, what you built and what you learned."},
+  {when:"Year",title:"Going independent",text:"Add when you started taking client work and the first clients you served."},
+  {when:"Year",title:"Scaling the stack",text:"Moving from desktop GIS to PostGIS, web mapping, Airflow pipelines and GeoAI."},
+  {when:"Now",title:"Figuring out what geospatial can do",text:"Routing, spatial regression, remote sensing and dashboards for businesses across Kenya."}
+];
+const LABS=[
+  {t:"H3 hex-grid demand explorer",d:"DuckDB spatial + H3 aggregation rendered with Deck.gl.",tags:["DuckDB","H3","Deck.gl"],s:"Prototype",u:""},
+  {t:"Multi-depot route optimiser",d:"Jsprit and GraphHopper with motorcycle profiles on OSM data.",tags:["Jsprit","GraphHopper","OSM"],s:"Prototype",u:""},
+  {t:"NDVI change monitor",d:"Sentinel-2 vegetation trends over farm blocks using Google Earth Engine.",tags:["Sentinel-2","GEE"],s:"In progress",u:""},
+  {t:"LISA hotspot notebook",d:"Spatial autocorrelation and local clusters with PySAL.",tags:["PySAL","Python"],s:"Idea",u:""}
+];
+const POSTS=[
+  {t:"Why I moved my spatial queries to DuckDB",d:"2026-01-10",c:"Data engineering",x:"Add your summary here.",u:"#"},
+  {t:"A practical guide to hotspot analysis",d:"2025-11-02",c:"Spatial analysis",x:"Add your summary here.",u:"#"},
+  {t:"Routing deliveries by motorbike in Nairobi",d:"2025-09-18",c:"Routing",x:"Add your summary here.",u:"#"}
+];
+const PROJECTS=[
+  {t:"Farm block monitoring portal",c:"web",l:"Web-GIS",u:"fineproject.html"},
+  {t:"Retail catchment hotspot study",c:"da",l:"Data Analysis",u:"fineproject.html"},
+  {t:"Site suitability scoring model",c:"ml",l:"Machine Learning",u:"fineproject.html"},
+  {t:"Routing outputs REST service",c:"api",l:"API Integration",u:"fineproject.html"},
+  {t:"Asset management web map",c:"web",l:"Web-GIS",u:"fineproject.html"},
+  {t:"Spatial regression of sales",c:"da",l:"Data Analysis",u:"fineproject.html"}
+];
+/* ===== END EDIT ===== */
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+$("#tl").innerHTML=JOURNEY.map(j=>`<li><time>${esc(j.when)}</time><h3>${esc(j.title)}</h3><p>${esc(j.text)}</p></li>`).join("");
+$("#labgrid").innerHTML=LABS.map(l=>`<article class="card lab"><span class="status">${esc(l.s)}</span><h3>${esc(l.t)}</h3><p>${esc(l.d)}</p><div>${l.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>${l.u?`<a class="more" href="${esc(l.u)}">Open lab →</a>`:""}</article>`).join("");
+$("#prjgrid").innerHTML=PROJECTS.map(p=>`<a class="card" data-c="${p.c}" href="${p.u}" style="text-decoration:none"><span class="tag">${esc(p.l)}</span><h3 style="margin-top:10px">${esc(p.t)}</h3></a>`).join("");
+
+const cats=["All",...new Set(POSTS.map(p=>p.c))];
+$("#blogtabs").innerHTML=cats.map((c,i)=>`<button aria-pressed="${i==0}" data-f="${esc(c)}">${esc(c)}</button>`).join("");
+$("#bloggrid").innerHTML=POSTS.map(p=>`<article class="card post" data-c="${esc(p.c)}"><time datetime="${p.d}">${new Date(p.d).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</time><h3><a href="${esc(p.u)}">${esc(p.t)}</a></h3><p>${esc(p.x)}</p><span class="tag" style="width:max-content">${esc(p.c)}</span></article>`).join("");
+
+/* filters */
+function filter(tabs,grid,all){
+  const t=$(tabs),g=$(grid);
+  t.addEventListener("click",e=>{
+    const b=e.target.closest("button");if(!b)return;
+    t.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));
+    const f=b.dataset.f;
+    g.children.length&&[...g.children].forEach(c=>c.hidden=!(f===all||c.dataset.c===f||c.dataset.c==="all"&&f==="all"));
+  });
+}
+filter("#svctabs","#svcgrid","all");filter("#prjtabs","#prjgrid","all");filter("#blogtabs","#bloggrid","All");
+
+/* nav, theme */
+$("#burger").onclick=e=>{const o=$("#links").classList.toggle("open");e.currentTarget.setAttribute("aria-expanded",o)};
+$("#links").addEventListener("click",()=>$("#links").classList.remove("open"));
+$("#theme").onclick=()=>{const r=document.documentElement,d=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;r.dataset.theme=d?"light":"dark"};
+
+/* counters */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;io.unobserve(e.target);const n=+e.target.dataset.n;let i=0;const st=Math.max(1,Math.round(n/50));const t=setInterval(()=>{i=Math.min(n,i+st);e.target.textContent=i;if(i>=n)clearInterval(t)},30)}));
+document.querySelectorAll("[data-n]").forEach(el=>io.observe(el));
+
+/* forms (open the visitor's mail app; swap for Formspree or similar later) */
+$("#cform").onsubmit=e=>{e.preventDefault();const b=`Name: ${$("#n").value}\nEmail: ${$("#e").value}\nService: ${$("#s").value}\n\n${$("#m").value}`;location.href=`mailto:sangpatrick211@gmail.com?subject=${encodeURIComponent("Discovery call: "+$("#s").value)}&body=${encodeURIComponent(b)}`};
+$("#sub").onsubmit=e=>{e.preventDefault();location.href=`mailto:sangpatrick211@gmail.com?subject=Subscribe&body=${encodeURIComponent("Please add me: "+$("#se").value)}`};
+</script>
+</body>
+</html>
