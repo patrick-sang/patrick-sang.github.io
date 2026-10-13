@@ -7,6 +7,7 @@
 	--accent-dim: #166534;
 	 --font-display: 'Fraunces', serif;
 }
+.wrap{max-width:1120px;margin:0 auto;padding:0 22px}
 
 
 /*** Spinner ***/
