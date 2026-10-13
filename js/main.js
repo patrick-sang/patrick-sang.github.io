@@ -147,7 +147,7 @@ document.querySelectorAll('.faq-item h3, .faq-item .faq-toggle').forEach((faqIte
     faqItem.parentNode.classList.toggle('faq-active');
   });
 });
-<script>
+
 /* ===== EDIT YOUR CONTENT HERE ===== */
 const JOURNEY=[
   {when:"2020",title:"Where it started",text:"Add the moment you first got into maps, GIS or surveying."},
