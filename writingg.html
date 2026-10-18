@@ -343,15 +343,18 @@ footer{border-top:1px solid var(--rule);padding-top:2.5rem;padding-bottom:var(--
 
   </style>
   <script>
-    (function () {
-      var h = document.documentElement;
-      h.classList.remove("no-js");
-      try {
-        var saved = localStorage.getItem("lce-theme");
-        var dark = saved ? saved === "dark" : !window.matchMedia("(prefers-color-scheme: light)").matches;
-        h.classList.toggle("dark", dark);
-      } catch (e) {}
-    })();
+   (function () {
+  var h = document.documentElement;
+  h.classList.remove("no-js");
+
+  // Light mode is the default
+  try {
+    var saved = localStorage.getItem("lce-theme");
+    h.classList.toggle("dark", saved === "dark");
+  } catch (e) {
+    h.classList.remove("dark");
+  }
+})();
   </script>
 </head>
 <body>
