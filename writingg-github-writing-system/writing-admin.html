@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Writing Admin — Patrick Sang</title>
+<link rel="stylesheet" href="writing-style.css">
+<link rel="stylesheet" href="https://get.mavo.io/mavo.css">
+<script src="https://get.mavo.io/mavo.js"></script>
+<style>
+body{background:var(--paper);color:var(--ink)}.admin-wrap{max-width:1100px;margin:auto;padding:2rem 1.25rem 6rem}.admin-head{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;border-bottom:1px solid var(--rule);padding-bottom:1.5rem;margin-bottom:2rem}.admin-note{background:var(--raised);border:1px solid var(--rule);padding:1rem;margin:1rem 0;color:var(--muted);font-size:.9rem}.writing-card{background:var(--raised);border:1px solid var(--rule);padding:1.25rem;margin:1rem 0}.writing-card input,.writing-card textarea{display:block;width:100%;font:inherit;padding:.7rem;margin:.3rem 0 1rem;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}.writing-card textarea{min-height:220px;resize:vertical}.field-label{font:600 .7rem var(--font-mono);text-transform:uppercase;letter-spacing:.1em}.cover-edit{width:180px;max-height:120px;object-fit:cover;border:1px solid var(--rule);margin:.5rem 0 1rem;cursor:pointer}.admin-actions{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap}.admin-actions button,.admin-button{display:inline-block;padding:.75rem 1rem;background:var(--ink);color:var(--paper);cursor:pointer}.mv-bar{z-index:100}.note-title{font-size:1.3rem;font-weight:600;margin-bottom:1rem}
+</style>
+</head>
+<body>
+<main class="admin-wrap" mv-app="writingAdmin" mv-storage="https://github.com/patrick-sang/patrick-sang.github.io/blob/main/writing-data.json" mv-autosave="0">
+<header class="admin-head"><div><p class="label annotate">PATRICK SANG / CONTENT MANAGEMENT</p><h1 class="display-md" style="padding-top:.7rem">Writing manager</h1><p class="small" style="padding-top:.5rem">Add, edit, or remove one writing piece at a time.</p></div><a class="ui-link" href="writingg.html">← View writing site</a></header>
+<div class="admin-note"><strong>How to save:</strong> sign in with GitHub using the Mavo bar, edit a card, then press Save. This app stores the content in <code>writing-data.json</code> in <code>patrick-sang/patrick-sang.github.io</code>. After saving, GitHub Actions regenerates each article page and its social preview metadata. For cover images, click the image below to choose a local image if the Mavo image editor is available, or paste a public image URL into the cover field.</div>
+<section property="notes" mv-multiple>
+  <article class="writing-card">
+    <p class="label annotate">WRITING PIECE</p>
+    <h2 class="note-title">Writing entry</h2>
+    <label class="field-label">Title</label><input property="title" placeholder="Title of the writing" />
+    <label class="field-label">URL slug (use lowercase words and hyphens)</label><input property="slug" placeholder="my-new-writing" />
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem"><div><label class="field-label">Publication date (YYYY-MM-DD)</label><input property="date" placeholder="2026-10-19" /></div><div><label class="field-label">Reading time</label><input property="reading" placeholder="4 min" /></div></div>
+    <label class="field-label">Short introduction / standfirst</label><textarea property="standfirst" rows="3" placeholder="A short summary shown on the writing index and social previews"></textarea>
+    <label class="field-label">Tags (comma-separated)</label><input property="tags" placeholder="gis, learning, analysis" />
+    <label class="field-label">Cover image</label><img class="cover-edit" property="cover" mv-accept="image/*" src="https://patrick-sang.is-a.dev/img/two.png" alt="Cover image — click to edit" />
+    <input property="coverUrl" placeholder="Or paste a public cover image URL (https://...)" />
+    <label class="field-label">Writing body</label><textarea property="body" placeholder="Write paragraphs separated by a blank line. Start a heading line with ## and a pull quote with >."></textarea>
+  </article>
+</section>
+<div class="admin-actions"><p class="small">Use the Mavo toolbar to add or delete a piece and save your changes.</p></div>
+</main>
+</body>
+</html>
