@@ -99,12 +99,31 @@ footer{border-top:1px solid var(--rule);padding:1.5rem 0 2.25rem}
 </div>
 <script>
 /* Journey content retained from the original file. Edit entries here. */
-const JOURNEY = [
- { when: "2020", title: "Where it started", text: "Add the moment you first got into maps, GIS or surveying." },
- { when: "Year", title: "First professional GIS role", text: "Add the organisation, what you built and what you learned." },
- { when: "Year", title: "Going independent", text: "Add when you started taking client work and the first clients you served." },
- { when: "Year", title: "Scaling the stack", text: "Moving from desktop GIS to PostGIS, web mapping, Airflow pipelines and GeoAI." },
- { when: "Now", title: "Figuring out what geospatial can do", text: "Routing, spatial regression, remote sensing and dashboards for businesses across Kenya." }
+const JOURNEY = [  {
+    when: "2020–2021",
+    title: "Building a foundation in GIS & spatial thinking",
+    text: "My journey into geospatial technology began with an interest in understanding places, spatial patterns and the relationship between people and their environment. I developed a foundation in mapping, geographic data and spatial analysis that would shape my approach to solving real-world problems."
+  },
+  {
+    when: "2022–2023",
+    title: "From GIS fundamentals to practical solutions",
+    text: "I expanded my expertise in GIS workflows, spatial data management, cartography, remote sensing and geospatial analysis. Through hands-on technical work and project-based learning, I developed the ability to transform raw geographic data into meaningful maps, actionable insights and decision-support tools."
+  },
+  {
+    when: "2024",
+    title: "Graduating with a vision beyond traditional GIS",
+    text: "I graduated in 2024 with a foundation in geospatial science and a clear ambition to push beyond conventional mapping. My focus shifted towards building technology-driven solutions that combine GIS, programming, spatial databases and modern web development to address complex spatial challenges."
+  },
+  {
+    when: "2025",
+    title: "Engineering modern geospatial applications",
+    text: "I continued advancing my practical capabilities in geospatial development, integrating Python, JavaScript, Leaflet, PostGIS and spatial analysis tools into modern workflows. My focus became building interactive web maps, geospatial dashboards, automated data-processing pipelines and applications that make spatial information accessible and useful."
+  },
+  {
+    when: "2026 — Now",
+    title: "Building intelligent, production-oriented geospatial systems & Exploring Geospatial Foundation models(GEOFMs)",
+    text: "Today, I approach geospatial challenges as a developer, analyst and problem-solver. My interests span full-stack GIS development, spatial databases, remote sensing, GIS automation, geospatial data visualization, location intelligence and GeoAI. I aim to bridge the gap between geographic data and practical digital solutions through scalable, data-driven applications."
+  }
 ];
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 document.getElementById("tl").innerHTML = JOURNEY.map((j,i) => `
