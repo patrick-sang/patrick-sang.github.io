@@ -344,8 +344,7 @@ h6,
     height: 5px;
     bottom: 0px;
     background: #FFFFFF;
-    -webkit-animation: section-title-run 5s infinite linear;
-    animation: section-title-run 5s infinite linear;
+    
 }
 
 .section-title.section-title-sm::after {
