@@ -1,0 +1,5 @@
+# AI Content Use Note
+
+This file is an informational statement, not a technical access-control mechanism or legal license.
+The site owner has not specified a distinct AI-training permission policy in the information used to generate this package. Do not interpret this file as granting additional rights or as overriding copyright, privacy, applicable law, or the site's actual terms.
+For permission requests, contact the site owner through the contact details published on the website.

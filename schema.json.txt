@@ -1,0 +1,49 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Patrick Sang",
+      "url": "https://patrick-sang.is-a.dev/",
+      "jobTitle": "Geospatial Software Developer",
+      "email": "mailto:sangpatrick211@gmail.com",
+      "telephone": "+254790835786",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Nairobi",
+        "addressCountry": "KE"
+      },
+      "knowsAbout": [
+        "Geographic information systems",
+        "Geospatial software development",
+        "Spatial analysis",
+        "Remote sensing",
+        "Web GIS",
+        "Spatial data engineering",
+        "GeoAI",
+        "Cartography",
+        "Spatial databases",
+        "Location intelligence"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "name": "Patrick Sang — Geospatial Software Developer",
+      "url": "https://patrick-sang.is-a.dev/",
+      "inLanguage": "en"
+    },
+    {
+      "@type": "CollectionPage",
+      "name": "Selected GIS Projects",
+      "url": "https://patrick-sang.is-a.dev/buildss.html",
+      "description": "Selected GIS projects, prototypes, and geospatial experiments."
+    },
+    {
+      "@type": "WebPage",
+      "name": "A Journey Through Place",
+      "url": "https://patrick-sang.is-a.dev/journeyy.html",
+      "description": "Professional journey through spatial analysis and geospatial systems."
+    }
+  ]
+}

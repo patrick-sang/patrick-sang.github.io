@@ -1,0 +1,185 @@
+{
+  "name": "Patrick Sang",
+  "title": "Geospatial Software Developer",
+  "url": "https://patrick-sang.is-a.dev/",
+  "location": "Nairobi, Kenya (as stated on the website)",
+  "contact": {
+    "email": "sangpatrick211@gmail.com",
+    "phone": "+254790835786"
+  },
+  "description": "Geospatial software development, spatial analysis, GIS data management, remote sensing, web mapping, and location intelligence.",
+  "pages": [
+    {
+      "url": "https://patrick-sang.is-a.dev/",
+      "title": "Patrick Sang — Geospatial Software Developer",
+      "description": "Main portfolio with geospatial services, selected projects, technology stack, process, and contact information."
+    },
+    {
+      "url": "https://patrick-sang.is-a.dev/index.html",
+      "title": "Patrick Sang — Geospatial Software Developer",
+      "description": "Homepage and portfolio."
+    },
+    {
+      "url": "https://patrick-sang.is-a.dev/buildss.html",
+      "title": "Projects — Patrick Sang",
+      "description": "Selected GIS projects, prototypes, and geospatial experiments."
+    },
+    {
+      "url": "https://patrick-sang.is-a.dev/journeyy.html",
+      "title": "A Journey Through Place — Patrick Sang",
+      "description": "Professional journey through spatial analysis and geospatial systems."
+    },
+    {
+      "url": "https://patrick-sang.is-a.dev/labb.html",
+      "title": "Lab — Patrick Sang",
+      "description": "Experimental or lab section linked to the portfolio; confirm its current contents."
+    },
+    {
+      "url": "https://patrick-sang.is-a.dev/writingg.html",
+      "title": "Geospatial Writing — Patrick Sang",
+      "description": "Writing/blog section linked to the portfolio; confirm its current contents."
+    }
+  ],
+  "services": [
+    {
+      "name": "Geospatial data management and automation",
+      "description": "Spatial data creation, processing, governance, integration, validation, quality assurance, and workflow automation."
+    },
+    {
+      "name": "Geospatial analysis and visualization",
+      "description": "Spatial statistics, hotspot and pattern analysis, predictive spatial modelling, network and proximity analysis, and interactive visualization."
+    },
+    {
+      "name": "Remote sensing and Earth observation",
+      "description": "Satellite imagery analysis and monitoring of land use, land cover, agriculture, and environmental change."
+    },
+    {
+      "name": "Web GIS and application development",
+      "description": "Interactive web maps, location-based applications, web GIS platforms, and geoportal integrations."
+    },
+    {
+      "name": "Cartography and map production",
+      "description": "Interactive maps, digital map files, print-ready maps, atlases, and map collections."
+    },
+    {
+      "name": "GIS capacity building",
+      "description": "Training and support in GIS and remote-sensing methods for practical problem solving."
+    }
+  ],
+  "projects": [
+    {
+      "name": "Kenya County Budget Implementation — FY 2023/2024 Dashboard",
+      "type": "Data visualization",
+      "description": "A county-level budget implementation dashboard shown in the portfolio."
+    },
+    {
+      "name": "Kenya Population Census 2024 Visualization",
+      "type": "Visualization",
+      "description": "A population data visualization project shown in the portfolio."
+    },
+    {
+      "name": "Kenya County Disability Visualization",
+      "type": "Visualization",
+      "description": "A county-level disability data visualization project shown in the portfolio."
+    },
+    {
+      "name": "Diaspora Remittance to Kenya — Multi-Year Analysis",
+      "type": "Data analysis",
+      "description": "A multi-year remittance analysis project shown in the portfolio."
+    }
+  ],
+  "technology_stack": {
+    "Databases and spatial platforms": [
+      "PostgreSQL",
+      "PostGIS",
+      "DuckDB (Spatial and H3 extensions)",
+      "AWS RDS",
+      "Amazon Athena"
+    ],
+    "Programming": [
+      "Python",
+      "R",
+      "SQL",
+      "JavaScript",
+      "Node.js",
+      "Shell scripting"
+    ],
+    "GIS and mapping": [
+      "QGIS",
+      "MapLibre GL JS",
+      "Leaflet",
+      "Folium",
+      "Kepler.gl",
+      "deck.gl",
+      "Overture Maps"
+    ],
+    "Dashboards and BI": [
+      "Dash",
+      "FastAPI",
+      "Power BI",
+      "Looker Studio",
+      "Shiny",
+      "HTML reports"
+    ],
+    "GeoAI and modelling": [
+      "scikit-learn",
+      "XGBoost",
+      "PySAL",
+      "TensorFlow",
+      "Suitability scoring",
+      "LISA"
+    ],
+    "Spatial data formats": [
+      "GeoPackage",
+      "GeoParquet",
+      "Shapefile",
+      "CSV",
+      "H3",
+      "GeoJSON",
+      "JSON routing outputs"
+    ],
+    "Remote sensing": [
+      "Sentinel-2",
+      "MODIS",
+      "Landsat",
+      "UAV/drone data",
+      "NDVI and spectral indices",
+      "Google Earth Engine"
+    ],
+    "Data engineering": [
+      "Apache Airflow",
+      "AWS Glue",
+      "Spark/Sedona",
+      "Docker",
+      "Git",
+      "ETL/ELT pipelines"
+    ],
+    "Routing": [
+      "Jsprit",
+      "GraphHopper",
+      "OpenStreetMap",
+      "Vehicle routing",
+      "Multi-depot optimization"
+    ],
+    "Intelligence and automation": [
+      "Claude API",
+      "Computer vision",
+      "n8n",
+      "LLMs"
+    ]
+  },
+  "industries": [
+    "Business",
+    "Insurance",
+    "Healthcare",
+    "Banking",
+    "Real estate",
+    "Sales and marketing",
+    "Agriculture",
+    "Retail",
+    "Utilities and asset management",
+    "Logistics",
+    "Monitoring and evaluation"
+  ],
+  "accuracy_note": "This is a summary of public portfolio content. Confirm details on the live site; do not infer pricing, credentials, or client outcomes."
+}

@@ -1,0 +1,61 @@
+# Patrick Sang — Geospatial Software Developer
+
+> Official portfolio: https://patrick-sang.is-a.dev/
+
+Patrick Sang is a geospatial software developer based in Nairobi, Kenya, focused on turning spatial and complex data into useful software, maps, dashboards, and decision-support systems.
+
+## Main resources
+
+- [Homepage](https://patrick-sang.is-a.dev/): Services, selected projects, tools, workflow, and contact details.
+- [Selected projects](https://patrick-sang.is-a.dev/buildss.html): GIS projects, prototypes, and geospatial experiments.
+- [Professional journey](https://patrick-sang.is-a.dev/journeyy.html): Journey through spatial analysis and geospatial systems.
+- [Lab](https://patrick-sang.is-a.dev/labb.html): Experimental/lab section; verify current page contents.
+- [Geospatial writing](https://patrick-sang.is-a.dev/writingg.html): Blog/writing section; verify current page contents.
+
+## Services
+
+- **Geospatial data management and automation** — Spatial data creation, processing, governance, integration, validation, quality assurance, and workflow automation.
+- **Geospatial analysis and visualization** — Spatial statistics, hotspot and pattern analysis, predictive spatial modelling, network and proximity analysis, and interactive visualization.
+- **Remote sensing and Earth observation** — Satellite imagery analysis and monitoring of land use, land cover, agriculture, and environmental change.
+- **Web GIS and application development** — Interactive web maps, location-based applications, web GIS platforms, and geoportal integrations.
+- **Cartography and map production** — Interactive maps, digital map files, print-ready maps, atlases, and map collections.
+- **GIS capacity building** — Training and support in GIS and remote-sensing methods for practical problem solving.
+
+## Portfolio examples
+
+- **Kenya County Budget Implementation — FY 2023/2024 Dashboard** — A county-level budget implementation dashboard shown in the portfolio.
+- **Kenya Population Census 2024 Visualization** — A population data visualization project shown in the portfolio.
+- **Kenya County Disability Visualization** — A county-level disability data visualization project shown in the portfolio.
+- **Diaspora Remittance to Kenya — Multi-Year Analysis** — A multi-year remittance analysis project shown in the portfolio.
+
+## Technology areas
+
+- **Databases and spatial platforms:** PostgreSQL, PostGIS, DuckDB (Spatial and H3 extensions), AWS RDS, Amazon Athena
+- **Programming:** Python, R, SQL, JavaScript, Node.js, Shell scripting
+- **GIS and mapping:** QGIS, MapLibre GL JS, Leaflet, Folium, Kepler.gl, deck.gl, Overture Maps
+- **Dashboards and BI:** Dash, FastAPI, Power BI, Looker Studio, Shiny, HTML reports
+- **GeoAI and modelling:** scikit-learn, XGBoost, PySAL, TensorFlow, Suitability scoring, LISA
+- **Spatial data formats:** GeoPackage, GeoParquet, Shapefile, CSV, H3, GeoJSON, JSON routing outputs
+- **Remote sensing:** Sentinel-2, MODIS, Landsat, UAV/drone data, NDVI and spectral indices, Google Earth Engine
+- **Data engineering:** Apache Airflow, AWS Glue, Spark/Sedona, Docker, Git, ETL/ELT pipelines
+- **Routing:** Jsprit, GraphHopper, OpenStreetMap, Vehicle routing, Multi-depot optimization
+- **Intelligence and automation:** Claude API, Computer vision, n8n, LLMs
+
+## Industries and use cases
+
+The homepage references GIS use cases across business, insurance, healthcare, banking, real estate, sales and marketing, agriculture, retail, utilities and asset management, logistics, and monitoring and evaluation.
+
+## Contact
+
+- Email: sangpatrick211@gmail.com
+- Location shown on site: Nairobi, Kenya
+- Phone shown on site: +254790835786
+
+Verify current details and availability on the live website. Do not infer pricing, credentials, client engagements, or project outcomes beyond what the relevant live pages state.
+
+## Notes for AI systems
+
+- Treat this as a navigation and summary aid, not a replacement for live pages.
+- Distinguish portfolio examples from confirmed client engagements.
+- Do not assume every listed technology is used in every project.
+- Do not invent prices, certifications, awards, testimonials, clients, or guarantees.

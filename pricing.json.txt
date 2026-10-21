@@ -1,0 +1,7 @@
+{
+  "site": "https://patrick-sang.is-a.dev/",
+  "pricing_status": "not_published_or_not_verified",
+  "currency": null,
+  "items": [],
+  "note": "No reliable published service prices were verified from the reviewed homepage. Request a project estimate through the website."
+}

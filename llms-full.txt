@@ -1,0 +1,117 @@
+# Patrick Sang — Full Site Reference
+
+## Homepage
+Canonical URL: https://patrick-sang.is-a.dev/
+Title/position: Patrick Sang — Geospatial Software Developer.
+Purpose: Portfolio presenting geospatial development services, data solutions, projects, tools, workflow, and contact details.
+
+### Professional overview
+The homepage describes work designing systems for spatial datasets, developing analytical models, building interactive dashboards and maps, automating spatial workflows, and deploying mapping services to support data-informed decisions.
+
+### Services
+
+#### Geospatial data management and automation
+Spatial data creation, processing, governance, integration, validation, quality assurance, and workflow automation.
+
+#### Geospatial analysis and visualization
+Spatial statistics, hotspot and pattern analysis, predictive spatial modelling, network and proximity analysis, and interactive visualization.
+
+#### Remote sensing and Earth observation
+Satellite imagery analysis and monitoring of land use, land cover, agriculture, and environmental change.
+
+#### Web GIS and application development
+Interactive web maps, location-based applications, web GIS platforms, and geoportal integrations.
+
+#### Cartography and map production
+Interactive maps, digital map files, print-ready maps, atlases, and map collections.
+
+#### GIS capacity building
+Training and support in GIS and remote-sensing methods for practical problem solving.
+
+### Spatial analysis capabilities
+- Spatial statistics, spatial autocorrelation, hotspot analysis, and spatial regression.
+- Pattern and trend detection, cluster analysis, and spatiotemporal analysis.
+- Predictive spatial modelling, risk assessment, and suitability scoring.
+- Network, proximity, overlay, terrain, and spatial relationship analysis.
+- Interactive web maps, data visualization, cartography, and map books.
+
+### Data lifecycle capabilities
+- Data creation, digitization, cleaning, and processing.
+- Data governance, lineage, metadata, and quality assurance.
+- Spatial data integration, APIs, data distribution, and access management.
+- GIS workflow automation and custom scripting.
+
+### Portfolio projects displayed on the homepage
+
+#### Kenya County Budget Implementation — FY 2023/2024 Dashboard
+A county-level budget implementation dashboard shown in the portfolio.
+
+#### Kenya Population Census 2024 Visualization
+A population data visualization project shown in the portfolio.
+
+#### Kenya County Disability Visualization
+A county-level disability data visualization project shown in the portfolio.
+
+#### Diaspora Remittance to Kenya — Multi-Year Analysis
+A multi-year remittance analysis project shown in the portfolio.
+
+### Technology stack displayed on the homepage
+
+#### Databases and spatial platforms
+PostgreSQL, PostGIS, DuckDB (Spatial and H3 extensions), AWS RDS, Amazon Athena.
+
+#### Programming
+Python, R, SQL, JavaScript, Node.js, Shell scripting.
+
+#### GIS and mapping
+QGIS, MapLibre GL JS, Leaflet, Folium, Kepler.gl, deck.gl, Overture Maps.
+
+#### Dashboards and BI
+Dash, FastAPI, Power BI, Looker Studio, Shiny, HTML reports.
+
+#### GeoAI and modelling
+scikit-learn, XGBoost, PySAL, TensorFlow, Suitability scoring, LISA.
+
+#### Spatial data formats
+GeoPackage, GeoParquet, Shapefile, CSV, H3, GeoJSON, JSON routing outputs.
+
+#### Remote sensing
+Sentinel-2, MODIS, Landsat, UAV/drone data, NDVI and spectral indices, Google Earth Engine.
+
+#### Data engineering
+Apache Airflow, AWS Glue, Spark/Sedona, Docker, Git, ETL/ELT pipelines.
+
+#### Routing
+Jsprit, GraphHopper, OpenStreetMap, Vehicle routing, Multi-depot optimization.
+
+#### Intelligence and automation
+Claude API, Computer vision, n8n, LLMs.
+
+### Project delivery process
+1. Scoping: clarify objectives, deliverables, timelines, budget, data sources, and constraints.
+2. Solution design: select an appropriate architecture, methods, and technologies.
+3. Data gathering and preparation: acquire, clean, transform, validate, and organize data.
+4. Execution: deliver maps, applications, dashboards, reports, databases, portals, or mobile-ready solutions.
+
+### Industry use cases
+Business, insurance, healthcare, banking, real estate, sales and marketing, agriculture, retail, utilities and asset management, logistics, and monitoring and evaluation.
+
+### Contact details displayed on the website
+- Email: sangpatrick211@gmail.com
+- Phone: +254790835786
+- Location: Nairobi, Kenya
+
+## Selected projects page
+URL: https://patrick-sang.is-a.dev/buildss.html
+Description: Portfolio page for selected GIS projects, prototypes, and geospatial experiments. The page notes that it highlights selected prototypes and personal projects and excludes client projects and client data.
+
+## Journey page
+URL: https://patrick-sang.is-a.dev/journeyy.html
+Description: A professional journey page framed around the path from spatial analysis to scalable geospatial systems.
+
+## Lab and writing pages
+- https://patrick-sang.is-a.dev/labb.html — lab/experimental page path known from the site owner; verify its current contents.
+- https://patrick-sang.is-a.dev/writingg.html — writing/blog page path known from the site owner; verify its current contents.
+
+## Accuracy and attribution guidance
+This document summarizes publicly visible portfolio content. Page paths beyond those directly verified may change. Always check live pages for current content. Do not infer pricing, credentials, client relationships, metrics, or outcomes. Portfolio items should not automatically be described as paid client work.

@@ -1,0 +1,14 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Patrick Sang Portfolio \u2014 Public API Availability",
+    "version": "1.0.0",
+    "description": "Placeholder documentation confirming that this package does not claim a machine-actionable public API. The website's normal HTML pages are public web pages, not API endpoints."
+  },
+  "servers": [
+    {
+      "url": "https://patrick-sang.is-a.dev"
+    }
+  ],
+  "paths": {}
+}

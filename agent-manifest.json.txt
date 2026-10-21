@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "name": "Patrick Sang Portfolio",
+  "description": "Public portfolio for geospatial development, GIS analysis, spatial data workflows, and remote sensing.",
+  "website": "https://patrick-sang.is-a.dev/",
+  "contact": {
+    "email": "sangpatrick211@gmail.com"
+  },
+  "capabilities": [
+    {
+      "id": "browse_portfolio",
+      "name": "Browse portfolio",
+      "description": "Read portfolio pages and project summaries.",
+      "url": "https://patrick-sang.is-a.dev/buildss.html",
+      "method": "GET",
+      "authentication": "none"
+    },
+    {
+      "id": "read_journey",
+      "name": "Read professional journey",
+      "description": "Read the professional journey page.",
+      "url": "https://patrick-sang.is-a.dev/journeyy.html",
+      "method": "GET",
+      "authentication": "none"
+    },
+    {
+      "id": "contact_owner",
+      "name": "Contact Patrick",
+      "description": "Use the email address published on the website to discuss a project.",
+      "url": "mailto:sangpatrick211@gmail.com",
+      "method": "mailto",
+      "authentication": "none"
+    }
+  ],
+  "limitations": [
+    "This website does not expose a verified public machine-action API in this manifest.",
+    "Do not submit forms or send messages without explicit user approval."
+  ]
+}

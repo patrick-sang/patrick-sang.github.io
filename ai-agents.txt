@@ -1,0 +1,15 @@
+# AI Agent Information
+
+Website: https://patrick-sang.is-a.dev/
+Owner/portfolio subject: Patrick Sang
+Primary domain: Geospatial software development and GIS.
+
+Public pages:
+- https://patrick-sang.is-a.dev/
+- https://patrick-sang.is-a.dev/buildss.html
+- https://patrick-sang.is-a.dev/journeyy.html
+- https://patrick-sang.is-a.dev/labb.html (verify current content)
+- https://patrick-sang.is-a.dev/writingg.html (verify current content)
+
+Agents may read publicly accessible pages and summarize the published content. Do not invent services, client relationships, qualifications, prices, or results. Do not submit forms, subscribe, or contact anyone unless the user explicitly asks.
+No verified public API is documented in this file.

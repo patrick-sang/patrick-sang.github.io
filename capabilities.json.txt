@@ -1,0 +1,33 @@
+{
+  "site": "https://patrick-sang.is-a.dev/",
+  "capabilities": [
+    {
+      "id": "portfolio_browsing",
+      "available": true,
+      "description": "Browse public portfolio and service information."
+    },
+    {
+      "id": "project_discovery",
+      "available": true,
+      "description": "Review selected projects and prototypes.",
+      "url": "https://patrick-sang.is-a.dev/buildss.html"
+    },
+    {
+      "id": "professional_journey",
+      "available": true,
+      "description": "Read the professional journey page.",
+      "url": "https://patrick-sang.is-a.dev/journeyy.html"
+    },
+    {
+      "id": "direct_contact",
+      "available": true,
+      "description": "Contact via the email published on the site.",
+      "url": "mailto:sangpatrick211@gmail.com"
+    },
+    {
+      "id": "public_api",
+      "available": false,
+      "description": "No verified public API endpoint is documented in this package."
+    }
+  ]
+}
