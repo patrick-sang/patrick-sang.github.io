@@ -1027,6 +1027,62 @@ window.cookieconsent.initialise({
   }
 });
 </script>
+
+let deferredInstallPrompt;
+
+const installButton = document.getElementById("installAppBtn");
+
+// Show the button when the browser supports the install prompt
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  installButton.hidden = false;
+});
+
+// Install when the visitor clicks
+installButton.addEventListener("click", async () => {
+  if (!deferredInstallPrompt) {
+    showInstallInstructions();
+    return;
+  }
+
+  deferredInstallPrompt.prompt();
+
+  const choice = await deferredInstallPrompt.userChoice;
+
+  if (choice.outcome === "accepted") {
+    console.log("Installation accepted");
+  }
+
+  deferredInstallPrompt = null;
+  installButton.hidden = true;
+});
+
+// Hide the button after installation
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+  installButton.hidden = true;
+});
+
+// Fallback for browsers without the install prompt API
+function showInstallInstructions() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+  if (isIOS) {
+    alert('To install, tap Share in Safari, then choose "Add to Home Screen".');
+  } else {
+    alert('Open your browser menu and look for "Install app" or "Add to Home screen".');
+  }
+}
+
+// Detect an app already running in standalone mode
+const isStandalone =
+  window.matchMedia("(display-mode: standalone)").matches ||
+  navigator.standalone === true;
+
+if (isStandalone) {
+  installButton.hidden = true;
+}
 	
 </body>
 </html>
