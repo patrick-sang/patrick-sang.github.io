@@ -3410,76 +3410,7 @@ $("#cform").onsubmit=e=>{e.preventDefault();const b=`Name: ${$("#n").value}\nEma
 $("#sub").onsubmit=e=>{e.preventDefault();location.href=`mailto:sangpatrick211@gmail.com?subject=Subscribe&body=${encodeURIComponent("Please add me: "+$("#se").value)}`};
 </script></script>
 	
-<!-- Install App Popup -->
-<div id="installPopup" class="install-popup" hidden>
-  <button id="closeInstallPopup" class="install-close"
-          aria-label="Close install popup">&times;</button>
 
-  <div class="install-icon">↗</div>
-
-  <div class="install-content">
-    <h3>Install My Portfolio</h3>
-    <p>Get quick access to my geospatial projects and services.</p>
-  </div>
-
-  <button id="installAppBtn" class="install-app-btn">
-    Install App
-  </button>
-</div>
-<script>
-const installPopup = document.getElementById("installPopup");
-const installBtn = document.getElementById("installAppBtn");
-const closeInstallBtn = document.getElementById("closeInstallPopup");
-
-let installPrompt = null;
-
-// Show the popup after a short delay
-// on browsers that may support installation.
-window.addEventListener("beforeinstallprompt", (event) => {
-  event.preventDefault();
-  installPrompt = event;
-
-  if (!isAppInstalled()) {
-    setTimeout(() => {
-      installPopup.hidden = false;
-    }, 1800);
-  }
-});
-
-function isAppInstalled() {
-  return window.matchMedia("(display-mode: standalone)").matches ||
-         navigator.standalone === true;
-}
-
-// Install button
-installBtn.addEventListener("click", async () => {
-  if (!installPrompt) {
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-
-    alert(isIOS
-      ? 'To install, tap Share in Safari, then "Add to Home Screen".'
-      : 'Open your browser menu and look for "Install app" or "Add to Home screen".'
-    );
-    return;
-  }
-
-  installPrompt.prompt();
-  await installPrompt.userChoice;
-
-  installPrompt = null;
-  installPopup.hidden = true;
-});
-
-// Close button
-closeInstallBtn.addEventListener("click", () => {
-  installPopup.hidden = true;
-});
-
-// Hide after successful installation
-window.addEventListener("appinstalled", () => {
-  installPopup.hidden = true;
-  installPrompt = null;
-});</script>
 
 </body>
 
