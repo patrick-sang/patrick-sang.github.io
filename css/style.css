@@ -4564,3 +4564,38 @@ footer{border-top:1px solid var(--rule);padding-top:2.5rem;padding-bottom:var(--
     transition: none !important;
   }
 }
+
+/* Install App button — navy and teal palette */
+.install-app-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 11px 17px;
+
+  color: #0B1220;
+  background: #2DD4BF;
+  border: 1px solid #2DD4BF;
+  border-radius: 10px;
+
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+
+  transition: background .2s ease, transform .2s ease;
+}
+
+.install-app-btn:hover {
+  background: #5EEAD4;
+  transform: translateY(-2px);
+}
+
+.install-app-btn:focus-visible {
+  outline: 2px solid #5EEAD4;
+  outline-offset: 4px;
+}
+
+.install-app-btn[hidden] {
+  display: none;
+}
