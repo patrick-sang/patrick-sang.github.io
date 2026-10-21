@@ -3426,7 +3426,7 @@ $("#sub").onsubmit=e=>{e.preventDefault();location.href=`mailto:sangpatrick211@g
     Install App
   </button>
 </div>
-
+<script>
 const installPopup = document.getElementById("installPopup");
 const installBtn = document.getElementById("installAppBtn");
 const closeInstallBtn = document.getElementById("closeInstallPopup");
@@ -3479,7 +3479,7 @@ closeInstallBtn.addEventListener("click", () => {
 window.addEventListener("appinstalled", () => {
   installPopup.hidden = true;
   installPrompt = null;
-});
+});</script>
 
 </body>
 
