@@ -383,9 +383,12 @@ footer{border-top:1px solid var(--rule);padding-top:2.5rem;padding-bottom:var(--
   }
 })();
   </script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
   <script>
   // Replace these values with your Firebase project's Web App config.
   const FIREBASE_CONFIG = {
@@ -402,6 +405,7 @@ footer{border-top:1px solid var(--rule);padding-top:2.5rem;padding-bottom:var(--
       firebase.initializeApp(FIREBASE_CONFIG);
       window.engagementAuth = firebase.auth();
       window.engagementDb = firebase.firestore();
+      window.blogDb = window.engagementDb;
       window.articleEngagement.ready = true;
       window.engagementAuth.signInAnonymously().catch(err => {
         console.error("Firebase anonymous sign-in failed:", err);
@@ -577,6 +581,7 @@ footer{border-top:1px solid var(--rule);padding-top:2.5rem;padding-bottom:var(--
   };
   </script>
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
   <div class="grain" id="app">
@@ -1339,7 +1344,7 @@ const latestExperiment = experiments[0];
  * Body formatting: prefix a line with "> " for a pull quote and "## " for a
  * sub-heading. Everything else is a paragraph.
  */
-const notes = [
+let notes = [
   {
     slug: "why i started gis development",
     title: "Why gis matters",
@@ -1634,7 +1639,7 @@ function renderArticle(slug) {
   const n = notes.find(x=>x.slug===slug);
   if (!n) return renderList();
   document.title = n.title+" — Writing";
-  const blocks = n.body.map(t => {
+  const blocks = n.bodyHtml ? DOMPurify.sanitize(n.bodyHtml, { USE_PROFILES: { html: true } }) : n.body.map(t => {
     // Headings: ## Heading
     if (t.startsWith("## ")) {
       return `<h2 class="display-sm" style="padding-top:2rem">${esc(t.slice(3))}</h2>`;
@@ -1684,11 +1689,25 @@ function renderArticle(slug) {
     <h1 class="display-lg" style="max-width:20ch;padding-top:2rem">${esc(n.title)}</h1>
     <p class="story muted" style="font-size:1.3rem;line-height:1.4;max-width:48ch;padding-top:1.75rem">${esc(n.standfirst)}</p>
     <div style="padding-top:2rem">${n.tags.map(t=>label(t)).join(" ")}</div>
-    <div class="article-body" style="max-width:66ch;padding:3rem 0 6rem">${blocks}</div>
+    ${n.coverUrl ? `<figure style="padding-top:2rem"><img src="${esc(n.coverUrl)}" alt="${esc(n.title)}" loading="lazy" style="width:100%;max-height:560px;object-fit:cover;border-radius:8px"></figure>` : ""}
+    <div class="article-body" style="max-width:66ch;padding:3rem 0 2rem">${blocks}</div>
+    ${n.geojsonUrl ? `<section style="padding:0 0 3rem"><h2 class="display-sm">${esc(n.mapCaption || "Interactive map")}</h2><div id="published-geo-map" style="height:360px;border:1px solid var(--rule);border-radius:8px;margin-top:1rem;overflow:hidden"></div><p class="small" style="padding-top:.5rem"><a class="ui-link" href="${esc(n.geojsonUrl)}" target="_blank" rel="noopener">Download GeoJSON dataset ↗</a></p></section>` : ""}
     <section id="article-engagement" class="engagement" aria-label="Article comments and likes"></section>
     <div class="rule-t" style="padding:2rem 0 5rem"><a href="#" class="ui-link">← Back to all writing</a></div>
   </article>`;
   if (window.setupArticleEngagement) window.setupArticleEngagement(n.slug);
+  if (n.geojsonUrl && window.L) {
+    const mapRoot = document.getElementById("published-geo-map");
+    if (mapRoot) {
+      const map = L.map(mapRoot).setView([0.0236,37.9062],5);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom:19, attribution:"&copy; OpenStreetMap"}).addTo(map);
+      fetch(n.geojsonUrl).then(r => { if(!r.ok) throw new Error("GeoJSON unavailable"); return r.json(); }).then(data => {
+        const layer = L.geoJSON(data,{style:{color:"#c83a1e",weight:2,fillOpacity:.2},pointToLayer:(f,ll)=>L.circleMarker(ll,{radius:6,color:"#c83a1e"})}).addTo(map);
+        if(layer.getBounds().isValid()) map.fitBounds(layer.getBounds().pad(.1),{maxZoom:15});
+      }).catch(err => { mapRoot.innerHTML = '<p style="padding:1rem">Map dataset could not be loaded. Use the GeoJSON download link instead.</p>'; console.warn(err); });
+      setTimeout(()=>map.invalidateSize(),100);
+    }
+  }
 }
 function render() { const slug = decodeURIComponent(location.hash.slice(1)); slug ? renderArticle(slug) : renderList(); window.scrollTo(0,0); }
 window.addEventListener("hashchange",render);
@@ -1700,6 +1719,28 @@ view.addEventListener("error", (event) => {
     if (fallback) fallback.hidden = false;
   }
 }, true);
+// Load published Firebase articles and merge them with the original static notes.
+// Existing static notes remain available if Firestore is empty or temporarily unavailable.
+async function loadPublishedArticles() {
+  if (!window.blogDb) return;
+  try {
+    const snap = await window.blogDb.collection("articles").where("status", "==", "published").get();
+    const remote = snap.docs.map(doc => {
+      const a = doc.data();
+      return { ...a, id: doc.id, slug: a.slug || doc.id, body: Array.isArray(a.body) ? a.body : [] };
+    });
+    const staticSlugs = new Set(notes.map(n => n.slug));
+    notes = [...notes, ...remote.filter(a => !staticSlugs.has(a.slug))];
+    // Replace an existing static entry if an admin explicitly publishes the same slug.
+    for (const a of remote) {
+      const i = notes.findIndex(n => n.slug === a.slug);
+      if (i >= 0) notes[i] = { ...notes[i], ...a };
+    }
+    notes.sort((a,b) => String(b.date||'').localeCompare(String(a.date||'')));
+    render();
+  } catch (err) { console.warn("Could not load published Firebase articles; showing static articles.", err); }
+}
+loadPublishedArticles();
 render();
 // Match the site's theme toggle and reading progress without requiring the full app router.
  
