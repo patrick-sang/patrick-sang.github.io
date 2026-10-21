@@ -982,15 +982,35 @@ font-weight: bold; font-family: monospace; font-size: 1.2rem; text-align: justif
     window.cookieconsent.initialise({
         "palette": {
             "popup": {
-                "background": "#000"
+                "background": "#0B1220",
+				"text":"#A7B4C8",
             },
             "button": {
-                "background": "#f1d600"
+                "background": "#2DD4BF",
+				"text":"#0B12120"
+				
             }
         },
+		"theme":"classic",
+		"position":"bottom-left",
+		"type":"opt-in",
         "content": {
+			"message": "This website uses cookies to improve your browsing experience and enhance your interaction with geospatial content.",
+    "dismiss": "Got it",
+    "allow": "Accept cookies",
+    "deny": "Decline",
+    "link": "Privacy Policy",
             "href": "patrick-sang.is-a.dev/privacy.html"
         }
+		 "elements": {
+    "messagelink": 
+      '<span id="cookieconsent:desc" class="cc-message">{{message}} ' +
+      '<a aria-label="learn more about cookies" tabindex="0" class="cc-link" href="{{href}}" target="{{target}}">{{link}}</a></span>'
+  },
+
+  "onInitialise": function (status) {
+    console.log("Cookie consent status:", status);
+  }
     });
     </script>	
 </body>
