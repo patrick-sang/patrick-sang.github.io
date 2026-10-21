@@ -3408,6 +3408,24 @@ document.querySelectorAll("[data-n]").forEach(el=>io.observe(el));
 $("#cform").onsubmit=e=>{e.preventDefault();const b=`Name: ${$("#n").value}\nEmail: ${$("#e").value}\nService: ${$("#s").value}\n\n${$("#m").value}`;location.href=`mailto:sangpatrick211@gmail.com?subject=${encodeURIComponent("Discovery call: "+$("#s").value)}&body=${encodeURIComponent(b)}`};
 $("#sub").onsubmit=e=>{e.preventDefault();location.href=`mailto:sangpatrick211@gmail.com?subject=Subscribe&body=${encodeURIComponent("Please add me: "+$("#se").value)}`};
 </script></script>
+	
+<!-- Install App Popup -->
+<div id="installPopup" class="install-popup" hidden>
+  <button id="closeInstallPopup" class="install-close"
+          aria-label="Close install popup">&times;</button>
+
+  <div class="install-icon">↗</div>
+
+  <div class="install-content">
+    <h3>Install My Portfolio</h3>
+    <p>Get quick access to my geospatial projects and services.</p>
+  </div>
+
+  <button id="installAppBtn" class="install-app-btn">
+    Install App
+  </button>
+</div>
+
 </body>
 
 </html>
