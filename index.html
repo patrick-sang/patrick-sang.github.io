@@ -976,33 +976,42 @@ font-weight: bold; font-family: monospace; font-size: 1.2rem; text-align: justif
         });
     </script>
 	
-    <!-- JavaScript for Cookie Consent Popup Message -->
-    <script src="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js" data-cfasync="false"></script>
-    <script>
-    window.cookieconsent.initialise({
-        "palette": {
-            "popup": {
-                "background": "#0B1220",
-				"text":"#A7B4C8",
-            },
-            "button": {
-                "background": "#2DD4BF",
-				"text":"#0B12120"
-				
-            }
-        },
-		"theme":"classic",
-		"position":"bottom-left",
-		"type":"opt-in",
-        "content": {
-			"message": "This website uses cookies to improve your browsing experience and enhance your interaction with geospatial content.",
+   <!-- Cookie Consent Popup -->
+<script
+  src="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js"
+  data-cfasync="false">
+</script>
+
+<script>
+window.cookieconsent.initialise({
+  "palette": {
+    "popup": {
+      "background": "#0B1220",
+      "text": "#A7B4C8"
+    },
+    "button": {
+      "background": "#2DD4BF",
+      "text": "#0B1220"
+    }
+  },
+
+  "theme": "classic",
+
+  "position": "bottom-left",
+
+  "type": "opt-in",
+
+  "content": {
+    "message": "This website uses cookies to improve your browsing experience and enhance your interaction with geospatial content.",
     "dismiss": "Got it",
     "allow": "Accept cookies",
     "deny": "Decline",
     "link": "Privacy Policy",
-            "href": "patrick-sang.is-a.dev/privacy.html"
-        }
-		 "elements": {
+    "href": "https://patrick-sang.is-a.dev/privacy.html",
+    "target": "_blank"
+  },
+
+  "elements": {
     "messagelink": 
       '<span id="cookieconsent:desc" class="cc-message">{{message}} ' +
       '<a aria-label="learn more about cookies" tabindex="0" class="cc-link" href="{{href}}" target="{{target}}">{{link}}</a></span>'
@@ -1011,8 +1020,9 @@ font-weight: bold; font-family: monospace; font-size: 1.2rem; text-align: justif
   "onInitialise": function (status) {
     console.log("Cookie consent status:", status);
   }
-    });
-    </script>	
+});
+</script>
+	
 </body>
 </html>
                     </div>
