@@ -1346,66 +1346,9 @@ const latestExperiment = experiments[0];
  */
 let notes = [
 
-  {
-    slug: "payments-taught-me-more-than-tutorials",
-    title: "Payments taught me more than any tutorial did",
-    date: "2026-07-02",
-    reading: "5 min",
-    tags: ["payments", "learning", "fintech"],
-    standfirst:
-      "Tutorials give you a problem that has already been solved. Money gives you a problem that is still happening, to someone, right now.",
-    body: [
-      "The gap between a tutorial project and a real one isn't difficulty. It's consequence. Nothing in a tutorial is *someone's rent*.",
-      "When I was learning, I did what everyone does — built the clone, followed the course, felt competent. The competence was real but it was shallow, because every problem I'd solved had been pre-shaped to have a solution. Reality doesn't pre-shape anything.",
-      "## Money makes the edge cases mandatory",
-      "You can ship a social app with a broken edge case and most people will never find it. You cannot ship a payment system that loses one transaction in three hundred. That single constraint drags in everything else: idempotency, auditability, reconciliation, partial states, and the discipline to build the failure path before the happy path.",
-      "> Payments are the fastest way I know to find out whether you actually understand the system you built, because the feedback is immediate, specific and someone is upset.",
-      "## It also teaches you the business",
-      "The second thing payments gave me was commercial literacy I couldn't have got from a course. Settlement timing changes what a business can afford to do. Fees change what's worth selling. When a landlord tells you rent is 'usually fine, just late', that sentence contains an entire financial product.",
-      "I don't think I chose fintech. I think I kept following the hardest part of every project I built, and it kept being the money.",
-    ],
-  },
-
-  {
-    slug: "operational-problems-in-software-clothing",
-    title: "Some software problems are operational problems wearing a costume",
-    date: "2026-05-28",
-    reading: "4 min",
-    tags: ["product", "operations", "lea"],
-    standfirst:
-      "The property manager didn't need a better dashboard. She needed the thing to take less than the forty seconds a phone call takes.",
-    body: [
-      "The most useful hour I spent on LEA involved no code. I sat and watched how the building was actually run.",
-      "What I saw was not a technology gap. It was a chain of handoffs held together by one person's memory. Rent arrives as a text. Someone reads it, matches a name, writes it down. A tenant complains in a group. Someone remembers to tell someone. It worked — and it worked entirely because of that person.",
-      "## Software can only replace a handoff it understands",
-      "My first version replaced the screens, not the handoffs. It was faster in theory and slower in practice, because the manager had to translate between how she worked and how the app thought she should. Given the choice between the two, she picked the phone. Correctly.",
-      "> If your system is slower than the workaround, it does not exist. Features don't fix that. Fewer steps do.",
-      "## How I test an idea now",
-      "I try to describe the operation as it exists — every handoff, every person, every point where information gets copied by hand. Then I ask which single handoff, if it disappeared, would change the day. That's usually the product. Everything else is a screen.",
-      "The uncomfortable version of this: a lot of what looks like a software opportunity is really a badly run process, and the honest answer is a spreadsheet and a different Tuesday.",
-    ],
-  },
-
-  {
-    slug: "what-data-science-changed",
-    title: "I'm studying data science. Here's what I already see differently.",
-    date: "2026-04-11",
-    reading: "4 min",
-    tags: ["data", "learning", "alt-data"],
-    standfirst:
-      "I could always spot a pattern. What I couldn't do was say how much I should believe it.",
-    body: [
-      "I came to data science from the wrong direction — not from statistics, but from having built enough systems to be suspicious of my own conclusions. I'd look at a chart of payments and *know* what it meant. I was often right. I had no idea how often.",
-      "## Confidence is the actual subject",
-      "The thing I underestimated is that most of the discipline isn't about finding signal. It's about being honest regarding how much signal you have. An engineer's instinct is to ship the model; the statistical instinct is to ask what would have to be true for this to be noise.",
-      "That reframing has been worth more to me than any technique. It's the same muscle as writing a postmortem: separating what happened from what I assumed.",
-      "> Anyone can produce a number. The skill is knowing what the number is allowed to be used for.",
-      "## Why alternative data",
-      "Kenya is a good place to be interested in this. Most people here have no formal credit file, so by the standards of a traditional system they are invisible. They are not invisible — they pay rent, buy airtime, run a till, settle a utility bill. The record exists; it just isn't in the place the system looks.",
-      "Turning that into a decision is where it gets serious. Alternative data is also how you build a system that quietly discriminates, if you're careless with it. I'd rather learn the statistics properly than find that out later, from someone it happened to.",
-    ],
-  },
-
+ 
+  
+ 
   {
     slug: "why-i-keep-changing-what-im-building",
     title: "Why I keep changing what I'm building",
