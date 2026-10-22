@@ -5,5 +5,5 @@ export const firebaseConfig = {
   projectId: "patrick-geospatial",
   storageBucket: "patrick-geospatial",
   messagingSenderId: "279002519061",
-  appId: ""
+  appId: "1:279002519061:web:175e99831925d9b66ee01c"
 };
