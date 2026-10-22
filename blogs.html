@@ -1345,30 +1345,6 @@ const latestExperiment = experiments[0];
  * sub-heading. Everything else is a paragraph.
  */
 let notes = [
-  {
-    slug: "",
-    title: "",
-    date: "",
-    reading: "",
-
-    tags: ["growth", "analysis", "modelling"],
-    standfirst:
-      "For two years I treated an integration as a box to tick. Then a payment provider taught me that an API is a description of somebody else's reality, and mine had to bend around it.",
-    body: [
-      "My GIS project demonstrates spatial analysis.",
-  "![GIS map visualization](https://patrick-sang.is-a.dev/img/about.png)",
-  "The map highlights the main findings.",
-      "The first time I integrated M-Pesa I wrote it on a Tuesday and called it done. Push a request, get a callback, mark the invoice paid. Three functions. It was on the roadmap as one line: *M-Pesa integration*.",
-      "That line was wrong in a way that took a year to fully see.",
-      "> An API is not a feature you add. It is a second system with its own opinions, its own idea of time, and its own failure modes — and you have just agreed to live with all of them.",
-      "## What a callback actually is",
-      "A callback is not an event. It's a claim about an event, made by a system you don't control, over a network that will occasionally deliver it twice, out of order, or not at all. The moment I wrote it down that way, my code looked obviously wrong. I had been treating a claim as a fact.",
-      "The fix wasn't clever. Make every payment event idempotent, key it on the provider's own reference, never destroy anything, and derive the balance instead of storing it. All of that is boring. All of it is the actual product.",
-      "## The part that changed how I plan",
-      "Now, when someone says 'we'll just integrate X', I hear a question instead of a task: what does X believe about the world, and what happens when it's wrong? Sometimes the answer is small. With money, it never is.",
-      "It also changed how I read other people's systems. Most of the complexity in a mature payments codebase isn't complexity — it's scar tissue. Somebody met reality there.",
-    ],
-  },
 
   {
     slug: "payments-taught-me-more-than-tutorials",
