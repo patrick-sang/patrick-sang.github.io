@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Geospatial Lab — Patrick Sang</title>
+<meta name="description" content="Experiments, prototypes and findings in geospatial development, spatial analytics, automation and data systems by Patrick Sang.">
+<meta name="theme-color" content="#091e3e">
+<link rel="canonical" href="https://patrick-sang.is-a.dev/labs.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="The Geospatial Lab — Patrick Sang">
+<meta property="og:url" content="https://patrick-sang.is-a.dev/labs.html">
+<meta property="og:description" content="Experiments, prototypes and findings in geospatial development, spatial analytics, automation and data systems.">
+<meta property="og:image" content="https://patrick-sang.is-a.dev/img/two.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://get.mavo.io/mavo.js"></script>
+<link rel="stylesheet" href="https://get.mavo.io/mavo.css">
+<style>
+:root{color-scheme:light;--primary:#06A3DA;--secondary:#34AD54;--light:#EEF9FF;--dark:#091E3E;--ink:#102a4b;--muted:#52657c;--line:#d5e4ef;--panel:#fff;--accent:#06A3DA;--serif:'Fraunces',Georgia,serif;--sans:'Nunito',Arial,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:24px}body{margin:0;background:var(--light);color:var(--ink);font:16px/1.7 var(--sans)}a{color:inherit;text-decoration:none}button,input,select{font:inherit}button,a,input,select{outline-offset:3px}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #06A3DA}img{max-width:100%}.wrap{width:min(1120px,calc(100% - 40px));margin-inline:auto}
+.nav{min-height:76px;display:flex;align-items:center;justify-content:space-between;gap:22px;border-bottom:1px solid var(--line)}.brand{display:flex;align-items:center;gap:11px;font-weight:900;color:var(--dark);white-space:nowrap}.mark{width:12px;height:12px;background:var(--primary);border-radius:3px;transform:rotate(45deg)}.navlinks{display:flex;gap:24px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:12px;font-weight:800}.navlinks a:hover,.navlinks .active{color:var(--primary)}
+main{padding:70px 0 80px}.hero{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(220px,.6fr);gap:40px;align-items:end}.eyebrow,.meta,.tag,.count-label,.section-kicker{font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.eyebrow,.section-kicker{color:var(--primary)}h1{font:600 clamp(3.3rem,8vw,6.7rem)/.98 var(--serif);letter-spacing:-.055em;color:var(--dark);margin:18px 0 22px}h1 span{color:var(--primary)}.intro{max-width:680px;color:var(--muted);font-size:18px;margin:0}.hero-aside{border-left:3px solid var(--primary);padding:8px 0 8px 20px;color:var(--muted);font-size:14px}.hero-aside strong{display:block;color:var(--dark);font-size:15px;margin-bottom:5px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:42px 0 34px}.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px}.stat strong{display:block;color:var(--dark);font:600 32px/1.2 var(--serif)}.stat span{color:var(--muted);font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.tools{padding:22px;background:#fff;border:1px solid var(--line);border-radius:16px;margin-bottom:28px}.search-row{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:12px}.field{width:100%;min-width:0;min-height:46px;padding:11px 14px;border:1px solid #c7d9e7;border-radius:9px;background:#fbfdff;color:var(--dark)}.filters{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.chip{border:1px solid #c7d9e7;border-radius:999px;background:#fff;color:var(--dark);padding:8px 14px;min-height:40px;cursor:pointer;font-size:12px;font-weight:900;transition:background .18s,border-color .18s,color .18s}.chip[aria-pressed=true],.chip:hover{background:var(--primary);border-color:var(--primary);color:white}.results-line{display:flex;justify-content:space-between;gap:12px;align-items:center;color:var(--muted);font-size:12px;margin:18px 2px 12px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;list-style:none;padding:0;margin:0}.item{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 7px 25px rgba(9,30,62,.045);display:flex;flex-direction:column;transition:transform .2s,border-color .2s,box-shadow .2s}.item[hidden]{display:none}.item:hover{transform:translateY(-3px);border-color:#9bd8ed;box-shadow:0 14px 30px rgba(9,30,62,.09)}.card-visual{height:138px;background:linear-gradient(135deg,#e6f6fd,#f5fbff);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}.card-visual img{width:100%;height:100%;object-fit:cover}.visual-placeholder{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:#49708b;text-align:center;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.visual-placeholder svg{width:48px;height:48px;stroke:var(--primary);stroke-width:1.4;fill:none}.card-content{padding:20px;display:flex;flex-direction:column;flex:1}.itemtop{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px}.id{font:10px var(--mono);font-weight:700;color:var(--primary)}.state{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 9px;background:#eef9f0;color:#22663a;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}.state:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--secondary)}.state[data-state="abandoned"]{background:#fff0ed;color:#a33e2c}.state[data-state="abandoned"]:before{background:#df6b55}.state[data-state="inconclusive"]{background:#fff7df;color:#87620b}.state[data-state="inconclusive"]:before{background:#d7a52a}.state[data-state="running"]{background:#eaf7ff;color:#0878a6}.state[data-state="running"]:before{background:var(--primary)}.item h2{font:600 1.36rem/1.25 var(--serif);letter-spacing:-.025em;color:var(--dark);margin:0 0 10px}.item p{color:var(--muted);font-size:13px;line-height:1.75;margin:0 0 16px}.category-label{display:inline-block;color:#0878a6;font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;margin-bottom:16px}.tag{font-size:9px;letter-spacing:.03em;border:1px solid var(--line);background:#f5fbff;color:#3d5870;border-radius:999px;padding:4px 8px}.card-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:42px;padding:9px 13px;border-radius:8px;border:1px solid var(--line);background:white;color:var(--dark);font-size:12px;font-weight:900;cursor:pointer}.btn.primary{background:var(--dark);color:#fff;border-color:var(--dark)}.btn:hover{border-color:var(--primary);color:var(--primary)}.btn.primary:hover{background:#123c70;color:white}.details{display:none;border-top:1px solid var(--line);padding:18px 20px 20px;background:#fbfdff}.item.expanded .details{display:block}.detail-block{margin:0 0 15px}.detail-block h3{font-size:10px;color:var(--primary);letter-spacing:.1em;text-transform:uppercase;margin:0 0 5px}.detail-block p{margin:0;color:var(--muted);font-size:13px;overflow-wrap:anywhere}.detail-links{display:flex;gap:8px;flex-wrap:wrap}.detail-links a{font-size:12px;font-weight:800;color:#0878a6;text-decoration:underline;text-underline-offset:3px}.empty{display:none;border:1px dashed #b7cedd;background:#fff;border-radius:12px;padding:24px;color:var(--muted);text-align:center}.empty.show{display:block}
+.section{margin-top:72px}.section-head{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:18px}.section-head h2{font:600 clamp(1.8rem,4vw,2.8rem)/1.1 var(--serif);color:var(--dark);margin:8px 0 0}.section-head p{max-width:500px;color:var(--muted);font-size:13px;margin:0}.map-panel{border:1px solid var(--line);border-radius:16px;background:#fff;overflow:hidden}.map-heading{padding:18px 22px;display:flex;justify-content:space-between;align-items:center;gap:15px;border-bottom:1px solid var(--line)}.map-heading strong{color:var(--dark)}.map-heading p{margin:3px 0 0;color:var(--muted);font-size:12px}#lab-map{height:360px;background:#e7f4f8}.map-note{padding:12px 18px;color:var(--muted);font-size:12px;border-top:1px solid var(--line)}.map-legend{display:flex;gap:8px;flex-wrap:wrap}.map-legend span{border:1px solid var(--line);padding:4px 8px;border-radius:99px;font-size:10px;color:var(--muted)}
+.mavo-edit-only{display:none!important}.mv-app.mv-edit .mavo-edit-only,.mv-app[mv-mode="edit"] .mavo-edit-only{display:block!important}.mv-app.mv-edit .image-fields.mavo-edit-only,.mv-app[mv-mode="edit"] .image-fields.mavo-edit-only{display:flex!important}.editor-note{border:1px solid #b9ddec;border-left:4px solid var(--primary);border-radius:10px;background:#f7fcff;color:var(--muted);font-size:13px;padding:15px 18px;margin:28px 0}.editor-note strong{color:var(--dark)}.foot{border-top:1px solid var(--line);color:var(--muted);padding:24px 0 38px;display:flex;justify-content:space-between;gap:20px;font-size:12px;font-weight:800}.foot a{color:var(--primary)}.mv-bar.mv-ui{background:#091e3e!important;border-bottom:2px solid #06a3da!important;color:#fff!important;z-index:1000}.mv-bar.mv-ui button,.mv-bar.mv-ui .mv-button{border-radius:6px!important}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{grid-template-columns:1fr .65fr;gap:24px}.stats{grid-template-columns:repeat(4,minmax(0,1fr))}.stat{padding:15px}}
+@media(max-width:650px){.wrap{width:calc(100% - 30px)}.nav{padding:16px 0;align-items:flex-start}.navlinks{justify-content:flex-end;gap:10px 14px;font-size:11px}.brand{font-size:13px}.brand img{height:42px!important;width:42px!important;object-fit:contain}main{padding-top:48px}.hero{grid-template-columns:1fr;gap:20px}h1{font-size:clamp(3.2rem,17vw,5rem)}.intro{font-size:16px}.hero-aside{max-width:560px}.stats{grid-template-columns:repeat(2,minmax(0,1fr));margin:30px 0 24px}.stat strong{font-size:28px}.tools{padding:14px}.search-row{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.card-visual{height:165px}.section{margin-top:52px}.section-head{display:block}.section-head p{margin-top:10px}.map-heading{align-items:flex-start;flex-direction:column}#lab-map{height:300px}.foot{flex-direction:column}.results-line{align-items:flex-start;flex-direction:column}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header class="wrap nav">
+  <a class="brand" href="index.html" aria-label=""><img src="./img/logo.webp" alt="" style="height:46px;width:46px;object-fit:contain"><span></span><span class="" aria-hidden="true"></span></a>
+  <nav class="navlinks" aria-label="Main navigation"><a href="index.html"></a><a href="index.html#builds"></a><a class="active" href="labs.html" aria-current="page"></a><a href="index.html#notes"></a></nav>
+</header>
+<main class="wrap" id="top" mv-app="patrickLab" mv-storage="https://github.com/patrick-sang/lab-data/lab.json" mv-plugins="github" mv-autosave="3">
+  <section class="hero" aria-labelledby="page-title">
+    <div><div class="eyebrow">Research / prototypes / 01</div><h1 id="page-title">The Geospatial<br>Lab<span>.</span></h1><p class="intro">Testing ideas. Exploring data. Building useful systems. A working notebook of experiments, prototypes, lessons learned and the occasional dead end.</p></div>
+    <aside class="hero-aside"><strong>Curiosity is part of the workflow.</strong>This is where questions become small tests, results get documented, and promising ideas earn a place in production.</aside>
+  </section>
+  <section class="stats" id="stats" aria-label="Experiment statistics" aria-live="polite">
+    <div class="stat"><strong id="stat-total">00</strong><span>Total experiments</span></div><div class="stat"><strong id="stat-running">00</strong><span>In progress</span></div><div class="stat"><strong id="stat-shipped">00</strong><span>Completed</span></div><div class="stat"><strong id="stat-categories">00</strong><span>Categories</span></div>
+  </section>
+  <section aria-label="Find experiments">
+    <div class="tools">
+      <div class="search-row"><input class="field" id="search" type="search" placeholder="Search experiments, methods, or technologies…" aria-label="Search experiments"><select class="field" id="sort" aria-label="Sort experiments"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="title">Title A–Z</option></select></div>
+      <div class="filters" id="category-filters" aria-label="Filter by category"></div>
+      <div class="filters" id="status-filters" aria-label="Filter by status"></div>
+    </div>
+    <div class="results-line"><span id="result-count" aria-live="polite">Showing experiments</span><button type="button" class="btn" id="reset-filters">Reset filters</button></div>
+    <ul class="grid" id="grid" mv-multiple="experiments" aria-label="Experiments"></ul>
+    <div class="empty" id="empty-state">No experiments match those filters. Try another search or reset the filters.</div>
+  </section>
+  <section class="section" aria-labelledby="map-title">
+    <div class="section-head"><div><div class="section-kicker">Explore spatial work</div><h2 id="map-title">Spatial experiments map</h2></div><p>When an experiment has a real study location, add its latitude and longitude to show it here. No locations are invented for experiments that have none.</p></div>
+    <div class="map-panel"><div class="map-heading"><div><strong>Geographic context</strong><p>Map markers are generated from coordinates stored with experiment records.</p></div><div class="map-legend"><span>● Experiment location</span><span>● Kenya overview</span></div></div><div id="lab-map" role="region" aria-label="Map of experiment locations"></div><div class="map-note" id="map-note" aria-live="polite">Loading map…</div></div>
+  </section>
+  <aside class="editor-note mavo-edit-only"><strong>Content editing:</strong> Sign in through the Mavo toolbar to edit experiment records. Use the available fields for category, status, methodology, findings, limitations, next steps, links and optional coordinates. Image selection in this page previews the image locally; permanent image hosting should use Firebase Storage or a stable public image URL.</aside>
+</main>
+<footer class="wrap foot"><span>© <span id="year"></span> Patrick Sang · Experiments and findings</span><a href="index.html">← Back to the main site</a></footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+(() => {
+"use strict";
+const initialExperiments = [{"id": "023", "date": "2026-08", "outcome": "running", "question": "Can rent history alone predict whether next month's rent arrives on time?", "note": "Twelve months of anonymised LEA payment events, a logistic baseline, no other features. It beats a coin flip and nothing else. Useful mostly as proof that I need more than one signal — which is the actual finding.", "tags": ["alt-data", "python", "underwriting"], "images": ["", "", ""], "category": "Web GIS"}, {"id": "022", "date": "2026-07", "outcome": "inconclusive", "question": "What happens if an n8n workflow becomes an agent instead of a flowchart?", "note": "Rebuilt a fixed six-step ops workflow as a tool-calling loop. It handled the edge cases the flowchart couldn't and invented two failure modes the flowchart never had. Kept the tools, threw away the autonomy.", "tags": ["agents", "n8n", "automation"], "images": ["", "", ""], "category": "Automation & AI"}, {"id": "021", "date": "2026-06", "outcome": "shipped", "question": "Can a till receipt tell you more about a small business than its bank statement?", "note": "Parsed a month of M-Pesa till confirmations into a daily revenue series. The shape of a week is extremely legible — Fridays, month-end, school terms. Formal statements flatten all of that out.", "tags": ["alt-data", "payments", "python"], "images": ["", "", ""], "category": "Automation & AI"}, {"id": "020", "date": "2026-04", "outcome": "abandoned", "question": "How cheap can a meeting-to-actions pipeline actually get?", "note": "Upload, transcribe, diarise, summarise, extract commitments. Works. The transcription cost per hour is the whole business model, and at Kenyan price points it doesn't close yet.", "tags": ["ai", "transcription", "pipelines"], "images": ["", "", ""], "category": "Automation & AI"}, {"id": "019", "date": "2026-03", "outcome": "abandoned", "question": "Is vector search worth it for a corpus of 400 documents?", "note": "Stood up Milvus, embedded everything, built the retrieval layer. Then tested it against Postgres full-text search. At this size, full-text won on latency and lost almost nothing on relevance. Deleted the cluster.", "tags": ["vector-db", "milvus", "retrieval"], "images": ["", "", ""], "category": "Automation & AI"}, {"id": "018", "date": "2026-02", "outcome": "shipped", "question": "Can a QR code replace the registration desk at a campus event?", "note": "Built for a Chiromo Tech Club event. It worked at the desk and failed in the queue — nobody has signal in the corridor. Now caches locally and syncs after.", "tags": ["events", "offline-first", "community"], "images": ["", "", ""], "category": "Web GIS"}, {"id": "017", "date": "2026-01", "outcome": "shipped", "question": "Can I automate the thing I do every Sunday night?", "note": "A scheduled job that pulls the week's payment events, diffs them against expected rent and posts a single summary. Ninety minutes of work replaced by a message. The prototype for how I now think about all internal tooling.", "tags": ["automation", "ops", "cron"], "images": ["", "", ""], "category": "Automation & AI"}, {"id": "016", "date": "2025-11", "outcome": "inconclusive", "question": "Does an SMS fallback actually change collection rates?", "note": "Africa's Talking behind the reminder system, for tenants who never open the app. Too small a sample to claim a number, but the qualitative answer is yes — the channel matters more than the message.", "tags": ["sms", "africas-talking", "payments"], "images": ["", "", ""], "category": "Automation & AI"}, {"id": "015", "date": "2025-09", "outcome": "shipped", "question": "What does a payment look like if you draw every state it can be in?", "note": "Not code. A wall of paper. Pending, pushed, timed-out, partial, duplicated, reversed, orphaned, reconciled. Nineteen states. This drawing is why the LEA ledger got rewritten.", "tags": ["payments", "modelling", "paper"], "images": ["", "", ""], "category": "Data Analytics"}];
+const grid = document.getElementById("grid");
+const search = document.getElementById("search");
+const sort = document.getElementById("sort");
+const categoryFilters = document.getElementById("category-filters");
+const statusFilters = document.getElementById("status-filters");
+const emptyState = document.getElementById("empty-state");
+const resultCount = document.getElementById("result-count");
+const categories = ["All categories","Web GIS","Remote Sensing","Spatial Analytics","Spatial AI","Automation & AI","Data Analytics","Prototyping"];
+const statuses = ["All statuses","running","shipped","inconclusive","abandoned"];
+let activeCategory = "All categories";
+let activeStatus = "All statuses";
+const escapeHTML = value => String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+function normal(value){return String(value||"").trim().toLowerCase()}
+function getRecords(){return Array.from(grid.querySelectorAll(":scope > .item"))}
+function getText(item, prop){return item.querySelector(`[property="${prop}"]`)?.textContent?.trim() || ""}
+function makeField(label, property, value, extra=""){return `<div class="detail-block"><h3>${label}</h3><p property="${property}" ${extra}>${escapeHTML(value||"Add details when editing…")}</p></div>`}
+function renderCard(data){
+ const li=document.createElement("li");li.className="item";li.setAttribute("mv-multiple-item","");
+ const tags=(data.tags||[]).map(t=>`<span class="tag">${escapeHTML(t)}</span>`).join("");
+ const firstImage=(data.images||[]).find(Boolean);
+ const visual=firstImage?`<img property="image" src="${escapeHTML(firstImage)}" alt="Experiment visual">`:`<div class="visual-placeholder" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M5 37 16 23l8 7 9-16 10 23H5Z"/><circle cx="33" cy="11" r="4"/><path d="M8 8h12M8 13h7"/></svg><span>Experiment preview</span></div>`;
+ li.innerHTML=`<div class="card-visual">${visual}</div>
+ <div class="card-content"><div class="itemtop"><span class="id">EXP. <span property="id">${escapeHTML(data.id)}</span> · <span property="date">${escapeHTML(data.date)}</span></span><span class="state" property="outcome" data-state="${escapeHTML(data.outcome)}">${escapeHTML(data.outcome)}</span></div>
+ <span class="category-label" property="category">${escapeHTML(data.category||"Prototyping")}</span><h2 property="question">${escapeHTML(data.question)}</h2><p property="note">${escapeHTML(data.note)}</p>
+ <div class="tags" property="tags">${tags||'<span class="tag">Add technology tags</span>'}</div><div class="card-actions"><button class="btn primary expand-btn" type="button" aria-expanded="false">View experiment <span aria-hidden="true">↗</span></button></div></div>
+ <div class="details"><div class="detail-block"><h3>Map coordinates (latitude, longitude)</h3><p><span property="latitude"></span>, <span property="longitude"></span></p><small>Enter real coordinates when editing to add this experiment to the map.</small></div>${makeField("Research question","researchQuestion","")}${makeField("Methodology","methodology","")}${makeField("Data sources","dataSources","")}${makeField("Findings","findings","")}${makeField("Limitations","limitations","")}${makeField("Next steps","nextSteps","")}
+ <div class="detail-block"><h3>Repository URL</h3><p property="repositoryUrl"></p></div><div class="detail-block"><h3>Live demo URL</h3><p property="demoUrl"></p></div>
+ <div class="detail-block"><h3>Additional images</h3><div class="image-fields mavo-edit-only"><label class="upload-label">Add image <input type="file" class="image-upload" accept="image/*" data-image-slot="image"></label><label class="upload-label">Add second image <input type="file" class="image-upload" accept="image/*" data-image-slot="image2"></label><label class="upload-label">Add third image <input type="file" class="image-upload" accept="image/*" data-image-slot="image3"></label></div><div class="extra-images"><img property="image2" alt="Additional experiment image" hidden><img property="image3" alt="Additional experiment image" hidden></div></div>
+ <div class="detail-links"><a class="repo-link" href="#" hidden>Source code ↗</a><a class="demo-link" href="#" hidden>Live demo ↗</a></div></div>`;
+ return li;
+}
+function initializeCards(){
+ if(!grid.children.length) initialExperiments.forEach(data=>grid.appendChild(renderCard(data)));
+}
+function uniqueCategories(){return [...new Set(getRecords().map(item=>getText(item,"category")||"Prototyping"))].sort()}
+function makeFilters(container, values, active, key){
+ container.innerHTML="";
+ values.forEach(label=>{
+  const button=document.createElement("button");button.type="button";button.className="chip";
+  const isActive=label===active;button.setAttribute("aria-pressed",String(isActive));
+  button.textContent=label==="All categories"||label==="All statuses"?label:label[0].toUpperCase()+label.slice(1);
+  button.dataset.filterKey=key;button.dataset.filterValue=label;container.appendChild(button);
+ });
+}
+function refreshFilters(){
+ const cats=["All categories",...uniqueCategories().filter(c=>c!=="All categories")];
+ makeFilters(categoryFilters,cats,activeCategory,"category");
+ makeFilters(statusFilters,statuses,activeStatus,"status");
+}
+function updateStats(){
+ const records=getRecords();const countStatus=status=>records.filter(item=>normal(getText(item,"outcome"))===status).length;
+ document.getElementById("stat-total").textContent=String(records.length).padStart(2,"0");
+ document.getElementById("stat-running").textContent=String(countStatus("running")).padStart(2,"0");
+ document.getElementById("stat-shipped").textContent=String(countStatus("shipped")).padStart(2,"0");
+ document.getElementById("stat-categories").textContent=String(uniqueCategories().length).padStart(2,"0");
+}
+function searchableText(item){return normal(["question","note","tags","category","outcome","methodology","findings","dataSources"].map(p=>getText(item,p)).join(" "))}
+function applyFilters(){
+ const q=normal(search.value);let shown=0;
+ let records=getRecords();const currentOrder=records.slice();
+ if(sort.value==="oldest") records.sort((a,b)=>getText(a,"date").localeCompare(getText(b,"date")));
+ else if(sort.value==="title") records.sort((a,b)=>getText(a,"question").localeCompare(getText(b,"question")));
+ else records.sort((a,b)=>getText(b,"date").localeCompare(getText(a,"date")));
+ if(records.some((item,index)=>item!==currentOrder[index])) records.forEach(item=>grid.appendChild(item));
+ records.forEach(item=>{
+  const category=normal(getText(item,"category")||"Prototyping"),status=normal(getText(item,"outcome"));
+  const match=(activeCategory==="All categories"||category===normal(activeCategory))&&(activeStatus==="All statuses"||status===activeStatus)&&(!q||searchableText(item).includes(q));
+  item.hidden=!match;if(match){shown++}
+ });
+ emptyState.classList.toggle("show",shown===0);
+ resultCount.textContent=`Showing ${shown} of ${records.length} experiment${records.length===1?"":"s"}`;
+}
+function updateLinks(item){
+ [["repositoryUrl",".repo-link","Source code ↗"],["demoUrl",".demo-link","Live demo ↗"]].forEach(([prop,selector,label])=>{
+  const link=item.querySelector(selector),raw=getText(item,prop);
+  if(raw && /^https?:\/\//i.test(raw)){link.href=raw;link.hidden=false;link.textContent=label;link.target="_blank";link.rel="noopener noreferrer"}else link.hidden=true;
+ });
+}
+function updateVisuals(){
+ getRecords().forEach(item=>{
+  updateLinks(item);
+  const state=item.querySelector(".state");if(state)state.dataset.state=normal(getText(item,"outcome"));
+  const mainImg=item.querySelector(".card-visual img[property='image']");
+  if(mainImg && mainImg.getAttribute("src")){mainImg.hidden=false;const placeholder=item.querySelector(".visual-placeholder");if(placeholder)placeholder.hidden=true}
+  item.querySelectorAll(".extra-images img").forEach(img=>{img.hidden=!(img.getAttribute("src")||"").trim()});
+ });
+}
+function buildMap(){
+ const note=document.getElementById("map-note");
+ if(!window.L){note.textContent="The map library could not load. Experiment search and cards still work; check your internet connection to enable the map.";return}
+ const map=L.map("lab-map",{scrollWheelZoom:false}).setView([-0.7,37.8],5);
+ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(map);
+ const markerLayer=L.featureGroup().addTo(map);
+ function refreshMarkers(){
+  markerLayer.clearLayers();let valid=0;
+  getRecords().forEach(item=>{
+   const lat=Number(getText(item,"latitude")),lon=Number(getText(item,"longitude"));
+   if(getText(item,"latitude")!==""&&getText(item,"longitude")!==""&&Number.isFinite(lat)&&Number.isFinite(lon)&&lat>=-90&&lat<=90&&lon>=-180&&lon<=180){
+    const marker=L.marker([lat,lon]).bindPopup(`<strong>${escapeHTML(getText(item,"question"))}</strong><br>${escapeHTML(getText(item,"category"))}<br><span>${escapeHTML(getText(item,"outcome"))}</span>`);
+    marker.addTo(markerLayer);valid++;
+   }
+  });
+  if(valid){map.fitBounds(markerLayer.getBounds().pad(.18),{maxZoom:9});note.textContent=`Showing ${valid} experiment location${valid===1?"":"s"} from saved coordinates.`}
+  else {map.setView([-0.7,37.8],5);note.textContent="Kenya overview shown. No experiment coordinates are saved yet, so no markers have been fabricated. Add latitude and longitude to a record to map it."}
+ }
+ refreshMarkers();window.addEventListener("resize",()=>map.invalidateSize());
+ const observer=new MutationObserver(()=>{refreshMarkers();updateStats();refreshFilters();applyFilters();updateVisuals()});
+ observer.observe(grid,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["src"]});
+}
+categoryFilters.addEventListener("click",event=>{const b=event.target.closest("[data-filter-key='category']");if(!b)return;activeCategory=b.dataset.filterValue;refreshFilters();applyFilters()});
+statusFilters.addEventListener("click",event=>{const b=event.target.closest("[data-filter-key='status']");if(!b)return;activeStatus=b.dataset.filterValue;refreshFilters();applyFilters()});
+function isMavoEditing(){const app=document.querySelector("[mv-app=\"patrickLab\"]");return !!app&&(app.classList.contains("mv-edit")||app.getAttribute("mv-mode")==="edit")}
+const appRoot=document.querySelector("[mv-app=\"patrickLab\"]");
+if(appRoot){new MutationObserver(()=>{const editing=isMavoEditing();appRoot.querySelectorAll(".image-upload").forEach(input=>{input.disabled=!editing});}).observe(appRoot,{attributes:true,attributeFilter:["class","mv-mode"],subtree:true,childList:true});}
+grid.addEventListener("change",event=>{
+ const input=event.target.closest(".image-upload");if(!input)return;
+ if(!isMavoEditing()){alert("Please sign in and enter edit mode using the Mavo toolbar before adding images.");input.value="";return;}
+ const file=input.files&&input.files[0];if(!file)return;
+ if(!file.type.startsWith("image/")){alert("Please choose an image file.");input.value="";return}
+ if(file.size>1200000){alert("Please choose an image under 1.2 MB. For permanent hosting, upload it to Firebase Storage and save the resulting URL.");input.value="";return}
+ const reader=new FileReader();
+ reader.onload=()=>{
+  const item=input.closest(".item");const slot=input.dataset.imageSlot;
+  let img=item.querySelector(`[property="${slot}"]`);
+  if(!img && slot==="image"){img=document.createElement("img");img.setAttribute("property","image");img.alt="Experiment visual";item.querySelector(".card-visual").prepend(img)}
+  if(img){img.setAttribute("src",String(reader.result));img.src=String(reader.result);img.hidden=false;img.dispatchEvent(new Event("input",{bubbles:true}));img.dispatchEvent(new Event("change",{bubbles:true}))}
+  const label=input.closest("label");if(label)label.dataset.uploaded="Preview ready — save with Mavo";
+  updateVisuals();
+ };
+ reader.readAsDataURL(file);
+});
+grid.addEventListener("click",event=>{
+ const button=event.target.closest(".expand-btn");if(!button)return;
+ const item=button.closest(".item"),expanded=item.classList.toggle("expanded");
+ button.setAttribute("aria-expanded",String(expanded));button.innerHTML=expanded?'Close details <span aria-hidden="true">×</span>':'View experiment <span aria-hidden="true">↗</span>';
+});
+search.addEventListener("input",applyFilters);sort.addEventListener("change",applyFilters);
+document.getElementById("reset-filters").addEventListener("click",()=>{search.value="";sort.value="newest";activeCategory="All categories";activeStatus="All statuses";refreshFilters();applyFilters()});
+document.getElementById("year").textContent=new Date().getFullYear();
+initializeCards();refreshFilters();updateStats();updateVisuals();applyFilters();buildMap();
+})();
+</script>
+</body>
+</html>
