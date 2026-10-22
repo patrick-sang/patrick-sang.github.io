@@ -3,7 +3,7 @@ export const firebaseConfig = {
   apiKey: "AIzaSyCnKqMqLN1uiPUJRGpegIJNspadjJz0ZVQ",
   authDomain: "patrick-geospatial.firebaseapp.com",
   projectId: "patrick-geospatial",
-  storageBucket: "",
+  storageBucket: "patrick-geospatial",
   messagingSenderId: "",
   appId: ""
 };
