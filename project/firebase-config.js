@@ -4,6 +4,6 @@ export const firebaseConfig = {
   authDomain: "patrick-geospatial.firebaseapp.com",
   projectId: "patrick-geospatial",
   storageBucket: "patrick-geospatial",
-  messagingSenderId: "",
+  messagingSenderId: "279002519061",
   appId: ""
 };
