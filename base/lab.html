@@ -37,7 +37,7 @@ main{padding:70px 0 80px}.hero{display:grid;grid-template-columns:minmax(0,1.4fr
   <nav class="navlinks" aria-label="Main navigation"><a href="index.html"></a><a href="index.html#builds"></a><a class="active" href="lab.html" aria-current="page"></a><a href="index.html#notes"></a></nav>
 </header>
 <main class="wrap" id="top" id="firebaseLabApp">
-  <section class="lab-login-strip" aria-label="Administrator access"><span id="labAuthStatus">Public view</span><button id="labAdminLogin" type="button">Admin sign in</button><button id="labAdminLogout" type="button" hidden>Sign out</button><span id="labFirebaseMessage" role="status"></span></section>
+  <section class="lab-login-strip" aria-label="Administrator access"><span id="labAuthStatus">Public view</span><button id="labAdminLogin" type="button">sign in</button><button id="labAdminLogout" type="button" hidden>Sign out</button><span id="labFirebaseMessage" role="status"></span></section>
   <section class="hero" aria-labelledby="page-title">
     <div><div class="eyebrow  style="color:darkblue;">[Research / prototypes / 01]</div><h1 id="page-title">The Geospatial<br>Lab<span>.</span></h1><p class="intro">Testing ideas. Exploring data. Building useful systems. A working notebook of experiments, prototypes, lessons learned and the occasional dead end.</p></div>
     <aside class="hero-aside"><strong>Curiosity is part of the workflow.</strong>This is where questions become small tests, results get documented, and promising ideas earn a place in production.</aside>
@@ -70,12 +70,12 @@ main{padding:70px 0 80px}.hero{display:grid;grid-template-columns:minmax(0,1.4fr
     <div class="empty" id="empty-state">No experiments match those filters. Try another search or reset the filters.</div>
   </section>
   <section class="section" aria-labelledby="map-title">
-    <div class="section-head"><div><div class="section-kicker">Explore spatial work</div><h2 id="map-title">Spatial experiments map</h2></div><p>When an experiment has a real study location, add its latitude and longitude to show it here. No locations are invented for experiments that have none.</p></div>
-    <div class="map-panel"><div class="map-heading"><div><strong></strong><p></p></div><div class="map-legend"><span>● Experiment location</span><span>● Kenya overview</span></div></div><div id="lab-map" role="region" aria-label="Map of experiment locations"></div><div class="map-note" id="map-note" aria-live="polite">Loading map…</div></div>
+    <div class="section-head"><div><div class="section-kicker">Explore spatial work</div><h2 id="map-title">Spatial experiments map</h2></div><p></p></div>
+    <div class="map-panel"><div class="map-heading"><div><strong></strong><p></p></div><div class="map-legend"><span></span><span></span></div></div><div id="lab-map" role="region" aria-label="Map of experiment locations"></div><div class="map-note" id="map-note" aria-live="polite">Loading map…</div></div>
   </section>
   <aside class="editor-note admin-only"><strong></strong></aside>
 </main>
-<footer class="wrap foot"><span>© <span id="year"></span></span><a href="index.html">← Back to the main site</a></footer>
+<footer class="wrap foot"><span>© <span id="year"></span></span><a href="https://patrick-sang.is-a.dev">← Back to the main site</a></footer>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script type="module" src="./lab-firebase.js"></script>
 </body>
