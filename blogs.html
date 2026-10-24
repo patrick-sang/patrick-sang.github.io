@@ -1522,9 +1522,9 @@ const label = (s, cls="") => `<span class="label ${cls}">${esc(s)}</span>`;
 const dateFmt = s => new Intl.DateTimeFormat("en-GB",{day:"2-digit",month:"short",year:"numeric"}).format(new Date(s));
 const view = $("#writing-view");
 function renderList() {
-  document.title = "Writing — Leo Chrisben Evans";
+  document.title = "";
   view.innerHTML = `<section class="gutter top">
-    ${label("Notes from building")}
+    ${label("[Notes from building]")}
     <h1 class="display-xl" style="padding-top:2rem">Writing</h1>
     <p class="small m46" style="font-size:1.0625rem;padding-top:1.5rem">I write things down so I stop learning them twice. These are the pieces where the lesson generalised beyond the project it came from.</p>
     <ol style="padding:4rem 0 6rem">${notes.map((n,i)=>`<li class="li-rule" style="padding:1.5rem 0">
