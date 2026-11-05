@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Browser-based agricultural market accessibility intelligence for Kenya using DuckDB-WASM and spatial embeddings.">
+  <title>AgriSpatial | Market Access Intelligence</title>
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#"><span class="brand-mark">A</span><span>AgriSpatial <small>KENYA INTELLIGENCE</small></span></a>
+    <div class="top-actions"><span class="live-dot"></span><span id="engineStatus">Starting analytics engine…</span><button id="exportAll" class="btn btn-light">Export analysis</button></div>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">AGRICULTURAL MARKET ACCESSIBILITY EMBEDDINGS</div>
+        <h1>Understand how farms<br><em>connect to markets.</em></h1>
+        <p>Discover production zones with similar logistics conditions, identify accessibility gaps and explore agricultural market relationships across Kenya.</p>
+      </div>
+      <div class="hero-side"><div class="hero-stat"><strong id="heroLocations">—</strong><span>production locations</span></div><div class="hero-stat"><strong id="heroMarkets">—</strong><span>market & storage nodes</span></div></div>
+    </section>
+
+    <section class="metric-grid">
+      <article class="metric"><span class="metric-label">PRODUCTION LOCATIONS</span><strong id="mLocations">—</strong><small>Loaded into DuckDB</small></article>
+      <article class="metric"><span class="metric-label">AVG. MARKET DISTANCE</span><strong id="mMarketDistance">—</strong><small>Nearest market estimate</small></article>
+      <article class="metric"><span class="metric-label">AVG. STORAGE DISTANCE</span><strong id="mStorageDistance">—</strong><small>Nearest storage estimate</small></article>
+      <article class="metric"><span class="metric-label">ACCESSIBILITY INDEX</span><strong id="mAccess">—</strong><small>Composite embedding score / 100</small></article>
+    </section>
+
+    <section class="workspace">
+      <aside class="panel controls">
+        <div class="panel-heading"><div><span class="eyebrow">WORKSPACE</span><h2>Analysis controls</h2></div><span class="status-pill" id="dataStatus">SAMPLE DATA</span></div>
+        <label class="field-label" for="regionFilter">County / region</label>
+        <select id="regionFilter"><option value="all">All regions</option></select>
+        <label class="field-label" for="clusterCount">K-means clusters <b id="clusterValue">4</b></label>
+        <input id="clusterCount" type="range" min="2" max="8" value="4">
+        <button id="runClustering" class="btn btn-primary full">Run clustering <span>↗</span></button>
+        <div class="divider"></div>
+        <h3>Spatial similarity search</h3>
+        <label class="field-label" for="referenceSite">Reference production zone</label>
+        <select id="referenceSite"></select>
+        <button id="findSimilar" class="btn btn-outline full">Find similar locations</button>
+        <div id="similarityResults" class="similarity-results"><p class="muted">Choose a reference zone to discover locations with similar logistics characteristics.</p></div>
+        <div class="divider"></div>
+        <h3>Upload your dataset</h3>
+        <p class="muted small">CSV with the required fields. Your file stays in this browser session.</p>
+        <label class="upload-box" for="csvUpload"><span class="upload-icon">↑</span><strong>Choose CSV file</strong><small>Replace the demonstration dataset</small></label>
+        <input type="file" id="csvUpload" accept=".csv,text/csv" hidden>
+        <button id="resetData" class="text-button">Restore sample dataset</button>
+      </aside>
+
+      <section class="panel map-panel">
+        <div class="panel-heading map-heading"><div><span class="eyebrow">GEOGRAPHIC EXPLORER</span><h2>Kenya production & market network</h2></div><div class="map-legend"><span><i class="dot farm"></i> Production zone</span><span><i class="dot market"></i> Market / storage</span><span><i class="dot similar"></i> Similar location</span></div></div>
+        <div id="map"></div>
+        <div class="map-foot"><span>● Click a production marker to inspect its accessibility profile</span><span id="mapCount">— locations displayed</span></div>
+      </section>
+    </section>
+
+    <section class="lower-grid">
+      <section class="panel">
+        <div class="panel-heading"><div><span class="eyebrow">EMBEDDING ANALYTICS</span><h2>Accessibility dimensions</h2></div></div>
+        <p class="muted small">Average normalized dimensions across the selected locations. Higher scores indicate better accessibility.</p>
+        <div id="dimensionBars" class="dimension-bars"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-heading"><div><span class="eyebrow">LOCATION PROFILE</span><h2 id="profileTitle">Select a production zone</h2></div></div>
+        <div id="profileContent" class="profile-empty">Select a point on the map or choose a location from the similarity search.</div>
+      </section>
+    </section>
+
+    <section class="panel table-panel">
+      <div class="panel-heading"><div><span class="eyebrow">SPATIAL DATA</span><h2>Production zone accessibility</h2></div><button id="exportCsv" class="btn btn-outline">Download CSV ↓</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Production zone</th><th>County</th><th>Production (t)</th><th>Market distance</th><th>Storage distance</th><th>Access score</th><th>Cluster</th></tr></thead><tbody id="dataTable"></tbody></table></div>
+      <div class="table-note">Demonstration dataset: illustrative values for interface testing, not official county or market statistics.</div>
+    </section>
+
+    <footer><span>AGRISPATIAL KENYA · MARKET ACCESS INTELLIGENCE</span><span>DuckDB-WASM · Leaflet · Vanilla JavaScript</span></footer>
+  </main>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
