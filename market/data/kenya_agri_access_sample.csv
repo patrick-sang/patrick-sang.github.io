@@ -1,0 +1,31 @@
+site_id,site_name,county,latitude,longitude,production_tonnes,road_distance_km,market_distance_km,storage_distance_km,market_demand_tonnes,transport_cost_kes_per_tonne_km,primary_crop
+S001,Kitale West,Trans Nzoia,1.015,35.006,18500,3.2,8.5,12.0,42000,18,Maize
+S002,Kiminini,Trans Nzoia,1.046,34.996,14200,5.1,12.4,16.0,31000,19,Maize
+S003,Turbo,Uasin Gishu,0.632,35.010,16200,4.0,10.2,14.5,36500,18,Maize
+S004,Eldoret North,Uasin Gishu,0.560,35.270,21000,2.1,5.4,7.0,51000,16,Maize
+S005,Molo,Nakuru,-0.248,35.731,12800,6.2,15.5,18.0,28000,21,Potato
+S006,Subukia,Nakuru,-0.018,36.116,9500,8.4,19.0,22.0,21000,22,Potato
+S007,Nyahururu,Laikipia,0.038,36.365,8700,5.5,11.8,16.5,19000,20,Potato
+S008,Ol Kalou,Nyandarua,-0.270,36.379,11500,3.7,9.6,11.0,24500,19,Potato
+S009,Thika,Kiambu,-1.039,37.090,7600,2.8,6.2,5.5,62000,15,Horticulture
+S010,Limuru,Kiambu,-1.108,36.642,6800,4.4,8.0,10.0,48000,16,Horticulture
+S011,Embu,Embu,-0.539,37.457,9200,3.1,7.8,9.0,29500,17,Avocado
+S012,Meru Central,Meru,0.050,37.650,10400,4.8,11.2,13.0,33000,18,Avocado
+S013,Kericho,Kericho,-0.368,35.283,7100,2.9,6.5,8.0,26000,17,Tea
+S014,Bomet,Bomet,-0.781,35.342,6400,6.0,13.5,17.0,22000,20,Tea
+S015,Kisumu East,Kisumu,-0.091,34.768,5400,3.5,7.2,10.0,39000,17,Rice
+S016,Ahero,Kisumu,-0.174,34.917,8200,5.2,12.8,15.0,42000,18,Rice
+S017,Awasi,Kisumu,-0.247,35.050,6900,6.7,16.1,20.0,34000,20,Rice
+S018,Mwea,Kirinyaga,-0.667,37.350,12500,2.6,5.8,7.5,45000,16,Rice
+S019,Makueni,Makueni,-2.283,37.833,4800,9.5,22.0,26.0,18000,24,Mango
+S020,Kibwezi,Makueni,-2.420,37.967,3900,11.0,27.5,31.0,16000,25,Mango
+S021,Kitui Central,Kitui,-1.367,38.010,3500,8.0,19.5,24.0,14500,23,Sorghum
+S022,Mwingi,Kitui,-0.934,38.061,2900,10.5,24.0,29.0,12000,25,Sorghum
+S023,Garissa Central,Garissa,-0.453,39.646,2600,12.0,28.0,35.0,17000,26,Pastoral
+S024,Wajir South,Wajir,1.747,40.057,1800,18.0,42.0,48.0,9000,31,Pastoral
+S025,Malindi,Kilifi,-3.217,40.116,5200,5.5,13.0,17.0,31000,20,Cashew
+S026,Kilifi North,Kilifi,-3.010,39.850,6100,7.0,16.5,20.0,28000,21,Cashew
+S027,Msambweni, Kwale,-4.466,39.481,4300,8.5,20.0,25.0,19000,23,Coconut
+S028,Matuga,Kwale,-4.180,39.460,3700,7.5,18.0,23.0,17500,22,Coconut
+S029,Nyeri Central,Nyeri,-0.420,36.950,7800,2.5,6.0,8.5,29000,16,Coffee
+S030,Othaya,Nyeri,-0.563,36.958,6500,4.2,9.5,12.5,24000,18,Coffee
