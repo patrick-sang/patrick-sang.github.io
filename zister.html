@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LVB Field Health — Anomaly Alerts</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+  <style>
+    :root {
+      --bg: #0f1419; --panel: #1a1f26; --panel-2: #232a33;
+      --text: #e8eaed; --muted: #8b95a1; --border: #2a323d;
+      --severe: #e63946; --deficit: #f77f00;
+      --normal: #43a047; --surplus: #2196f3;
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+    #topbar { height: 56px; flex-shrink: 0; background: var(--panel); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; padding: 0 16px; gap: 12px; }
+    .brand h1 { font-size: 16px; font-weight: 600; }
+    .brand .subtitle { font-size: 11px; color: var(--muted); }
+    .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .controls label { font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+    select { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 12px; outline: none; }
+    .btn { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 7px 12px; font-size: 12px; cursor: pointer; transition: background 0.15s; }
+    .btn:hover { background: #2c3540; }
+    .btn-sm { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; font-size: 11px; cursor: pointer; }
+    .btn-sm:hover { color: var(--text); border-color: var(--muted); }
+    #app { flex: 1; display: flex; min-height: 0; position: relative; }
+    #sidebar { width: 340px; flex-shrink: 0; min-height: 0; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; transition: transform 0.25s ease; }
+    #map-container { flex: 1; position: relative; min-width: 0; }
+    #map { position: absolute; inset: 0; }
+    #stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); }
+    .stat { background: var(--panel); padding: 10px 6px; text-align: center; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat span { display: block; font-size: 20px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+    .stat-severe span { color: var(--severe); } .stat-deficit span { color: var(--deficit); } .stat-normal span { color: var(--normal); } .stat-surplus span { color: var(--surplus); }
+    .section-title { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+    .export-btns { display: flex; gap: 4px; }
+    #alert-list { flex: 1; overflow-y: auto; padding: 8px; }
+    .alert-item { padding: 10px 12px; margin-bottom: 6px; background: var(--panel-2); border: 1px solid transparent; border-radius: var(--radius); cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+    .alert-item:hover { background: #2a333d; } .alert-item.selected { border-color: #4a7fd4; }
+    .alert-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .alert-z { font-size: 11px; color: var(--muted); font-family: monospace; }
+    .alert-meta { font-size: 12px; color: var(--muted); } .alert-meta strong { color: var(--text); }
+    .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 24px 12px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: #fff; }
+    .badge-severe_deficit { background: var(--severe); } .badge-deficit { background: var(--deficit); }
+    .badge-normal { background: var(--normal); } .badge-surplus { background: var(--surplus); }
+    .badge-no_data, .badge-no_baseline { background: #555; }
+    #draw-controls { position: absolute; top: 16px; left: 16px; z-index: 5; display: flex; flex-direction: column; gap: 8px; }
+    .btn-icon { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: background 0.15s; }
+    .btn-icon:hover { background: var(--panel-2); } .btn-icon.active { background: var(--surplus); border-color: var(--surplus); color: #fff; }
+    #draw-hint { display: none; position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 5; background: rgba(0,0,0,0.8); color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 12px; pointer-events: none; }
+    #legend { position: absolute; bottom: 16px; left: 16px; z-index: 5; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; font-size: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+    .swatch { width: 14px; height: 14px; border-radius: 3px; }
+    .sw-severe { background: var(--severe); } .sw-deficit { background: var(--deficit); } .sw-normal { background: var(--normal); } .sw-surplus { background: var(--surplus); }
+    #field-panel { display: none; position: absolute; right: 16px; bottom: 16px; z-index: 6; width: 340px; max-height: 65%; overflow-y: auto; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .panel-header h2 { font-size: 15px; font-weight: 600; }
+    .btn-close { background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; line-height: 1; padding: 0 4px; }
+    .btn-close:hover { color: var(--text); }
+    .field-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin: 12px 0; font-size: 12px; }
+    .field-stats dt { color: var(--muted); } .field-stats dd { text-align: right; font-weight: 600; }
+    #sparkline-container { height: 140px; position: relative; margin: 12px 0; }
+    .action-hint { font-size: 12px; color: var(--text); background: var(--panel-2); padding: 10px; border-radius: 6px; line-height: 1.4; border-left: 3px solid var(--surplus); }
+    #sidebar-toggle { display: none; position: absolute; top: 16px; right: 16px; z-index: 20; width: 40px; height: 40px; border-radius: 50%; background: var(--panel); color: var(--text); border: 1px solid var(--border); cursor: pointer; font-size: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+    @media (max-width: 768px) {
+      #sidebar { position: absolute; top: 0; left: 0; bottom: 0; z-index: 15; width: 85%; max-width: 340px; transform: translateX(-100%); box-shadow: 4px 0 20px rgba(0,0,0,0.5); }
+      #sidebar.open { transform: translateX(0); }
+      #sidebar-toggle { display: block; }
+      #field-panel { left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 55%; }
+      #legend { display: none; }
+      .controls .btn { padding: 6px 8px; font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <header id="topbar">
+    <div class="brand">
+      <h1>LVB Field Health</h1>
+      <div class="subtitle">Sentinel-2 anomaly alerts · Lake Victoria Basin</div>
+    </div>
+    <div class="controls">
+      <label>Dekad <select id="dekad-select"></select></label>
+      <button id="btn-sample" class="btn">Load sample</button>
+      <button id="btn-clear" class="btn">Clear</button>
+    </div>
+  </header>
+
+  <div id="app">
+    <aside id="sidebar">
+      <div id="stats"></div>
+      <div class="section-title">
+        <span>Alerts</span>
+        <div class="export-btns">
+          <button class="btn-sm" id="btn-export-csv">CSV</button>
+          <button class="btn-sm" id="btn-export-geojson">GeoJSON</button>
+          <button class="btn-sm" id="btn-export-sms">SMS</button>
+        </div>
+      </div>
+      <div id="alert-list"></div>
+    </aside>
+
+    <div id="map-container">
+      <div id="map"></div>
+      <button id="sidebar-toggle" aria-label="Toggle list">☰</button>
+      <div id="draw-controls">
+        <button id="btn-draw" class="btn-icon">✏️ Draw field</button>
+        <label for="file-upload" class="btn-icon">📁 Upload</label>
+        <input type="file" id="file-upload" accept=".geojson,.json,.zip" style="display:none" />
+        <button id="btn-finish" class="btn-icon" style="display:none">✓ Finish</button>
+        <button id="btn-cancel" class="btn-icon" style="display:none">✕ Cancel</button>
+      </div>
+      <div id="draw-hint">Click to add vertices · Double-click to finish · Esc to cancel</div>
+      <div id="legend">
+        <div class="legend-item"><span class="swatch sw-severe"></span>Severe deficit</div>
+        <div class="legend-item"><span class="swatch sw-deficit"></span>Deficit</div>
+        <div class="legend-item"><span class="swatch sw-normal"></span>Normal</div>
+        <div class="legend-item"><span class="swatch sw-surplus"></span>Surplus</div>
+      </div>
+      <div id="field-panel"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/@turf/turf@7/turf.min.js"></script>
+  <script src="https://unpkg.com/shpjs@4.0.4/dist/shp.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- DuckDB-WASM -->
+  <script type="module">
+    import * as duckdb from 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.0/+esm';
+    window.duckdb = duckdb;
+  </script>
+
+  <script>
+    // ============================================================
+    // CONFIG — Set your Fused canvas token here
+    // ============================================================
+    const CONFIG = {
+      USE_MOCK: false,
+      FUSED_BASE: "https://udf.ai/fc_1o5RedGiesQyOfqHhjjjbc", // <-- Replace with your token
+    };
+
+    // ============================================================
+    // STATE
+    // ============================================================
+    const state = {
+      fields: [], selectedId: null, dekads: generateDekads(36),
+      currentDekad: null, drawing: { active: false, coords: [] }, chart: null,
+      db: null, // DuckDB-WASM instance
+    };
+
+    // ============================================================
+    // UTILS
+    // ============================================================
+    function generateDekads(n) {
+      const out = []; const now = new Date();
+      for (let i = 0; i < n; i++) {
+        const d = new Date(now); d.setDate(d.getDate() - i * 10);
+        const day = d.getDate(); d.setDate(day <= 10 ? 1 : day <= 20 ? 11 : 21);
+        out.push(d.toISOString().slice(0, 10));
+      }
+      return out;
+    }
+    function uuid() { return "field-" + Math.random().toString(36).slice(2, 10); }
+    function formatClass(c) { return c.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()); }
+    function downloadBlob(content, filename, mime) {
+      const blob = new Blob([content], { type: mime }); const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
+    }
+
+    // ============================================================
+    // DUCKDB-WASM INITIALIZATION
+    // ============================================================
+    async function initDuckDB() {
+      try {
+        const bundle = await window.duckdb.selectBundle({
+          mvp: { mainModule: 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.0/dist/duckdb-mvp.wasm',
+                 mainWorker: 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.0/dist/duckdb-browser-mvp.worker.js' },
+          eh: { mainModule: 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.0/dist/duckdb-eh.wasm',
+                mainWorker: 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.29.0/dist/duckdb-browser-eh.worker.js' },
+        });
+        const worker = new Worker(bundle.mainWorker);
+        const logger = new window.duckdb.ConsoleLogger();
+        const db = new window.duckdb.AsyncDuckDB(logger, worker);
+        await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+        state.db = db;
+        console.log("DuckDB-WASM initialized");
+      } catch (e) {
+        console.warn("DuckDB-WASM failed to initialize:", e);
+      }
+    }
+
+    // ============================================================
+    // FUSED UDF CALLS
+    // ============================================================
+    async function getFieldsAnomaly(fields, dekad) {
+      if (CONFIG.USE_MOCK) return mockFieldsAnomaly(fields, dekad);
+      const BATCH = 20; const all = [];
+      for (let i = 0; i < fields.length; i += BATCH) {
+        const batch = fields.slice(i, i + BATCH);
+        const params = new URLSearchParams({
+          dekad,
+          fields_json: JSON.stringify({ type: "FeatureCollection", features: batch }),
+          baseline_years: "5",
+          resolution: "20",
+        });
+        const res = await fetch(`${CONFIG.FUSED_BASE}/field_anomaly.geojson?${params.toString()}`);
+        if (!res.ok) throw new Error(`field_anomaly UDF error ${res.status}`);
+        const fc = await res.json();
+        all.push(...fc.features);
+      }
+      return all;
+    }
+
+    async function getFieldTimeseries(field) {
+      if (CONFIG.USE_MOCK) return mockFieldTimeseries(field);
+      const params = new URLSearchParams({
+        field_id: field.properties.field_id,
+        geometry_json: JSON.stringify(field.geometry),
+        years: "5",
+      });
+      const res = await fetch(`${CONFIG.FUSED_BASE}/field_timeseries.json?${params.toString()}`);
+      if (!res.ok) throw new Error(`field_timeseries UDF error ${res.status}`);
+      const series = await res.json();
+      return { field_id: field.properties.field_id, series };
+    }
+
+    // ============================================================
+    // MOCK UDFS (fallback)
+    // ============================================================
+    function mockFieldsAnomaly(fields, dekad) {
+      return fields.map(f => {
+        const c = turf.centroid(f);
+        const key = `${c.geometry.coordinates[0].toFixed(3)}|${c.geometry.coordinates[1].toFixed(3)}|${dekad}`;
+        let h = 0; for (let i = 0; i < key.length; i++) { h = ((h << 5) - h) + key.charCodeAt(i); h |= 0; }
+        const r = () => { h = (h * 1103515245 + 12345) & 0x7fffffff; return h / 0x7fffffff; };
+        const baseline = 0.45 + r() * 0.4;
+        const ndvi_now = Math.max(0.05, Math.min(0.95, baseline + (r() - 0.5) * 0.55));
+        const std = 0.04 + r() * 0.06;
+        const z = (ndvi_now - baseline) / std;
+        const cls = z < -1.5 ? "severe_deficit" : z < -0.5 ? "deficit" : z < 0.5 ? "normal" : "surplus";
+        return { ...f, properties: { ...f.properties, field_id: f.properties?.field_id || f.id || uuid(),
+          area_ha: +(turf.area(f) / 10000).toFixed(2), ndvi_now: +ndvi_now.toFixed(2),
+          ndvi_baseline: +baseline.toFixed(2), z_score: +z.toFixed(2), anomaly_class: cls,
+          n_obs: 2 + Math.floor(r() * 9), confidence: "medium", last_clear_date: dekad, crop: f.properties?.crop || "maize" } };
+      });
+    }
+
+    function mockFieldTimeseries(field, years = 5) {
+      const c = turf.centroid(field);
+      let h = 0; for (let i = 0; i < c.geometry.coordinates.join(",").length; i++) { h = ((h << 5) - h) + c.geometry.coordinates.join(",").charCodeAt(i); h |= 0; }
+      const r = () => { h = (h * 1103515245 + 12345) & 0x7fffffff; return h / 0x7fffffff; };
+      const rb = () => { h = (h * 1103515245 + 12345) & 0x7fffffff; return h / 0x7fffffff; };
+      const series = []; const now = new Date();
+      for (let i = years * 36 - 1; i >= 0; i--) {
+        const d = new Date(now); d.setDate(d.getDate() - i * 10);
+        const m = d.getMonth();
+        const seasonal = 0.55 + 0.25 * Math.sin((m - 2) * Math.PI / 6);
+        series.push({ date: d.toISOString().slice(0, 10),
+          ndvi: Math.max(0.05, Math.min(0.95, seasonal + (r() - 0.5) * 0.12)),
+          baseline: seasonal + (rb() - 0.5) * 0.05 });
+      }
+      return { field_id: field.properties.field_id, series };
+    }
+
+    // ============================================================
+    // MAP & LAYERS
+    // ============================================================
+    const map = new maplibregl.Map({
+      container: "map",
+      style: { version: 8, sources: { esri: { type: "raster", tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"], tileSize: 256, maxzoom: 19, attribution: "Esri World Imagery" } },
+        layers: [{ id: "esri", type: "raster", source: "esri" }] },
+      center: [33.5, -1.0], zoom: 8,
+    });
+    map.addControl(new maplibregl.NavigationControl(), "top-right");
+    map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
+
+    const EMPTY_FC = { type: "FeatureCollection", features: [] };
+    function initLayers() {
+      map.addSource("fields", { type: "geojson", data: EMPTY_FC });
+      map.addLayer({ id: "fields-fill", type: "fill", source: "fields", paint: {
+        "fill-color": ["match", ["get", "anomaly_class"], "severe_deficit", "#b41e1e", "deficit", "#f08c28", "normal", "#3ca050", "surplus", "#286ec8", "#888888"],
+        "fill-opacity": 0.6 } });
+      map.addLayer({ id: "fields-outline", type: "line", source: "fields", paint: { "line-color": "#e0e0e0", "line-width": 1.5 } });
+      map.addSource("draft", { type: "geojson", data: EMPTY_FC });
+      map.addLayer({ id: "draft-fill", type: "fill", source: "draft", filter: ["==", "$type", "Polygon"], paint: { "fill-color": "#ffffff", "fill-opacity": 0.2 } });
+      map.addLayer({ id: "draft-line", type: "line", source: "draft", filter: ["==", "$type", "LineString"], paint: { "line-color": "#ffffff", "line-width": 2, "line-dasharray": [2, 1] } });
+      map.on("click", "fields-fill", e => { if (!state.drawing.active) selectField(e.features[0].properties.field_id); });
+      map.on("mouseenter", "fields-fill", () => map.getCanvas().style.cursor = "pointer");
+      map.on("mouseleave", "fields-fill", () => map.getCanvas().style.cursor = "");
+    }
+
+    function refreshFieldsSource() {
+      map.getSource("fields").setData({ type: "FeatureCollection", features: state.fields });
+      map.setPaintProperty("fields-outline", "line-color", ["case", ["==", ["get", "field_id"], state.selectedId || ""], "#ffffff", "#e0e0e0"]);
+      map.setPaintProperty("fields-outline", "line-width", ["case", ["==", ["get", "field_id"], state.selectedId || ""], 3, 1.5]);
+    }
+
+    // ============================================================
+    // DRAWING
+    // ============================================================
+    function startDrawing() {
+      state.drawing = { active: true, coords: [] };
+      map.getCanvas().style.cursor = "crosshair"; map.doubleClickZoom.disable();
+      document.getElementById("draw-hint").style.display = "block";
+      document.getElementById("btn-draw").classList.add("active");
+      document.getElementById("btn-draw").style.display = "none";
+      document.getElementById("btn-finish").style.display = "flex";
+      document.getElementById("btn-cancel").style.display = "flex";
+      updateDraft();
+    }
+    function cancelDrawing() {
+      state.drawing = { active: false, coords: [] };
+      map.getCanvas().style.cursor = ""; map.doubleClickZoom.enable();
+      document.getElementById("draw-hint").style.display = "none";
+      document.getElementById("btn-draw").classList.remove("active");
+      document.getElementById("btn-draw").style.display = "flex";
+      document.getElementById("btn-finish").style.display = "none";
+      document.getElementById("btn-cancel").style.display = "none";
+      updateDraft();
+    }
+    function updateDraft() {
+      const src = map.getSource("draft"); if (!src) return;
+      if (state.drawing.coords.length < 2) { src.setData(EMPTY_FC); return; }
+      const coords = state.drawing.coords;
+      const features = [{ type: "Feature", geometry: { type: "LineString", coordinates: coords } }];
+      if (coords.length >= 3) features.push({ type: "Feature", geometry: { type: "Polygon", coordinates: [[...coords, coords[0]]] } });
+      src.setData({ type: "FeatureCollection", features });
+    }
+    async function finishDrawing() {
+      if (state.drawing.coords.length < 3) { cancelDrawing(); return; }
+      const coords = state.drawing.coords; const newId = uuid();
+      const poly = { type: "Feature", id: newId, properties: { field_id: newId, crop: "maize" },
+        geometry: { type: "Polygon", coordinates: [[...coords, coords[0]]] } };
+      cancelDrawing(); await addFields([poly]);
+    }
+    map.on("click", e => { if (!state.drawing.active) return; state.drawing.coords.push([e.lngLat.lng, e.lngLat.lat]); updateDraft(); });
+    map.on("dblclick", e => { if (!state.drawing.active) return; e.preventDefault(); finishDrawing(); });
+    map.on("mousemove", e => {
+      if (!state.drawing.active || state.drawing.coords.length === 0) return;
+      const coords = [...state.drawing.coords, [e.lngLat.lng, e.lngLat.lat]];
+      const features = [{ type: "Feature", geometry: { type: "LineString", coordinates: coords } }];
+      if (state.drawing.coords.length >= 3) features.push({ type: "Feature", geometry: { type: "Polygon", coordinates: [[...coords, coords[0]]] } });
+      map.getSource("draft").setData({ type: "FeatureCollection", features });
+    });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && state.drawing.active) cancelDrawing(); });
+
+    // ============================================================
+    // FIELD MANAGEMENT
+    // ============================================================
+    async function addFields(newFeatures) {
+      state.fields = [...state.fields, ...newFeatures];
+      await recomputeAnomalies();
+    }
+    async function recomputeAnomalies() {
+      if (state.fields.length === 0) { refreshFieldsSource(); renderAlerts(); renderStats(); updateFieldPanel(); return; }
+      try {
+        const enriched = await getFieldsAnomaly(state.fields, state.currentDekad);
+        state.fields = enriched; refreshFieldsSource(); renderAlerts(); renderStats();
+        if (state.selectedId) updateFieldPanel();
+        // Sync to DuckDB for analytics
+        await syncToDuckDB();
+      } catch (err) { console.error(err); alert("UDF error: " + err.message); }
+    }
+    async function syncToDuckDB() {
+      if (!state.db) return;
+      const conn = await state.db.connect();
+      try {
+        await conn.query(`CREATE OR REPLACE TABLE fields AS SELECT * FROM (VALUES ${state.fields.map(f => 
+          `('${f.properties.field_id}', '${f.properties.crop}', ${f.properties.area_ha}, ${f.properties.z_score}, '${f.properties.anomaly_class}')`
+        ).join(', ')}) AS t(field_id, crop, area_ha, z_score, anomaly_class)`);
+      } catch (e) { console.warn("DuckDB sync failed:", e); }
+      finally { await conn.close(); }
+    }
+
+    function loadSampleFields() {
+      const samples = []; const baseLng = 34.4, baseLat = -0.4;
+      for (let i = 0; i < 12; i++) {
+        const cLng = baseLng + (Math.random() - 0.5) * 0.12; const cLat = baseLat + (Math.random() - 0.5) * 0.12;
+        const w = 0.002 + Math.random() * 0.003; const h = 0.002 + Math.random() * 0.003;
+        const id = `KIS-${String(100 + i).padStart(4, "0")}`;
+        samples.push({ type: "Feature", id, properties: { field_id: id, crop: ["maize","beans","rice","cassava","sorghum"][i % 5] },
+          geometry: { type: "Polygon", coordinates: [[[cLng - w, cLat - h], [cLng + w, cLat - h], [cLng + w, cLat + h], [cLng - w, cLat + h], [cLng - w, cLat - h]]] } });
+      }
+      state.fields = []; state.selectedId = null;
+      addFields(samples).then(() => { const bbox = turf.bbox(turf.featureCollection(samples)); map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 80 }); });
+    }
+
+    function selectField(fieldId) {
+      state.selectedId = fieldId; refreshFieldsSource(); updateFieldPanel(); renderAlerts();
+    }
+
+    // ============================================================
+    // FIELD DETAIL PANEL
+    // ============================================================
+    async function updateFieldPanel() {
+      const panel = document.getElementById("field-panel");
+      const field = state.fields.find(f => f.properties.field_id === state.selectedId);
+      if (!field) { panel.style.display = "none"; return; }
+      panel.style.display = "block";
+      const p = field.properties;
+      panel.innerHTML = `
+        <div class="panel-header"><h2>${p.field_id}</h2><button class="btn-close" id="btn-close-panel">×</button></div>
+        <div><span class="badge badge-${p.anomaly_class}">${formatClass(p.anomaly_class)}</span></div>
+        <dl class="field-stats">
+          <dt>NDVI now</dt><dd>${p.ndvi_now.toFixed(2)}</dd>
+          <dt>5-yr baseline</dt><dd>${p.ndvi_baseline.toFixed(2)}</dd>
+          <dt>z-score</dt><dd>${p.z_score.toFixed(2)}</dd>
+          <dt>Area</dt><dd>${p.area_ha} ha</dd>
+          <dt>Last clear obs</dt><dd>${p.last_clear_date}</dd>
+          <dt>Confidence</dt><dd>${p.confidence} (${p.n_obs} obs)</dd>
+        </dl>
+        <div id="sparkline-container"><canvas id="sparkline"></canvas></div>
+        <p class="action-hint">${recommendation(p)}</p>`;
+      document.getElementById("btn-close-panel").onclick = () => selectField(null);
+      const ts = await getFieldTimeseries(field);
+      const canvas = document.getElementById("sparkline"); if (!canvas) return;
+      if (state.chart) { state.chart.destroy(); state.chart = null; }
+      state.chart = new Chart(canvas, {
+        type: "line", data: { labels: ts.series.map(s => s.date), datasets: [
+          { label: "5-yr baseline", data: ts.series.map(s => s.baseline), borderColor: "#8b95a1", borderDash: [3, 3], borderWidth: 1, pointRadius: 0, fill: false },
+          { label: "NDVI", data: ts.series.map(s => s.ndvi), borderColor: "#43a047", borderWidth: 2, pointRadius: 0, tension: 0.3, fill: false },
+        ] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false, min: 0, max: 1 } }, interaction: { mode: "index", intersect: false } },
+      });
+    }
+    function recommendation(p) {
+      const map = { severe_deficit: "Severe deficit — scout for fall armyworm, check soil moisture. Consider top-dressing if >10 mm rain is forecast.",
+        deficit: "Mild deficit — monitor closely. Check for pest damage and water stress.",
+        normal: "Vegetation within normal range for this dekad.",
+        surplus: "Above-normal vegetation — likely good rainfall; watch for waterlogging." };
+      return map[p.anomaly_class] || "";
+    }
+
+    // ============================================================
+    // SIDEBAR
+    // ============================================================
+    function renderAlerts() {
+      const container = document.getElementById("alert-list");
+      if (state.fields.length === 0) { container.innerHTML = '<p class="empty">No fields yet.<br>Draw on the map, upload a file, or load sample data.</p>'; return; }
+      const order = { severe_deficit: 0, deficit: 1, normal: 2, surplus: 3 };
+      const sorted = [...state.fields].sort((a, b) => order[a.properties.anomaly_class] - order[b.properties.anomaly_class]);
+      container.innerHTML = sorted.map(f => {
+        const p = f.properties; const sel = p.field_id === state.selectedId ? " selected" : "";
+        return `<div class="alert-item${sel}" data-id="${p.field_id}">
+          <div class="alert-row"><span class="badge badge-${p.anomaly_class}">${formatClass(p.anomaly_class)}</span><span class="alert-z">z=${p.z_score.toFixed(1)}</span></div>
+          <div class="alert-meta"><strong>${p.field_id}</strong> · ${p.crop} · ${p.area_ha} ha</div></div>`;
+      }).join("");
+      container.querySelectorAll(".alert-item").forEach(el => {
+        el.addEventListener("click", () => {
+          const id = el.dataset.id; selectField(id);
+          const field = state.fields.find(f => f.properties.field_id === id);
+          if (field) { const c = turf.centerOfMass(field); map.flyTo({ center: c.geometry.coordinates, zoom: Math.max(map.getZoom(), 14) }); }
+          if (window.innerWidth <= 768) document.getElementById("sidebar").classList.remove("open");
+        });
+      });
+    }
+
+    function renderStats() {
+      const counts = { severe_deficit: 0, deficit: 0, normal: 0, surplus: 0 };
+      state.fields.forEach(f => counts[f.properties.anomaly_class]++);
+      document.getElementById("stats").innerHTML = `
+        <div class="stat stat-severe"><span>${counts.severe_deficit}</span>severe</div>
+        <div class="stat stat-deficit"><span>${counts.deficit}</span>deficit</div>
+        <div class="stat stat-normal"><span>${counts.normal}</span>normal</div>
+        <div class="stat stat-surplus"><span>${counts.surplus}</span>surplus</div>`;
+    }
+
+    function exportCSV() {
+      if (state.fields.length === 0) return;
+      const cols = ["field_id","crop","area_ha","ndvi_now","ndvi_baseline","z_score","anomaly_class","confidence","last_clear_date"];
+      const rows = [cols.join(",")];
+      state.fields.forEach(f => rows.push(cols.map(c => JSON.stringify(f.properties[c] ?? "")).join(",")));
+      downloadBlob(rows.join("\n"), "lvb-alerts.csv", "text/csv");
+    }
+    function exportGeoJSON() {
+      if (state.fields.length === 0) return;
+      downloadBlob(JSON.stringify({ type: "FeatureCollection", features: state.fields }, null, 2), "lvb-alerts.geojson", "application/geo+json");
+    }
+    function exportSMS() {
+      const severe = state.fields.filter(f => f.properties.anomaly_class === "severe_deficit");
+      if (severe.length === 0) { alert("No severe-deficit fields to message."); return; }
+      const lines = severe.map(f => { const p = f.properties; return `${p.field_id} (${p.crop}, ${p.area_ha} ha): SEVERE deficit (z=${p.z_score.toFixed(1)}). Scout for pests, check soil moisture.`; });
+      downloadBlob(lines.join("\n"), "lvb-sms-blast.txt", "text/plain");
+    }
+
+    // ============================================================
+    // FILE UPLOAD
+    // ============================================================
+    async function handleFileUpload(file) {
+      try {
+        let gj;
+        if (file.name.toLowerCase().endsWith(".zip")) { if (typeof shp === "undefined") throw new Error("Shapefile support unavailable — use GeoJSON."); gj = await shp(await file.arrayBuffer()); }
+        else { gj = JSON.parse(await file.text()); }
+        const fc = gj.type === "FeatureCollection" ? gj : { type: "FeatureCollection", features: [gj] };
+        const valid = fc.features.filter(f => f.geometry && ["Polygon", "MultiPolygon"].includes(f.geometry.type))
+          .map(f => ({ ...f, id: f.id || uuid(), properties: { ...f.properties, field_id: f.properties?.field_id || f.id || uuid() } }));
+        if (valid.length === 0) throw new Error("No polygon features found in file.");
+        await addFields(valid);
+        const bbox = turf.bbox({ type: "FeatureCollection", features: valid }); map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 60 });
+      } catch (err) { alert("Upload failed: " + err.message); }
+    }
+
+    // ============================================================
+    // DEKAD PICKER & UI BINDING
+    // ============================================================
+    function renderDekadPicker() {
+      const sel = document.getElementById("dekad-select");
+      sel.innerHTML = state.dekads.map(d => `<option value="${d}"${d === state.currentDekad ? " selected" : ""}>${d}</option>`).join("");
+    }
+    function bindUI() {
+      document.getElementById("btn-draw").onclick = startDrawing;
+      document.getElementById("btn-finish").onclick = finishDrawing;
+      document.getElementById("btn-cancel").onclick = cancelDrawing;
+      document.getElementById("btn-sample").onclick = loadSampleFields;
+      document.getElementById("btn-clear").onclick = () => { if (state.fields.length && !confirm("Clear all fields?")) return; state.fields = []; state.selectedId = null; refreshFieldsSource(); renderAlerts(); renderStats(); updateFieldPanel(); };
+      document.getElementById("btn-export-csv").onclick = exportCSV;
+      document.getElementById("btn-export-geojson").onclick = exportGeoJSON;
+      document.getElementById("btn-export-sms").onclick = exportSMS;
+      document.getElementById("file-upload").onchange = e => { const f = e.target.files[0]; if (f) handleFileUpload(f); e.target.value = ""; };
+      document.getElementById("sidebar-toggle").onclick = () => document.getElementById("sidebar").classList.toggle("open");
+      document.getElementById("dekad-select").onchange = e => { state.currentDekad = e.target.value; recomputeAnomalies(); };
+    }
+
+    // ============================================================
+    // BOOT
+    // ============================================================
+    map.on("load", () => {
+      initLayers(); state.currentDekad = state.dekads[0]; renderDekadPicker(); renderStats(); renderAlerts(); bindUI();
+      initDuckDB(); // Initialize DuckDB-WASM in background
+    });
+  </script>
+</body>
+</html>
