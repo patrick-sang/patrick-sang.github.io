@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kenya Crop Calendar Intelligence</title>
+<link rel="preconnect" href="https://unpkg.com"><link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="#"><span class="brand-mark">KA</span><span>KENYA <b>AGRI INTELLIGENCE</b><small>SEASONAL DECISION SUPPORT</small></span></a>
+  <div class="top-actions"><span class="live-dot"></span><span id="connectionLabel">Ready to configure</span><button id="refreshBtn" class="btn btn-light">↻ Refresh data</button></div>
+</header>
+<main class="shell">
+  <section class="hero">
+    <div><div class="eyebrow">DIGITAL AGRONOMY · CROP CALENDAR</div><h1>Know your <em>planting window.</em></h1><p>Combine Kenya's seasonal crop calendars, live weather and satellite observation metadata to support better-informed farm decisions.</p></div>
+    <div class="hero-tag"><span>KENYA</span><strong>47</strong><small>COUNTIES</small></div>
+  </section>
+
+  <section class="control-panel">
+    <div class="control-head"><div><span class="eyebrow">LOCATION & CROP PROFILE</span><h2>Analysis settings</h2></div><span class="source-pill">Weather · Calendar · STAC</span></div>
+    <div class="controls">
+      <label>County / area<select id="county">
+        <option value="Kisumu">Kisumu</option><option>Siaya</option><option>Homa Bay</option><option>Migori</option><option>Kakamega</option><option>Busia</option><option>Bungoma</option><option>Vihiga</option><option>Kisii</option><option>Nyamira</option><option>Uasin Gishu</option><option>Trans Nzoia</option><option>Nandi</option><option>Kericho</option><option>Nakuru</option><option>Machakos</option><option>Kitui</option><option>Makueni</option><option>Meru</option><option>Embu</option><option>Nyeri</option><option>Kiambu</option><option>Murang'a</option><option>Laikipia</option><option>Narok</option><option>Kajiado</option><option>Turkana</option><option>Marsabit</option><option>Garissa</option><option>Wajir</option><option>Mandera</option><option>Kilifi</option><option>Kwale</option><option>Taita-Taveta</option><option>Tana River</option><option>Mombasa</option><option>Nairobi</option><option>Nyandarua</option><option>Kirinyaga</option><option>Tharaka-Nithi</option><option>Isiolo</option><option>Samburu</option><option>West Pokot</option><option>Baringo</option><option>Elgeyo-Marakwet</option><option>Bomet</option><option>Other / map point</option>
+      </select></label>
+      <label>Crop<select id="crop"><option value="maize">Maize</option><option value="beans">Beans</option><option value="sorghum">Sorghum</option><option value="millet">Finger millet / millet</option></select></label>
+      <label>Season<select id="season"><option value="long_rains">Long rains</option><option value="short_rains">Short rains</option></select></label>
+      <label>Agroecological zone<select id="region"><option value="western_nyanza_medium">Western & Nyanza medium-altitude</option><option value="north_rift_unimodal">North Rift & higher-altitude unimodal</option><option value="eastern_coast">Eastern & Coast</option><option value="central_rift">Central & Rift Valley mixed</option><option value="north_eastern_arid">North Eastern & ASAL</option></select></label>
+      <label>Latitude<input id="lat" type="number" step="0.0001" value="-0.0917"></label>
+      <label>Longitude<input id="lon" type="number" step="0.0001" value="34.7680"></label>
+    </div>
+    <div class="control-bottom"><span>Tip: click anywhere on the map to change the analysis point.</span><button id="analyseBtn" class="btn btn-primary">Run seasonal analysis <span>→</span></button></div>
+  </section>
+
+  <section class="kpis">
+    <article class="kpi"><span class="kpi-icon blue">◷</span><div><small>PLANTING WINDOW</small><strong id="plantingWindow">Mar – Apr</strong><span id="windowNote">Indicative local calendar</span></div></article>
+    <article class="kpi"><span class="kpi-icon green">☁</span><div><small>7-DAY RAINFALL</small><strong id="rain7">— <i>mm</i></strong><span>Recent + forecast rolling total</span></div></article>
+    <article class="kpi"><span class="kpi-icon amber">◉</span><div><small>CONDITIONS SIGNAL</small><strong id="signal">Awaiting data</strong><span id="signalNote">Screening indicator, not a forecast</span></div></article>
+    <article class="kpi"><span class="kpi-icon purple">▦</span><div><small>SATELLITE OBSERVATIONS</small><strong id="stacCount">Not queried</strong><span>Digital Earth Africa STAC</span></div></article>
+  </section>
+
+  <section class="grid-main">
+    <article class="card map-card"><div class="card-head"><div><span class="eyebrow">SPATIAL VIEW</span><h2>Weather analysis location</h2></div><span class="map-badge">OpenStreetMap</span></div><div id="map"></div><div class="map-foot"><span><i class="legend-dot"></i> Selected analysis point</span><span id="coordsLabel">-0.0917, 34.7680</span></div></article>
+    <article class="card calendar-card"><div class="card-head"><div><span class="eyebrow">SEASONAL REFERENCE</span><h2>Crop development calendar</h2></div><span class="year-label" id="calendarYear"></span></div><div id="calendarTimeline" class="timeline"></div><div class="calendar-note">Calendar dates are indicative regional reference windows. Local farmer calendars and county extension guidance take precedence.</div></article>
+  </section>
+
+  <section class="grid-bottom">
+    <article class="card"><div class="card-head"><div><span class="eyebrow">WEATHER INTELLIGENCE</span><h2>Daily rainfall outlook</h2></div><span class="unit">mm / day</span></div><div class="chart-wrap"><canvas id="rainChart"></canvas></div><div id="weatherStatus" class="status-line">Connect the Fused UDF or use the direct Open-Meteo preview.</div></article>
+    <article class="card"><div class="card-head"><div><span class="eyebrow">FIELD CONDITIONS</span><h2>Daily conditions table</h2></div><span class="unit">Recent + forecast</span></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Period</th><th>Rain</th><th>Temp max</th><th>Soil moisture</th><th>Signal</th></tr></thead><tbody id="weatherRows"><tr><td colspan="6" class="empty">Run an analysis to load weather data.</td></tr></tbody></table></div></article>
+  </section>
+
+  <section class="card satellite-card"><div class="card-head"><div><span class="eyebrow">EARTH OBSERVATION</span><h2>Recent Sentinel-2 catalogue matches</h2><p>STAC metadata search near the selected point. This lists observations; it does not yet calculate crop indices.</p></div><button id="stacBtn" class="btn btn-light">Search STAC</button></div><div id="stacResults" class="stac-results"><div class="empty">Configure the Digital Earth Africa STAC UDF endpoint to list satellite observations.</div></div></section>
+
+  <section class="disclaimer"><strong>Decision-support notice</strong><span>Weather-model values and calendar windows are indicative. They are not a guarantee of rainfall, soil conditions, crop performance or planting success. Confirm with local agricultural extension officers and farmer knowledge. The planting-conditions score is a transparent screening heuristic and requires local agronomic calibration.</span></section>
+  <footer>KENYA AGRI INTELLIGENCE <span>Built with Fused UDFs · Open-Meteo · Digital Earth Africa STAC · Leaflet</span></footer>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="assets/app.js"></script>
+</body></html>
