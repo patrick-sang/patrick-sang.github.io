@@ -22,7 +22,7 @@ const REGION_BY_COUNTY = {
 };
 let calendarData, map, marker, rainChart, weatherRows=[];
 const $ = id => document.getElementById(id);
-const CONFIG = { weatherEndpoint:"https://udf.ai/fc_1F6QOJgJLp2hRF3v4sA0VX/crop_weather_intelligence.json, stacEndpoint:"https://udf.ai/fc_1F6QOJgJLp2hRF3v4sA0VX/deafrica_stac_search.json"
+const CONFIG = { weatherEndpoint:"https://udf.ai/fc_1F6QOJgJLp2hRF3v4sA0VX/crop_weather_intelligence.json", stacEndpoint:"https://udf.ai/fc_1F6QOJgJLp2hRF3v4sA0VX/deafrica_stac_search.json"
 };
 const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 function point(){return {lat:Number($("lat").value),lon:Number($("lon").value)}}
