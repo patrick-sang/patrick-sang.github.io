@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kenya Sowing Window &amp; Drought Watch</title>
+  <!-- Load Inter font for clean UI legibility across devices -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Tailwind CSS for responsive layout utilities -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ["Inter", "system-ui", "-apple-system", "BlinkMacSystemFont", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+  <!-- MapLibre GL JS CSS and script -->
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <style>
+    /* Ensure full-bleed map and clean responsive control styling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #0f172a;
+    }
+
+    #map {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Custom scrollbar for control drawer */
+    .panel-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .panel-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .panel-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+
+    /* Smooth mobile drawer transitions */
+    #panel {
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+    }
+
+    @media (max-width: 767px) {
+      #panel.panel-collapsed {
+        transform: translateY(calc(100% + 24px));
+        pointer-events: none;
+      }
+      .maplibregl-ctrl-top-right {
+        top: 12px !important;
+        right: 12px !important;
+      }
+      .maplibregl-ctrl-bottom-right {
+        bottom: 76px !important;
+        right: 12px !important;
+      }
+    }
+
+    @media (min-width: 768px) {
+      #panel.panel-collapsed-desktop {
+        transform: translateX(calc(-100% - 28px));
+        pointer-events: none;
+      }
+    }
+
+    .maplibregl-popup-content {
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-family: "Inter", system-ui, sans-serif;
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: #0f172a;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.2);
+    }
+  </style>
+</head>
+<body class="bg-slate-100 antialiased selection:bg-green-100 selection:text-green-900">
+  <!-- Full-viewport MapLibre map container -->
+  <div id="map" role="region" aria-label="Kenya Sowing Window and Drought Watch Map"></div>
+
+  <!-- Mobile / Tablet Floating Drawer Toggle Pill -->
+  <button
+    id="mobileToggleBtn"
+    type="button"
+    aria-expanded="true"
+    aria-controls="panel"
+    class="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 rounded-full bg-slate-900/95 px-4 py-2.5 text-xs font-semibold text-white shadow-lg ring-1 ring-white/15 backdrop-blur active:scale-95 transition"
+  >
+    <svg id="mobileToggleIcon" class="h-4 w-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+    </svg>
+    <span id="mobileToggleLabel">Hide Controls</span>
+  </button>
+
+  <!-- Desktop Re-open Drawer Button (shown when desktop panel is collapsed) -->
+  <button
+    id="desktopReopenBtn"
+    type="button"
+    title="Show Controls"
+    aria-label="Show Controls"
+    class="hidden fixed top-4 left-4 z-20 items-center gap-2 rounded-xl bg-white/95 px-3.5 py-2.5 text-xs font-semibold text-slate-800 shadow-lg ring-1 ring-slate-900/10 backdrop-blur hover:bg-white transition"
+  >
+    <svg class="h-4 w-4 text-green-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h10" />
+    </svg>
+    <span>Sowing &amp; Drought Controls</span>
+  </button>
+
+  <!-- Responsive Control & Analytics Panel (Bottom sheet on mobile, floating card on tablet/desktop) -->
+  <aside
+    id="panel"
+    class="panel-scroll fixed z-20 bg-white/95 backdrop-blur-md shadow-xl ring-1 ring-slate-900/10 overflow-y-auto
+           bottom-0 inset-x-0 max-h-[76vh] rounded-t-2xl p-4 pb-20
+           md:bottom-auto md:inset-x-auto md:top-4 md:left-4 md:w-[356px] md:max-w-[calc(100vw-2rem)] md:max-h-[calc(100vh-2rem)] md:rounded-2xl md:p-5 md:pb-5"
+  >
+    <!-- Mobile drag indicator -->
+    <div class="mx-auto mb-2.5 h-1.5 w-10 rounded-full bg-slate-300 md:hidden" aria-hidden="true"></div>
+
+    <!-- Header & Desktop Collapse Button -->
+    <div class="flex items-start justify-between gap-2">
+      <div>
+        <h1 class="text-base font-bold tracking-tight text-slate-900">Kenya Sowing &amp; Drought Watch</h1>
+        <p class="mt-0.5 text-xs text-slate-500">Fused UDFs · DE Africa STAC (SCL-masked) · Open-Meteo</p>
+      </div>
+      <button
+        id="desktopCollapseBtn"
+        type="button"
+        title="Collapse panel"
+        aria-label="Collapse panel"
+        class="hidden md:inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"
+      >
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- County Selector -->
+    <div class="mt-3">
+      <label for="countySelect" class="block text-xs font-semibold text-slate-700">County</label>
+      <select
+        id="countySelect"
+        class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600/20"
+      >
+        <option value="">All Counties</option>
+      </select>
+    </div>
+
+    <!-- Rainfall Window & Max Cloud -->
+    <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+      <div>
+        <label for="rainDays" class="block text-xs font-semibold text-slate-700">Rainfall Window</label>
+        <select
+          id="rainDays"
+          class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600/20"
+        >
+          <option value="14">14 days</option>
+          <option value="30" selected>30 days</option>
+          <option value="60">60 days</option>
+        </select>
+      </div>
+      <div>
+        <label for="maxCloud" class="block text-xs font-semibold text-slate-700">Max Cloud (%)</label>
+        <input
+          id="maxCloud"
+          type="number"
+          min="5"
+          max="100"
+          value="40"
+          class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600/20"
+        />
+      </div>
+    </div>
+
+    <!-- Sentinel-2 Date Range -->
+    <div class="mt-3">
+      <label for="dateRange" class="block text-xs font-semibold text-slate-700">Sentinel-2 Date Range</label>
+      <input
+        id="dateRange"
+        type="text"
+        value="2026-09-01/2026-11-19"
+        class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600/20"
+      />
+    </div>
+
+    <!-- FTW Confidence & NDVI Zoom Threshold -->
+    <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+      <div>
+        <label for="ftwConf" class="block text-xs font-semibold text-slate-700">Min FTW Conf.</label>
+        <input
+          id="ftwConf"
+          type="number"
+          min="0"
+          max="100"
+          value="75"
+          class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600/20"
+        />
+      </div>
+      <div>
+        <label for="minNdviZoom" class="block text-xs font-semibold text-slate-700">NDVI Zoom Min</label>
+        <input
+          id="minNdviZoom"
+          type="number"
+          min="6"
+          max="16"
+          value="10"
+          class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600/20"
+        />
+      </div>
+    </div>
+
+    <!-- Optional FTW GeoParquet URL -->
+    <div class="mt-3">
+      <label for="ftwUrl" class="block text-xs font-semibold text-slate-700">FTW GeoParquet URL (optional)</label>
+      <input
+        id="ftwUrl"
+        type="text"
+        placeholder="Leave blank or paste valid GeoParquet URL"
+        value=""
+        class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600/20"
+      />
+    </div>
+
+    <!-- Primary & Secondary Action Buttons -->
+    <div class="mt-3.5 space-y-2">
+      <button
+        id="updateBtn"
+        type="button"
+        class="flex w-full items-center justify-center gap-2 rounded-xl bg-green-700 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-green-800 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition"
+      >
+        <svg id="refreshIcon" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        <span id="updateBtnLabel">Refresh Layers</span>
+      </button>
+
+      <button
+        id="exportNdviBtn"
+        type="button"
+        class="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 active:scale-[0.99] transition"
+      >
+        <svg class="h-4 w-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        <span>Export Viewport NDVI (.geojson)</span>
+      </button>
+    </div>
+
+    <!-- Status Counts Breakdown Strip -->
+    <div
+      id="statusCounts"
+      class="mt-3 rounded-lg bg-emerald-50/70 px-2.5 py-2 text-[11px] font-semibold text-slate-700 ring-1 ring-emerald-900/10"
+    >
+      Open: 0 · Watch: 0 · Dry: 0
+    </div>
+
+    <!-- Selection / Inspection Summary Card -->
+    <div
+      id="summaryCard"
+      class="mt-2.5 rounded-xl border border-slate-200 bg-slate-50/90 p-3 text-xs leading-relaxed text-slate-700"
+    >
+      Click any county for rainfall &amp; soil moisture, or zoom in to inspect SCL-masked NDVI.
+    </div>
+
+    <!-- County Sowing Status Legend -->
+    <div class="mt-3.5">
+      <div class="text-xs font-bold text-slate-800">County Sowing Status</div>
+      <div class="mt-1.5 flex items-center gap-2 text-xs text-slate-700">
+        <span class="h-3.5 w-3.5 shrink-0 rounded bg-green-600"></span>
+        <span>Sowing Window Open</span>
+      </div>
+      <div class="mt-1.5 flex items-center gap-2 text-xs text-slate-700">
+        <span class="h-3.5 w-3.5 shrink-0 rounded bg-yellow-500"></span>
+        <span>Early Moisture / Watch</span>
+      </div>
+      <div class="mt-1.5 flex items-center gap-2 text-xs text-slate-700">
+        <span class="h-3.5 w-3.5 shrink-0 rounded bg-red-600"></span>
+        <span>Dry / Drought Watch</span>
+      </div>
+    </div>
+
+    <!-- SCL-Masked NDVI Legend -->
+    <div class="mt-3.5">
+      <div class="text-xs font-bold text-slate-800">NDVI (SCL-Masked)</div>
+      <div class="mt-1.5 flex items-center gap-2 text-xs text-slate-700">
+        <span class="h-3.5 w-3.5 shrink-0 rounded bg-red-500"></span>
+        <span>&lt; 0.25 (Low / Bare / Stressed)</span>
+      </div>
+      <div class="mt-1.5 flex items-center gap-2 text-xs text-slate-700">
+        <span class="h-3.5 w-3.5 shrink-0 rounded bg-amber-500"></span>
+        <span>0.25 – 0.45 (Moderate)</span>
+      </div>
+      <div class="mt-1.5 flex items-center gap-2 text-xs text-slate-700">
+        <span class="h-3.5 w-3.5 shrink-0 rounded bg-green-700"></span>
+        <span>&gt; 0.45 (Healthy Vegetation)</span>
+      </div>
+    </div>
+
+    <!-- Live Status Bar -->
+    <div id="statusBar" role="status" aria-live="polite" class="mt-3.5 border-t border-slate-200/80 pt-2.5 text-xs text-slate-600">
+      Ready.
+    </div>
+  </aside>
+
+  <script>
+    /**
+     * Deployed Fused UDF GeoJSON endpoints
+     * UDF_A_URL: County-level weather, soil moisture, FTW sampling, and sowing status
+     * UDF_B_URL: Viewport/field-level SCL-masked Sentinel-2 NDVI and FTW fields
+     */
+    const UDF_A_URL = "https://udf.ai/fc_2pwEy42cuudCBUClIh9UJ0/county_sowing_udf.geojson";
+    const UDF_B_URL = "https://udf.ai/fc_2pwEy42cuudCBUClIh9UJ0/ndvi_fields_udf.geojson";
+
+    // Kenya bounding box [west, south, east, north] for resetting "All Counties" view
+    const KENYA_BOUNDS = [
+      [33.9, -4.7],
+      [41.9, 5.5]
+    ];
+
+    // Initialize MapLibre GL map with Positron basemap and Kenya center/zoom
+    const map = new maplibregl.Map({
+      container: "map",
+      style: "https://tiles.openfreemap.org/styles/positron",
+      center: [37.9, 0.2],
+      zoom: 6
+    });
+
+    // Add standard navigation and metric scale controls
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+    map.addControl(new maplibregl.ScaleControl({ maxWidth: 120, unit: "metric" }), "bottom-right");
+
+    // Application state variables
+    let moveTimer = null;
+    let countiesLoadedOnce = false;
+    let countyAbortController = null;
+    let ndviAbortController = null;
+    let latestCountiesGeoJson = null;
+    let latestNdviGeoJson = null;
+    let activeCountyHoverId = null;
+    let activeNdviHoverId = null;
+    let isDesktopPanelCollapsed = false;
+    let isMobilePanelOpen = true;
+
+    /**
+     * Updates the status bar text safely.
+     */
+    function setStatus(msg) {
+      const el = document.getElementById("statusBar");
+      if (el) el.textContent = msg;
+    }
+
+    /**
+     * Toggles the loading spinner and disabled state on the primary refresh button.
+     */
+    function setLoadingState(isLoading) {
+      const btn = document.getElementById("updateBtn");
+      const label = document.getElementById("updateBtnLabel");
+      const icon = document.getElementById("refreshIcon");
+      if (btn) btn.disabled = isLoading;
+      if (label) label.textContent = isLoading ? "Updating Layers..." : "Refresh Layers";
+      if (icon) icon.classList.toggle("animate-spin", isLoading);
+    }
+
+    /**
+     * Builds a parameterized endpoint URL while skipping empty/null query values.
+     */
+    function buildEndpointUrl(baseUrl, params) {
+      const url = new URL(baseUrl);
+      Object.entries(params).forEach(([key, val]) => {
+        if (val !== undefined && val !== null && String(val).trim() !== "") {
+          url.searchParams.set(key, String(val).trim());
+        }
+      });
+      return url.toString();
+    }
+
+    /**
+     * Recursively extracts [lng, lat] coordinate pairs from any GeoJSON geometry,
+     * safely handling Polygon rings and MultiPolygon nested arrays.
+     */
+    function extractLngLatPairs(geometry, out = []) {
+      if (!geometry) return out;
+      const walkCoords = (node) => {
+        if (!Array.isArray(node) || node.length === 0) return;
+        if (typeof node[0] === "number" && typeof node[1] === "number") {
+          out.push([node[0], node[1]]);
+          return;
+        }
+        for (let i = 0; i < node.length; i += 1) {
+          walkCoords(node[i]);
+        }
+      };
+
+      if (geometry.type === "GeometryCollection" && Array.isArray(geometry.geometries)) {
+        geometry.geometries.forEach((g) => extractLngLatPairs(g, out));
+      } else {
+        walkCoords(geometry.coordinates);
+      }
+      return out;
+    }
+
+    /**
+     * Fits the map viewport to a GeoJSON FeatureCollection's bounding box.
+     */
+    function zoomToGeoJson(gj) {
+      if (!gj || !Array.isArray(gj.features) || gj.features.length === 0) return;
+      const coords = [];
+      gj.features.forEach((f) => extractLngLatPairs(f.geometry, coords));
+      if (!coords.length) return;
+
+      const bounds = new maplibregl.LngLatBounds(coords[0], coords[0]);
+      coords.forEach((c) => bounds.extend(c));
+      if (!bounds.isEmpty()) {
+        map.fitBounds(bounds, { padding: 36, maxZoom: 11 });
+      }
+    }
+
+    /**
+     * Computes and renders counts of county sowing statuses.
+     */
+    function renderStatusCounts(gj) {
+      const el = document.getElementById("statusCounts");
+      if (!el) return;
+
+      const counts = {
+        "Sowing Window Open": 0,
+        "Early Moisture / Watch": 0,
+        "Dry / Drought Watch": 0
+      };
+
+      if (gj && Array.isArray(gj.features)) {
+        gj.features.forEach((f) => {
+          const status = f.properties?.sowing_status;
+          if (status in counts) counts[status] += 1;
+        });
+      }
+
+      el.textContent =
+        `Open: ${counts["Sowing Window Open"]} · ` +
+        `Watch: ${counts["Early Moisture / Watch"]} · ` +
+        `Dry: ${counts["Dry / Drought Watch"]}`;
+    }
+
+    /**
+     * Formats parcel or viewport area in hectares and square meters.
+     */
+    function formatArea(areaM2) {
+      const num = Number(areaM2);
+      if (!Number.isFinite(num) || num <= 0) return "N/A";
+      if (num >= 10000) {
+        return `${(num / 10000).toFixed(2)} ha (${Math.round(num).toLocaleString()} m²)`;
+      }
+      return `${Math.round(num).toLocaleString()} m²`;
+    }
+
+    /**
+     * Formats popup HTML for NDVI / FTW field features.
+     */
+    function formatNdviPopupHtml(p = {}) {
+      const rawNdvi = p.ndvi ?? p.mean_ndvi;
+      const ndviNum = Number(rawNdvi);
+      const ndviFormatted = Number.isFinite(ndviNum) ? ndviNum.toFixed(2) : "N/A";
+      const title = p.ftw_fields === 0 ? "Viewport NDVI Summary" : "FTW Field";
+
+      return `
+        <div>
+          <div style="font-weight:700; margin-bottom:4px;">${title}</div>
+          <div>NDVI: <b>${ndviFormatted}</b></div>
+          <div>Confidence: ${p.confidence ?? "N/A"}</div>
+          <div>Area: ${formatArea(p.area_m2)}</div>
+        </div>
+      `;
+    }
+
+    /**
+     * Ensures GeoJSON features have numeric IDs so MapLibre feature-state hover works reliably.
+     */
+    function normalizeGeoJsonIds(gj) {
+      if (!gj || !Array.isArray(gj.features)) return { type: "FeatureCollection", features: [] };
+      return {
+        ...gj,
+        features: gj.features.map((feat, idx) => ({
+          ...feat,
+          id: typeof feat.id === "number" ? feat.id : idx + 1
+        }))
+      };
+    }
+
+    /**
+     * Configures pointer cursor changes and hover state highlights for a polygon layer.
+     */
+    function bindPolygonInteractions(fillLayerId, sourceName, onClickHandler, isCounty) {
+      map.on("mouseenter", fillLayerId, () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+
+      map.on("mousemove", fillLayerId, (e) => {
+        const feat = e.features && e.features[0];
+        if (!feat || feat.id === undefined) return;
+
+        if (isCounty) {
+          if (activeCountyHoverId !== null && activeCountyHoverId !== feat.id) {
+            map.setFeatureState({ source: sourceName, id: activeCountyHoverId }, { hover: false });
+          }
+          activeCountyHoverId = feat.id;
+          map.setFeatureState({ source: sourceName, id: activeCountyHoverId }, { hover: true });
+        } else {
+          if (activeNdviHoverId !== null && activeNdviHoverId !== feat.id) {
+            map.setFeatureState({ source: sourceName, id: activeNdviHoverId }, { hover: false });
+          }
+          activeNdviHoverId = feat.id;
+          map.setFeatureState({ source: sourceName, id: activeNdviHoverId }, { hover: true });
+        }
+      });
+
+      map.on("mouseleave", fillLayerId, () => {
+        map.getCanvas().style.cursor = "";
+        if (isCounty && activeCountyHoverId !== null) {
+          map.setFeatureState({ source: sourceName, id: activeCountyHoverId }, { hover: false });
+          activeCountyHoverId = null;
+        } else if (!isCounty && activeNdviHoverId !== null) {
+          map.setFeatureState({ source: sourceName, id: activeNdviHoverId }, { hover: false });
+          activeNdviHoverId = null;
+        }
+      });
+
+      map.on("click", fillLayerId, onClickHandler);
+    }
+
+    /**
+     * Loads and updates the Kenya county sowing & weather layer.
+     */
+    async function loadCounties(shouldFitSelected = false, resetToKenyaWhenEmpty = false) {
+      const county_name = document.getElementById("countySelect").value;
+      const rainfall_days = document.getElementById("rainDays").value;
+      const min_ftw_confidence = document.getElementById("ftwConf").value;
+      const ftw_parquet_url = document.getElementById("ftwUrl").value;
+
+      if (countyAbortController) {
+        countyAbortController.abort();
+      }
+      countyAbortController = new AbortController();
+
+      setStatus("Fetching Kenya county weather & sowing status...");
+      const url = buildEndpointUrl(UDF_A_URL, {
+        county_name,
+        rainfall_days,
+        min_ftw_confidence,
+        ftw_parquet_url
+      });
+
+      try {
+        const res = await fetch(url, { signal: countyAbortController.signal });
+        if (!res.ok) {
+          setStatus(`County UDF error (${res.status}).`);
+          return;
+        }
+
+        const rawGj = await res.json();
+        const gj = normalizeGeoJsonIds(rawGj);
+        latestCountiesGeoJson = gj;
+
+        // Populate county dropdown once from initial all-counties response
+        if (!countiesLoadedOnce && Array.isArray(gj.features)) {
+          const select = document.getElementById("countySelect");
+          const names = [...new Set(gj.features.map((f) => f.properties?.county).filter(Boolean))].sort();
+          names.forEach((name) => {
+            const opt = document.createElement("option");
+            opt.value = name;
+            opt.textContent = name;
+            select.appendChild(opt);
+          });
+          countiesLoadedOnce = true;
+        }
+
+        if (!map.getSource("counties")) {
+          map.addSource("counties", { type: "geojson", data: gj });
+          map.addLayer({
+            id: "counties-fill",
+            type: "fill",
+            source: "counties",
+            paint: {
+              "fill-opacity": [
+                "case",
+                ["boolean", ["feature-state", "hover"], false],
+                0.62,
+                0.42
+              ],
+              "fill-color": [
+                "match",
+                ["get", "sowing_status"],
+                "Sowing Window Open", "#16a34a",
+                "Early Moisture / Watch", "#eab308",
+                "Dry / Drought Watch", "#dc2626",
+                "#64748b"
+              ]
+            }
+          });
+          map.addLayer({
+            id: "counties-line",
+            type: "line",
+            source: "counties",
+            paint: {
+              "line-color": [
+                "case",
+                ["boolean", ["feature-state", "hover"], false],
+                "#0f172a",
+                "#1e293b"
+              ],
+              "line-width": [
+                "case",
+                ["boolean", ["feature-state", "hover"], false],
+                2.2,
+                1.4
+              ]
+            }
+          });
+
+          bindPolygonInteractions(
+            "counties-fill",
+            "counties",
+            (e) => {
+              const p = e.features?.[0]?.properties || {};
+              document.getElementById("summaryCard").innerHTML = `
+                <div class="font-bold text-slate-900 text-sm">${p.county || "County"}</div>
+                <div class="mt-1">Status: <b>${p.sowing_status || "N/A"}</b></div>
+                <div>Rainfall (${rainfall_days}d): <b>${p.rain_mm ?? "N/A"}</b> mm</div>
+                <div>Soil Moisture (0–10cm): <b>${p.soil_moisture_0_10cm ?? "N/A"}</b></div>
+                <div>FTW Fields Sampled: <b>${p.ftw_fields_sampled ?? 0}</b></div>
+              `;
+
+              new maplibregl.Popup()
+                .setLngLat(e.lngLat)
+                .setHTML(`
+                  <div>
+                    <div style="font-weight:700; margin-bottom:4px;">${p.county || "County"}</div>
+                    <div>Status: <b>${p.sowing_status || "N/A"}</b></div>
+                    <div>Rainfall: ${p.rain_mm ?? "N/A"} mm</div>
+                    <div>Soil Moisture (0–10cm): ${p.soil_moisture_0_10cm ?? "N/A"}</div>
+                  </div>
+                `)
+                .addTo(map);
+            },
+            true
+          );
+        } else {
+          map.getSource("counties").setData(gj);
+        }
+
+        // Only update aggregate status counts when viewing all counties
+        if (!county_name) {
+          renderStatusCounts(gj);
+        }
+
+        if (shouldFitSelected && county_name) {
+          zoomToGeoJson(gj);
+        } else if (resetToKenyaWhenEmpty && !county_name) {
+          map.fitBounds(KENYA_BOUNDS, { padding: 36 });
+        }
+
+        setStatus(`Loaded ${gj.features?.length || 0} county feature(s).`);
+      } catch (err) {
+        if (err.name === "AbortError") return;
+        setStatus(`County UDF fetch failed: ${err.message}`);
+      }
+    }
+
+    /**
+     * Loads and updates the zoom-gated SCL-masked NDVI / FTW layer for the current viewport.
+     */
+    async function loadNdviLayer() {
+      const minZoom = Number(document.getElementById("minNdviZoom").value) || 10;
+      if (map.getZoom() < minZoom) {
+        if (ndviAbortController) {
+          ndviAbortController.abort();
+          ndviAbortController = null;
+        }
+        latestNdviGeoJson = { type: "FeatureCollection", features: [] };
+        if (map.getSource("ndvi-layer")) {
+          map.getSource("ndvi-layer").setData(latestNdviGeoJson);
+        }
+        setStatus(`Zoom to level ${minZoom}+ to load DE Africa NDVI.`);
+        return;
+      }
+
+      const b = map.getBounds();
+      const boundsStr = [
+        b.getWest().toFixed(4),
+        b.getSouth().toFixed(4),
+        b.getEast().toFixed(4),
+        b.getNorth().toFixed(4)
+      ].join(",");
+
+      const date_range = document.getElementById("dateRange").value;
+      const max_cloud_cover = document.getElementById("maxCloud").value;
+      const min_ftw_confidence = document.getElementById("ftwConf").value;
+      const ftw_parquet_url = document.getElementById("ftwUrl").value;
+
+      if (ndviAbortController) {
+        ndviAbortController.abort();
+      }
+      ndviAbortController = new AbortController();
+
+      setStatus("Querying DE Africa STAC (SCL-masked)...");
+      const url = buildEndpointUrl(UDF_B_URL, {
+        bounds: boundsStr,
+        date_range,
+        max_cloud_cover,
+        min_ftw_confidence,
+        ftw_parquet_url
+      });
+
+      try {
+        const res = await fetch(url, { signal: ndviAbortController.signal });
+        if (!res.ok) {
+          setStatus(`NDVI UDF error (${res.status}).`);
+          return;
+        }
+
+        const rawGj = await res.json();
+        const gj = normalizeGeoJsonIds(rawGj);
+        latestNdviGeoJson = gj;
+
+        if (!map.getSource("ndvi-layer")) {
+          map.addSource("ndvi-layer", { type: "geojson", data: gj });
+          map.addLayer({
+            id: "ndvi-fill",
+            type: "fill",
+            source: "ndvi-layer",
+            paint: {
+              "fill-opacity": [
+                "case",
+                ["boolean", ["feature-state", "hover"], false],
+                0.88,
+                0.72
+              ],
+              "fill-color": [
+                "case",
+                ["==", ["coalesce", ["get", "ndvi"], ["get", "mean_ndvi"]], null], "#94a3b8",
+                ["<", ["coalesce", ["get", "ndvi"], ["get", "mean_ndvi"]], 0.25], "#ef4444",
+                ["<", ["coalesce", ["get", "ndvi"], ["get", "mean_ndvi"]], 0.45], "#f59e0b",
+                "#15803d"
+              ]
+            }
+          });
+          map.addLayer({
+            id: "ndvi-line",
+            type: "line",
+            source: "ndvi-layer",
+            paint: {
+              "line-color": [
+                "case",
+                ["boolean", ["feature-state", "hover"], false],
+                "#000000",
+                "#0f172a"
+              ],
+              "line-width": [
+                "case",
+                ["boolean", ["feature-state", "hover"], false],
+                1.8,
+                1
+              ]
+            }
+          });
+
+          bindPolygonInteractions(
+            "ndvi-fill",
+            "ndvi-layer",
+            (e) => {
+              const p = e.features?.[0]?.properties || {};
+              new maplibregl.Popup()
+                .setLngLat(e.lngLat)
+                .setHTML(formatNdviPopupHtml(p))
+                .addTo(map);
+            },
+            false
+          );
+        } else {
+          map.getSource("ndvi-layer").setData(gj);
+        }
+
+        setStatus(`NDVI layer updated (${gj.features?.length || 0} feature(s) in view).`);
+      } catch (err) {
+        if (err.name === "AbortError") return;
+        setStatus(`NDVI UDF fetch failed: ${err.message}`);
+      }
+    }
+
+    /**
+     * Refreshes both county and NDVI layers while managing button loading state.
+     */
+    async function refreshAllLayers(shouldFitSelected = false, resetToKenyaWhenEmpty = false) {
+      setLoadingState(true);
+      try {
+        await Promise.all([
+          loadCounties(shouldFitSelected, resetToKenyaWhenEmpty),
+          loadNdviLayer()
+        ]);
+      } finally {
+        setLoadingState(false);
+      }
+    }
+
+    /**
+     * Exports current viewport NDVI/FTW GeoJSON features to a downloadable file.
+     */
+    function exportViewportNdviGeoJson() {
+      const features = latestNdviGeoJson?.features || [];
+      if (!features.length) {
+        setStatus("No NDVI/FTW features in current view to export.");
+        return;
+      }
+
+      const payload = JSON.stringify(
+        {
+          type: "FeatureCollection",
+          features
+        },
+        null,
+        2
+      );
+
+      const blob = new Blob([payload], { type: "application/geo+json;charset=utf-8" });
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const dateStamp = new Date().toISOString().slice(0, 10);
+      link.href = blobUrl;
+      link.download = `kenya_ndvi_ftw_${dateStamp}.geojson`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+
+      setStatus(`Exported ${features.length} viewport NDVI/FTW feature(s).`);
+    }
+
+    /**
+     * Syncs mobile drawer and desktop panel visibility states.
+     */
+    function setMobileDrawerState(open) {
+      isMobilePanelOpen = open;
+      const panel = document.getElementById("panel");
+      const btn = document.getElementById("mobileToggleBtn");
+      const label = document.getElementById("mobileToggleLabel");
+      const icon = document.getElementById("mobileToggleIcon");
+
+      if (panel) panel.classList.toggle("panel-collapsed", !open);
+      if (btn) btn.setAttribute("aria-expanded", String(open));
+      if (label) label.textContent = open ? "Hide Controls" : "Show Controls";
+      if (icon) {
+        icon.innerHTML = open
+          ? '<path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />'
+          : '<path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />';
+      }
+    }
+
+    function setDesktopPanelState(collapsed) {
+      isDesktopPanelCollapsed = collapsed;
+      const panel = document.getElementById("panel");
+      const reopenBtn = document.getElementById("desktopReopenBtn");
+      if (panel) panel.classList.toggle("panel-collapsed-desktop", collapsed);
+      if (reopenBtn) {
+        reopenBtn.classList.toggle("hidden", !collapsed);
+        reopenBtn.classList.toggle("inline-flex", collapsed);
+      }
+    }
+
+    // Wire up map lifecycle & debounced viewport updates
+    map.on("load", async () => {
+      await refreshAllLayers(false, false);
+    });
+
+    map.on("moveend", () => {
+      clearTimeout(moveTimer);
+      moveTimer = setTimeout(() => {
+        loadNdviLayer();
+      }, 450);
+    });
+
+    // Wire up UI controls
+    document.getElementById("countySelect").addEventListener("change", async (e) => {
+      const hasCounty = Boolean(e.target.value);
+      await loadCounties(hasCounty, !hasCounty);
+    });
+
+    document.getElementById("updateBtn").addEventListener("click", async () => {
+      await refreshAllLayers(false, false);
+    });
+
+    document.getElementById("exportNdviBtn").addEventListener("click", exportViewportNdviGeoJson);
+
+    document.getElementById("mobileToggleBtn").addEventListener("click", () => {
+      setMobileDrawerState(!isMobilePanelOpen);
+    });
+
+    document.getElementById("desktopCollapseBtn").addEventListener("click", () => {
+      setDesktopPanelState(true);
+    });
+
+    document.getElementById("desktopReopenBtn").addEventListener("click", () => {
+      setDesktopPanelState(false);
+    });
+
+    // Keep map canvas layout responsive across orientation and viewport shifts
+    window.addEventListener("resize", () => {
+      map.resize();
+    });
+  </script>
+</body>
+</html>
