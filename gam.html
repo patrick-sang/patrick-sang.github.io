@@ -3,576 +3,261 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#f4f6fa" />
-  <meta name="description" content="Kenya urban building density and corridor mapping with H3 aggregation and building footprints." />
-  <title>Kenya Building Density &amp; Corridor WebGIS</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
-  <script src="https://unpkg.com/h3-js@4.1.0/dist/h3-js.umd.js"></script>
+  <title>Kenya Urban Building Density &amp; Corridor WebGIS</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  />
   <style>
     :root {
-      --ink: #172033;
-      --muted: #64748b;
-      --line: #e2e8f0;
-      --surface: #ffffff;
-      --page: #f4f6fa;
-      --blue: #007bff;
-      --blue-dark: #0056b3;
-      --radius: 10px;
-      --shadow: 0 2px 8px rgba(15, 23, 42, .07);
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-border: #1f2937;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #22c55e;
+      --warn: #f59e0b;
+      --err: #f87171;
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width: 100%; min-height: 100%; }
     body {
-      display: flex;
-      flex-direction: row;
-      width: 100%;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       height: 100vh;
-      height: 100dvh;
-      min-height: 0;
+      display: flex;
       overflow: hidden;
-      background: var(--page);
-      color: var(--ink);
-      font-family: Arial, sans-serif;
-      line-height: 1.5;
     }
-
-    #map {
-      flex: 1 1 70%;
-      width: 70%;
-      height: 100%;
-      min-width: 0;
-      min-height: 0;
-      background: #e9eef4;
-    }
-
-    #panel {
-      flex: 0 0 clamp(340px, 30vw, 480px);
-      width: clamp(340px, 30vw, 480px);
-      min-width: 0;
-      height: 100%;
+    #sidebar {
+      width: 375px;
+      min-width: 320px;
+      background: var(--panel);
+      border-right: 1px solid var(--panel-border);
       padding: 16px;
       display: flex;
       flex-direction: column;
       gap: 12px;
-      overflow-x: hidden;
       overflow-y: auto;
-      overscroll-behavior: contain;
-      background: var(--surface);
-      border-left: 1px solid #dfe5ed;
-      box-shadow: -2px 0 8px rgba(15, 23, 42, .04);
-      scrollbar-width: thin;
-      scrollbar-color: #cbd5e1 transparent;
+      z-index: 1000;
     }
-
-    .header { padding: 2px 2px 4px; }
-    .header h1 {
-      color: #26364d;
-      font-size: clamp(18px, 1.5vw, 22px);
-      line-height: 1.25;
-      font-weight: 700;
-      text-align: left;
-    }
-    .header p {
-      margin-top: 6px;
+    h1 { font-size: 1.05rem; font-weight: 700; line-height: 1.3; }
+    .subtitle { font-size: 0.76rem; color: var(--muted); margin-top: 2px; word-break: break-all; }
+    .control-group { display: flex; flex-direction: column; gap: 5px; }
+    label {
+      font-size: 0.72rem;
+      font-weight: 600;
       color: var(--muted);
-      font-size: 13px;
-      line-height: 1.5;
-      overflow-wrap: anywhere;
-    }
-
-    .notice {
-      padding: 10px 12px;
-      border: 1px solid #f5d98a;
-      border-left: 4px solid #e5a000;
-      border-radius: 7px;
-      background: #fffbeb;
-      color: #854d0e;
-      font-size: 12px;
-      line-height: 1.45;
-    }
-
-    button, input, select { font: inherit; }
-    .btn {
-      flex: 1 1 90px;
-      min-width: 0;
-      min-height: 35px;
-      padding: 7px 10px;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      background: #f8fafc;
-      color: #1e293b;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background .18s ease, color .18s ease, border-color .18s ease;
-    }
-    .btn:hover { background: #eaf2ff; border-color: #93c5fd; }
-    .btn.primary {
-      background: var(--blue);
-      border-color: var(--blue);
-      color: #ffffff;
-    }
-    .btn.primary:hover {
-      background: var(--blue-dark);
-      border-color: var(--blue-dark);
-    }
-    .btn.ghost {
-      width: 100%;
-      background: #ffffff;
-      border-style: dashed;
-      color: #334155;
-    }
-    .btn.ghost:hover {
-      background: #f8fafc;
-      border-color: #93c5fd;
-    }
-
-    .box, .card {
-      min-width: 0;
-      padding: 13px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: #fff;
-      box-shadow: var(--shadow);
-    }
-    .box {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      background: #fbfcfe;
-    }
-    .box-title {
-      margin-bottom: 2px;
-      color: #1e5799;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: .045em;
       text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
-
-    .row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      min-width: 0;
-      font-size: 13px;
-    }
-    .row label {
-      flex: 1 1 42%;
-      color: #334155;
-      font-weight: 600;
-      min-width: 0;
-    }
-    .row > span {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 6px;
-      flex: 0 1 58%;
-      min-width: 0;
-    }
-
-    .field {
+    select, input, button {
       width: 100%;
-      min-width: 0;
       padding: 8px 10px;
-      border: 1px solid #cbd5e1;
-      border-radius: 7px;
-      background: #fff;
-      color: #334155;
-      font-size: 12px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #0b1220;
+      color: var(--text);
+      font-size: 0.84rem;
     }
-    .row .field {
-      flex: 0 1 58%;
+    button.primary {
+      background: var(--accent);
+      color: #061320;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
     }
-
-    .btn-row { display: flex; flex-wrap: wrap; gap: 7px; }
-    .grid-2 {
+    button.secondary {
+      background: #1e293b;
+      cursor: pointer;
+    }
+    button.ghost {
+      background: transparent;
+      border: 1px dashed #475569;
+      color: #cbd5e1;
+      cursor: pointer;
+      font-size: 0.78rem;
+    }
+    button:hover { filter: brightness(1.08); }
+    .row-2 {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: 1fr 1fr;
       gap: 8px;
     }
-
-    .status {
-      padding: 10px 12px;
-      border: 1px solid #bfdbfe;
-      border-radius: 7px;
-      background: #eff6ff;
-      color: #1d4ed8;
-      font-size: 12px;
-      line-height: 1.45;
-      overflow-wrap: anywhere;
-    }
-    .status.warn {
-      border-color: #fde68a;
-      background: #fffbeb;
-      color: #92400e;
-    }
-    .status.error {
-      border-color: #fecaca;
-      background: #fef2f2;
-      color: #b91c1c;
-    }
-
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(2, 1fr);
       gap: 8px;
     }
     .kpi {
-      padding: 10px;
-      border: 1px solid var(--line);
+      background: #0b1220;
+      border: 1px solid #1e293b;
       border-radius: 8px;
-      background: #fff;
-      min-width: 0;
+      padding: 10px;
     }
-    .kpi span {
-      display: block;
-      color: var(--muted);
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .04em;
+    .kpi .val { font-size: 1.05rem; font-weight: 700; color: var(--accent); }
+    .kpi .lbl { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+    #detail-box {
+      background: #0b1220;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 0.8rem;
+      line-height: 1.45;
+      color: #cbd5e1;
     }
-    .kpi strong {
-      display: block;
-      margin-top: 3px;
-      font-size: 20px;
-      line-height: 1.2;
-      color: #172033;
-      overflow-wrap: anywhere;
+    #status-box {
+      background: #0b1220;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.75rem;
+      color: var(--accent-2);
+      line-height: 1.4;
+      word-break: break-word;
     }
-
-    .kv {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 7px 0;
-      border-bottom: 1px solid #edf0f4;
-      font-size: 12px;
+    #status-box.error { color: var(--err); border-color: #7f1d1d; }
+    #status-box.warn { color: var(--warn); border-color: #78350f; }
+    #map { flex: 1; height: 100%; background: #1e293b; }
+    .legend {
+      background: rgba(15, 23, 42, 0.92);
+      color: #f8fafc;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      font-size: 0.75rem;
+      line-height: 1.4;
     }
-    .kv:last-child { border-bottom: 0; }
-    .kv > span:first-child { color: #64748b; }
-    .kv strong { color: #172033; text-align: right; overflow-wrap: anywhere; }
-
-    .detail-body {
-      font-size: 12px;
-      line-height: 1.5;
-      color: #334155;
-      overflow-wrap: anywhere;
-    }
-    .detail-body code {
-      background: #f1f5f9;
-      padding: 1px 5px;
-      border-radius: 4px;
-      font-size: 11px;
-      color: #0f172a;
-    }
-
-    .subnote {
-      font-size: 11px;
-      color: #64748b;
-      line-height: 1.5;
-    }
-
-    .legend { color: #64748b; font-size: 12px; line-height: 1.55; }
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      margin-top: 4px;
-    }
-    .legend-swatch {
+    .legend i {
       display: inline-block;
       width: 12px;
       height: 12px;
+      margin-right: 6px;
       border-radius: 2px;
-      border: 1px solid rgba(15, 23, 42, .2);
-      flex: 0 0 auto;
-    }
-
-    .map-legend-control {
-      max-width: min(310px, calc(100vw - 90px));
-      margin: 10px !important;
-      padding: 0;
-      border: 1px solid rgba(148, 163, 184, .55);
-      border-radius: 10px;
-      background: rgba(255, 255, 255, .96);
-      box-shadow: 0 3px 14px rgba(15, 23, 42, .16);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      overflow: hidden;
-    }
-    .map-legend-heading {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 8px 11px;
-      color: #26364d;
-      font-size: 12px;
-      font-weight: 700;
-      border-bottom: 1px solid #e2e8f0;
-    }
-    .map-legend-body { padding: 9px 11px; }
-    .map-legend-toggle {
-      border: 0;
-      padding: 2px 6px;
-      border-radius: 5px;
-      background: #eef2f7;
-      color: #334155;
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .map-legend-control.collapsed .map-legend-body { display: none; }
-    .map-legend-body .legend { color: #475569; font-size: 11px; line-height: 1.45; }
-    .leaflet-bottom.leaflet-right .map-legend-control { margin-bottom: 12px !important; }
-
-    .report-head { display: none; }
-
-    button:focus-visible, input:focus-visible, select:focus-visible {
-      outline: 3px solid rgba(0, 123, 255, .25);
-      outline-offset: 2px;
-    }
-
-    @media print {
-      body { display: block; height: auto; overflow: visible; background: #fff; }
-      #map { height: 420px; width: 100%; break-inside: avoid; }
-      #panel { width: 100%; height: auto; overflow: visible; border: 0; box-shadow: none; padding: 10px; }
-      .no-print, .btn-row { display: none !important; }
-      .report-head { display: block; margin-bottom: 8px; font-size: 12px; color: #475569; }
-      .card, .box { break-inside: avoid; box-shadow: none; }
-      .header h1 { font-size: 24px; }
-    }
-
-    @media (max-width: 1100px) {
-      #panel { flex-basis: 380px; width: 380px; padding: 13px; gap: 10px; }
-      .box, .card { padding: 11px; }
-      .header h1 { font-size: 19px; }
-    }
-
-    @media (max-width: 820px) {
-      body {
-        flex-direction: column;
-        height: 100vh;
-        height: 100dvh;
-      }
-      #map {
-        flex: 0 0 44%;
-        width: 100%;
-        height: 44%;
-        min-height: 230px;
-      }
-      #panel {
-        flex: 1 1 56%;
-        width: 100%;
-        height: 56%;
-        min-height: 0;
-        padding: 14px clamp(12px, 3vw, 22px) 22px;
-        border-left: 0;
-        border-top: 1px solid #dfe5ed;
-        box-shadow: 0 -2px 8px rgba(15, 23, 42, .04);
-        gap: 11px;
-      }
-      .header h1 { font-size: 20px; }
-    }
-
-    @media (max-width: 520px) {
-      #map { flex-basis: 39%; height: 39%; min-height: 190px; }
-      #panel {
-        flex-basis: 61%;
-        height: 61%;
-        padding: 12px 11px 18px;
-        gap: 9px;
-      }
-      .header h1 { font-size: 18px; }
-      .header p { font-size: 12px; }
-      .notice { padding: 8px 10px; font-size: 11px; }
-      .grid-2 { grid-template-columns: 1fr; }
-      .box, .card { padding: 10px; border-radius: 8px; }
-      .box-title { font-size: 11px; }
-      .row { gap: 7px; font-size: 12px; flex-direction: column; align-items: stretch; }
-      .row > span, .row .field { flex: 1 1 auto; width: 100%; }
-      .btn { flex-basis: calc(50% - 5px); min-height: 36px; }
-      .legend { font-size: 11px; }
-      .map-legend-control { max-width: min(260px, calc(100vw - 76px)); margin: 7px !important; }
-      .map-legend-heading { padding: 7px 9px; }
-      .map-legend-body { padding: 7px 9px; }
-    }
-
-    @media (max-width: 360px) {
-      #map { flex-basis: 36%; height: 36%; }
-      #panel { flex-basis: 64%; height: 64%; padding-inline: 9px; }
-      .btn-row { gap: 5px; }
-    }
-
-    @media (max-height: 560px) and (max-width: 820px) {
-      #map { flex-basis: 42%; height: 42%; min-height: 150px; }
-      #panel { flex-basis: 58%; height: 58%; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+      vertical-align: middle;
     }
   </style>
 </head>
 <body>
-  <div id="map"></div>
-
-  <aside id="panel">
-    <div class="header">
+  <aside id="sidebar">
+    <div>
       <h1>Kenya Building Density &amp; Corridor Mapper</h1>
-      <p>Canvas <code>fc_1NQSFd3F8X3TKH596bGI16</code> · Keyless Basemaps &amp; Fused UDFs</p>
+      <div class="subtitle">Canvas <code>fc_1NQSFd3F8X3TKH596bGI16</code> · Keyless Basemaps</div>
     </div>
 
-    <div class="report-head">Kenya Building Density &amp; Corridor Report — Viewport &amp; UDF Summary</div>
-
-    <div class="kpi-grid" aria-label="Dataset summary">
-      <div class="kpi">
-        <span id="kpi-primary-lbl">Active Hexes</span>
-        <strong id="kpi-primary">—</strong>
-      </div>
-      <div class="kpi">
-        <span>Total Buildings</span>
-        <strong id="kpi-buildings">—</strong>
-      </div>
-      <div class="kpi">
-        <span>Footprint Area (m²)</span>
-        <strong id="kpi-area">—</strong>
-      </div>
-      <div class="kpi">
-        <span>Max Height (m)</span>
-        <strong id="kpi-max-h">—</strong>
-      </div>
+    <div class="control-group">
+      <label for="basemap-provider">Open / Keyless Basemap</label>
+      <select id="basemap-provider">
+        <option value="esri_gray" selected>Esri Light Gray Canvas</option>
+        <option value="osm">OpenStreetMap Standard</option>
+        <option value="esri_imagery">Esri World Imagery (Satellite)</option>
+        <option value="opentopomap">OpenTopoMap (Terrain)</option>
+      </select>
     </div>
 
-    <div class="notice">
-      <strong>Viewport &amp; UDF note:</strong> Metrics aggregate features returned for the current map bounding box from <code>nairobi_building_hex</code> or <code>nairobi_corridor_buildings</code>. Use the local preview button if an endpoint is unreachable or blocked.
+    <div class="control-group">
+      <label for="corridor-preset">Kenya Urban Corridor / Metro</label>
+      <select id="corridor-preset">
+        <option value="36.79,-1.31,36.85,-1.26" selected>Nairobi Central &amp; Upper Hill</option>
+        <option value="36.78,-1.28,36.82,-1.24">Westlands &amp; Parklands Corridor</option>
+        <option value="36.82,-1.35,36.88,-1.29">Mombasa Rd &amp; Industrial Area</option>
+        <option value="34.74,-0.12,34.78,-0.08">Kisumu Central</option>
+        <option value="36.05,-0.31,36.09,-0.26">Nakuru CBD</option>
+      </select>
     </div>
 
-    <div class="box no-print">
-      <div class="box-title">Basemap &amp; corridor</div>
-      <div class="row">
-        <label for="basemap-provider">Open / Keyless Basemap</label>
-        <select id="basemap-provider" class="field">
-          <option value="esri_gray" selected>Esri Light Gray Canvas</option>
-          <option value="osm">OpenStreetMap Standard</option>
-          <option value="esri_imagery">Esri World Imagery (Satellite)</option>
-          <option value="opentopomap">OpenTopoMap (Terrain)</option>
+    <div class="control-group">
+      <label for="view-mode">Layer Mode</label>
+      <select id="view-mode">
+        <option value="hex" selected>H3 Density Aggregation (nairobi_building_hex)</option>
+        <option value="buildings">Building Footprints (nairobi_corridor_buildings)</option>
+      </select>
+    </div>
+
+    <div class="row-2">
+      <div class="control-group">
+        <label for="h3-res">H3 Resolution</label>
+        <select id="h3-res">
+          <option value="7">Res 7 (~5.16 km²)</option>
+          <option value="8" selected>Res 8 (~0.74 km²)</option>
+          <option value="9">Res 9 (~0.105 km²)</option>
         </select>
       </div>
-      <div class="row">
-        <label for="corridor-preset">Kenya Urban Corridor</label>
-        <select id="corridor-preset" class="field">
-          <option value="36.79,-1.31,36.85,-1.26" selected>Nairobi Central &amp; Upper Hill</option>
-          <option value="36.78,-1.28,36.82,-1.24">Westlands &amp; Parklands Corridor</option>
-          <option value="36.82,-1.35,36.88,-1.29">Mombasa Rd &amp; Industrial Area</option>
-          <option value="34.74,-0.12,34.78,-0.08">Kisumu Central</option>
-          <option value="36.05,-0.31,36.09,-0.26">Nakuru CBD</option>
-        </select>
+      <div class="control-group">
+        <label for="release-tag">Overture Release</label>
+        <input id="release-tag" type="text" value="2026-11-18.0" />
       </div>
     </div>
 
-    <div class="box no-print">
-      <div class="box-title">Layer &amp; UDF parameters</div>
-      <div class="row">
-        <label for="view-mode">Layer Mode</label>
-        <select id="view-mode" class="field">
-          <option value="hex" selected>H3 Density Aggregation (nairobi_building_hex)</option>
-          <option value="buildings">Building Footprints (nairobi_corridor_buildings)</option>
-        </select>
-      </div>
-      <div class="grid-2">
-        <div class="row">
-          <label for="h3-res">H3 Res</label>
-          <select id="h3-res" class="field">
-            <option value="7">Res 7 (~5.16 km²)</option>
-            <option value="8" selected>Res 8 (~0.74 km²)</option>
-            <option value="9">Res 9 (~0.105 km²)</option>
-          </select>
-        </div>
-        <div class="row">
-          <label for="release-tag">Release</label>
-          <input id="release-tag" class="field" type="text" value="2026-11-18.0" />
-        </div>
-      </div>
-      <div class="row" id="class-filter-group" style="display:none;">
-        <label for="building-class">Building Class</label>
-        <input id="building-class" class="field" type="text" placeholder="e.g. commercial, residential, industrial" />
-      </div>
-      <div class="btn-row">
-        <button class="btn primary" id="btn-load-bbox">Query Fused UDF</button>
-        <button class="btn" id="btn-fit-corridor">Zoom Corridor</button>
-      </div>
-      <button class="btn ghost" id="btn-demo-preview">Load Local Preview Hexes (If Endpoint Blocked)</button>
+    <div class="control-group" id="class-filter-group" style="display:none;">
+      <label for="building-class">Building Class Filter (Optional)</label>
+      <input id="building-class" type="text" placeholder="e.g. commercial, residential, industrial" />
     </div>
 
-    <div id="status-box" class="status">Initializing map...</div>
-
-    <div class="card">
-      <div class="box-title" style="margin-bottom:6px;">Selected feature details</div>
-      <div id="detail-box" class="detail-body">Click an H3 hexagon or building footprint on the map to inspect attributes.</div>
+    <div class="row-2">
+      <button class="primary" id="btn-load-bbox">Query Fused UDF</button>
+      <button class="secondary" id="btn-fit-corridor">Zoom Corridor</button>
     </div>
 
-    <div class="card">
-      <div class="box-title" style="margin-bottom:6px;">Active configuration</div>
-      <div class="kv"><span>Canvas Token</span><strong>fc_1NQSFd3F8X3TKH596bGI16</strong></div>
-      <div class="kv"><span>Active UDF</span><strong id="cfg-udf">nairobi_building_hex</strong></div>
-      <div class="kv"><span>Viewport BBOX</span><strong id="cfg-bbox">—</strong></div>
-      <div class="subnote">Relative color scale compares each feature against the maximum count or footprint area in the current viewport response.</div>
+    <button class="ghost" id="btn-demo-preview">Load Local Preview Hexes (If Endpoint Blocked)</button>
+
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="val" id="kpi-primary">—</div>
+        <div class="lbl" id="kpi-primary-lbl">Active Hexes</div>
+      </div>
+      <div class="kpi">
+        <div class="val" id="kpi-buildings">—</div>
+        <div class="lbl">Total Buildings</div>
+      </div>
+      <div class="kpi">
+        <div class="val" id="kpi-area">—</div>
+        <div class="lbl">Footprint Area (m²)</div>
+      </div>
+      <div class="kpi">
+        <div class="val" id="kpi-max-h">—</div>
+        <div class="lbl">Max Height (m)</div>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Selected Feature Details</label>
+      <div id="detail-box">Click an H3 hexagon or building footprint on the map to inspect attributes.</div>
+    </div>
+
+    <div class="control-group">
+      <label>Endpoint &amp; Request Status</label>
+      <div id="status-box">Initializing map...</div>
     </div>
   </aside>
 
+  <main id="map"></main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+  <script src="https://unpkg.com/h3-js@4.1.0/dist/h3-js.umd.js"></script>
   <script>
     const CANVAS_TOKEN = "fc_1NQSFd3F8X3TKH596bGI16";
     const HEX_UDF = "nairobi_building_hex";
     const BLDG_UDF = "nairobi_corridor_buildings";
 
-    const map = L.map("map", {
-      preferCanvas: true,
-      center: [-1.285, 36.82],
-      zoom: 13
-    });
+    const map = L.map("map").setView([-1.285, 36.82], 13);
     const dataLayer = L.layerGroup().addTo(map);
 
-    const MapLegend = L.Control.extend({
-      options: { position: "bottomright" },
-      onAdd: function () {
-        const container = L.DomUtil.create("div", "map-legend-control");
-        container.setAttribute("aria-label", "Map legend");
-        container.innerHTML = `
-          <div class="map-legend-heading">
-            <span>Map legend</span>
-            <button type="button" class="map-legend-toggle" aria-expanded="true">Hide</button>
-          </div>
-          <div class="map-legend-body">
-            <div class="legend">
-              <strong>Density / Area Scale (Relative)</strong>
-              <div class="legend-item"><span class="legend-swatch" style="background:#1d4ed8"></span><span>Low (&le; 20% of max)</span></div>
-              <div class="legend-item"><span class="legend-swatch" style="background:#06b6d4"></span><span>Moderate (21%–45%)</span></div>
-              <div class="legend-item"><span class="legend-swatch" style="background:#eab308"></span><span>High (46%–75%)</span></div>
-              <div class="legend-item"><span class="legend-swatch" style="background:#ef4444"></span><span>Very High (&gt; 75%)</span></div>
-            </div>
-          </div>
-        `;
-        L.DomEvent.disableClickPropagation(container);
-        L.DomEvent.disableScrollPropagation(container);
-        const toggle = container.querySelector(".map-legend-toggle");
-        toggle.addEventListener("click", () => {
-          const collapsed = container.classList.toggle("collapsed");
-          toggle.textContent = collapsed ? "Show" : "Hide";
-          toggle.setAttribute("aria-expanded", String(!collapsed));
-        });
-        return container;
-      }
-    });
-    map.addControl(new MapLegend());
+    const legend = L.control({ position: "bottomright" });
+    legend.onAdd = function () {
+      const div = L.DomUtil.create("div", "legend");
+      div.innerHTML = `
+        <strong>Density / Area Scale</strong><br/>
+        <i style="background:#1d4ed8"></i>Low<br/>
+        <i style="background:#06b6d4"></i>Moderate<br/>
+        <i style="background:#eab308"></i>High<br/>
+        <i style="background:#ef4444"></i>Very High
+      `;
+      return div;
+    };
+    legend.addTo(map);
 
     const basemapProviderEl = document.getElementById("basemap-provider");
     const presetEl = document.getElementById("corridor-preset");
@@ -583,16 +268,12 @@
     const classGroupEl = document.getElementById("class-filter-group");
     const statusEl = document.getElementById("status-box");
     const detailEl = document.getElementById("detail-box");
-    const cfgUdfEl = document.getElementById("cfg-udf");
-    const cfgBboxEl = document.getElementById("cfg-bbox");
 
     let activeBasemapLayer = null;
 
     function setStatus(msg, level = "ok") {
       statusEl.textContent = msg;
-      statusEl.className = "status";
-      if (level === "error") statusEl.classList.add("error");
-      else if (level === "warn") statusEl.classList.add("warn");
+      statusEl.className = level === "error" ? "error" : level === "warn" ? "warn" : "";
     }
 
     function createBasemapLayer(provider) {
@@ -641,7 +322,6 @@
 
     modeEl.addEventListener("change", () => {
       classGroupEl.style.display = modeEl.value === "buildings" ? "flex" : "none";
-      cfgUdfEl.textContent = modeEl.value === "hex" ? HEX_UDF : BLDG_UDF;
       runQuery();
     });
 
@@ -666,7 +346,6 @@
         avg_footprint_m2: 175 + idx * 12,
         max_height_m: 18 + idx * 7,
       }));
-      cfgBboxEl.textContent = getCurrentBboxJson();
       renderHexRows(sampleRows, "Local preview H3 cells rendered (offline/fallback mode).");
     });
 
@@ -734,7 +413,7 @@
             color: "#1e293b",
             weight: 1.2,
             fillColor: getColor(count / maxCount),
-            fillOpacity: 0.65,
+            fillOpacity: 0.62,
           }
         );
 
@@ -775,7 +454,7 @@
             color: "#1e293b",
             weight: 1,
             fillColor: getColor(a / maxArea),
-            fillOpacity: 0.72,
+            fillOpacity: 0.7,
           };
         },
         onEachFeature: (feat, layer) => {
@@ -814,9 +493,6 @@
         ? { bbox: bboxJson, h3_res: Number(h3ResEl.value), release }
         : { bbox: bboxJson, building_class: classFilterEl.value.trim(), release };
 
-      cfgUdfEl.textContent = targetUdf;
-      cfgBboxEl.textContent = bboxJson;
-
       const url = buildUdfUrl(targetUdf, params);
       setStatus(`Requesting ${url}`);
 
@@ -847,19 +523,6 @@
       document.getElementById("kpi-area").textContent = area.toLocaleString();
       document.getElementById("kpi-max-h").textContent = maxH !== null ? `${maxH} m` : "N/A";
     }
-
-    let mapResizeFrame = null;
-    function refreshMapSize() {
-      if (mapResizeFrame) cancelAnimationFrame(mapResizeFrame);
-      mapResizeFrame = requestAnimationFrame(() => {
-        map.invalidateSize({ pan: false });
-        mapResizeFrame = null;
-      });
-    }
-    window.addEventListener("resize", refreshMapSize, { passive: true });
-    window.addEventListener("orientationchange", () => {
-      window.setTimeout(refreshMapSize, 180);
-    }, { passive: true });
 
     applyBasemap();
     runQuery();
