@@ -1,0 +1,1922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1120" />
+  <title>Nairobi Expressway — Corridor Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg-dark: #0b1120;
+      --panel-bg: rgba(15, 23, 42, 0.94);
+      --panel-border: rgba(148, 163, 184, 0.18);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+
+      --route1-color: #38bdf8;
+      --route2-color: #f59e0b;
+      --plaza-color: #10b981;
+      --interchange-color: #a855f7;
+      --landmark-color: #f43f5e;
+      --accent: #0ea5e9;
+
+      --shadow-lg: 0 20px 45px rgba(2, 6, 23, 0.55);
+      --gap: 12px;
+      --sidebar-w: 350px;
+      --topbar-h: 56px;
+
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 9px;
+
+      --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-l: env(safe-area-inset-left, 0px);
+      --safe-r: env(safe-area-inset-right, 0px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      width: 100%;
+      overflow: hidden;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      font-family: var(--font-ui);
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      overscroll-behavior: none;
+    }
+
+    button, .chip, .toggle-item, .sheet-handle, .feature-table tbody tr {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button { font-family: inherit; }
+
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+      border-radius: 6px;
+    }
+
+    #map {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background: #0b1120;
+    }
+
+    .topbar {
+      position: absolute;
+      top: calc(var(--gap) + var(--safe-t));
+      left: calc(var(--gap) + var(--safe-l));
+      right: calc(var(--gap) + var(--safe-r));
+      z-index: 1000;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .brand-card,
+    .status-cluster {
+      pointer-events: auto;
+      background: var(--panel-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      box-shadow: var(--shadow-lg);
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .brand-card {
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #0284c7, #10b981);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 14px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .brand-text { min-width: 0; }
+
+    .brand-text h1 {
+      font-size: clamp(12px, 1.1vw + 8px, 15px);
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand-text p {
+      font-size: 11.5px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .status-cluster {
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .quota-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.14);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #6ee7b7;
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .quota-pill.error {
+      background: rgba(244, 63, 94, 0.16);
+      border-color: rgba(244, 63, 94, 0.45);
+      color: #fda4af;
+    }
+
+    .quota-pill > span:last-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+    }
+
+    .btn-sm {
+      background: rgba(30, 41, 59, 0.9);
+      color: var(--text-primary);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius-sm);
+      padding: 7px 11px;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.2;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .btn-sm:hover {
+      background: rgba(51, 65, 85, 0.95);
+      border-color: rgba(148, 163, 184, 0.4);
+    }
+
+    .btn-sm.primary {
+      background: rgba(14, 165, 233, 0.22);
+      border-color: rgba(56, 189, 248, 0.45);
+      color: #7dd3fc;
+    }
+
+    .basemap-select-mobile { display: none; }
+
+    .error-banner {
+      display: none;
+      position: absolute;
+      top: calc(var(--topbar-h) + var(--gap) * 3 + var(--safe-t));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1002;
+      width: max-content;
+      max-width: min(680px, calc(100vw - var(--gap) * 2 - var(--safe-l) - var(--safe-r)));
+      background: rgba(69, 10, 10, 0.96);
+      border: 1px solid rgba(248, 113, 113, 0.5);
+      color: #fecaca;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      line-height: 1.45;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .error-banner.visible { display: block; }
+
+    .sidebar {
+      position: absolute;
+      top: calc(var(--topbar-h) + var(--gap) * 2 + var(--safe-t));
+      left: calc(var(--gap) + var(--safe-l));
+      bottom: calc(var(--gap) + var(--safe-b));
+      width: var(--sidebar-w);
+      max-width: calc(100vw - var(--gap) * 2 - var(--safe-l) - var(--safe-r));
+      z-index: 999;
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: transform;
+    }
+
+    .sidebar.collapsed { transform: translateX(calc(-100% - 24px)); }
+    .sheet-handle { display: none; }
+
+    .sidebar-section {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--panel-border);
+      flex-shrink: 0;
+    }
+
+    .sidebar-section:last-child { border-bottom: none; }
+
+    .search-box {
+      width: 100%;
+      background: rgba(2, 6, 23, 0.65);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 9px 12px;
+      color: var(--text-primary);
+      font-size: 16px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .search-box:focus { border-color: var(--accent); }
+
+    .filter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .chip {
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 6px 11px;
+      border-radius: 999px;
+      border: 1px solid var(--panel-border);
+      background: rgba(30, 41, 59, 0.6);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .chip.active {
+      background: rgba(56, 189, 248, 0.18);
+      border-color: rgba(56, 189, 248, 0.5);
+      color: #e0f2fe;
+    }
+
+    .layer-toggles {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .toggle-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      background: rgba(2, 6, 23, 0.45);
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      cursor: pointer;
+      user-select: none;
+      min-width: 0;
+    }
+
+    .toggle-item span:last-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .toggle-item input {
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .feature-list {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding: 12px 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 0;
+    }
+
+    .feature-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .group-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 10.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-secondary);
+      margin: 0 2px;
+      user-select: none;
+    }
+
+    .group-title .swatch { width: 9px; height: 9px; }
+
+    .group-count {
+      margin-left: auto;
+      background: rgba(148, 163, 184, 0.15);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      border-radius: 999px;
+      padding: 1px 8px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .feature-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      table-layout: fixed;
+    }
+
+    .feature-table thead th {
+      text-align: left;
+      font-size: 9.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      font-weight: 700;
+      padding: 4px 8px 6px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    .feature-table tbody tr {
+      cursor: pointer;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+      transition: background 0.12s ease, color 0.12s ease;
+      outline: none;
+    }
+
+    .feature-table tbody tr:last-child { border-bottom: none; }
+
+    .feature-table tbody tr:hover,
+    .feature-table tbody tr:focus-visible {
+      background: rgba(56, 189, 248, 0.09);
+    }
+
+    .feature-table tbody tr.selected {
+      background: rgba(56, 189, 248, 0.18);
+    }
+
+    .feature-table td {
+      padding: 8px;
+      vertical-align: middle;
+    }
+
+    .cell-name {
+      font-weight: 600;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .feature-table tbody tr.selected .cell-name { color: #7dd3fc; }
+
+    .cell-km {
+      width: 52px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    .cell-notes {
+      width: 40%;
+      color: var(--text-muted);
+      font-size: 11px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .cell-name::after {
+      content: "↗";
+      display: inline-block;
+      margin-left: 6px;
+      font-size: 10px;
+      color: var(--accent);
+      opacity: 0;
+      transform: translateX(-2px);
+      transition: opacity 0.12s ease, transform 0.12s ease;
+    }
+
+    .feature-table tbody tr:hover .cell-name::after,
+    .feature-table tbody tr:focus-visible .cell-name::after {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .feature-card {
+      background: rgba(30, 41, 59, 0.55);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      border-radius: var(--radius-md);
+      padding: 11px 12px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 22px 16px;
+      color: var(--text-muted);
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .skeleton { cursor: default; pointer-events: none; }
+
+    .skeleton-line {
+      height: 10px;
+      border-radius: 4px;
+      background: linear-gradient(
+        90deg,
+        rgba(148, 163, 184, 0.1) 0%,
+        rgba(148, 163, 184, 0.26) 50%,
+        rgba(148, 163, 184, 0.1) 100%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .map-controls-br {
+      position: absolute;
+      bottom: calc(var(--gap) + var(--safe-b));
+      right: calc(var(--gap) + var(--safe-r));
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+      pointer-events: none;
+      max-width: calc(100vw - var(--gap) * 2);
+    }
+
+    .legend-card {
+      pointer-events: auto;
+      background: var(--panel-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow-lg);
+      width: max-content;
+      max-width: 260px;
+    }
+
+    .legend-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .legend-row:last-child { margin-bottom: 0; }
+
+    .legend-line {
+      width: 20px;
+      height: 4px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .basemap-bar {
+      pointer-events: auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+      background: var(--panel-bg);
+      padding: 6px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--panel-border);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .leaflet-container {
+      font-family: var(--font-ui);
+      background: #0b1120;
+    }
+
+    .leaflet-control-zoom a,
+    .leaflet-control-zoom a:visited {
+      background: rgba(15, 23, 42, 0.94) !important;
+      color: #f8fafc !important;
+      border-color: rgba(148, 163, 184, 0.25) !important;
+      width: 34px;
+      height: 34px;
+      line-height: 32px;
+      font-size: 18px;
+    }
+
+    .leaflet-control-zoom a:hover { background: rgba(51, 65, 85, 0.95) !important; }
+
+    .leaflet-control-attribution {
+      background: rgba(15, 23, 42, 0.82) !important;
+      color: #94a3b8 !important;
+      font-size: 10px !important;
+      padding: 2px 6px !important;
+      border-radius: 6px !important;
+      max-width: 60vw;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .leaflet-control-attribution a { color: #7dd3fc !important; }
+
+    .leaflet-control-scale-line {
+      background: rgba(15, 23, 42, 0.72) !important;
+      border-color: rgba(148, 163, 184, 0.5) !important;
+      color: #cbd5e1 !important;
+      font-size: 10px;
+    }
+
+    @media (min-width: 769px) {
+      .leaflet-bottom.leaflet-left {
+        left: calc(var(--sidebar-w) + var(--gap) * 3 + var(--safe-l));
+        transition: left 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      body.sidebar-collapsed .leaflet-bottom.leaflet-left {
+        left: calc(var(--gap) + var(--safe-l));
+      }
+    }
+
+    @media (max-width: 768px) {
+      .leaflet-top.leaflet-right {
+        top: calc(var(--topbar-h) + var(--gap) * 2 + var(--safe-t));
+      }
+      .leaflet-bottom.leaflet-left {
+        bottom: calc(var(--gap) + var(--safe-b));
+      }
+    }
+
+    .leaflet-popup-content-wrapper {
+      background: #0f172a;
+      color: #f8fafc;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: var(--radius-md);
+    }
+
+    .leaflet-popup-tip { background: #0f172a; }
+    .leaflet-popup-content { margin: 12px 14px; }
+
+    .popup-body {
+      font-family: var(--font-ui);
+      min-width: min(220px, 60vw);
+      max-width: 300px;
+    }
+
+    .popup-body h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .popup-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 4px 10px;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .popup-label {
+      color: #94a3b8;
+      font-weight: 600;
+    }
+
+    .popup-desc {
+      font-size: 12px;
+      color: #cbd5e1;
+      line-height: 1.45;
+      border-top: 1px solid rgba(148, 163, 184, 0.18);
+      padding-top: 6px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: rgba(2, 6, 23, 0.75);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: none;
+      place-items: center;
+      padding: calc(16px + var(--safe-t)) calc(16px + var(--safe-r)) calc(16px + var(--safe-b)) calc(16px + var(--safe-l));
+    }
+
+    .modal-backdrop.open { display: grid; }
+
+    .modal-card {
+      background: #0f172a;
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius-lg);
+      max-width: 540px;
+      width: 100%;
+      padding: 20px;
+      box-shadow: var(--shadow-lg);
+      max-height: calc(100dvh - 32px - var(--safe-t) - var(--safe-b));
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .modal-card h2 {
+      font-size: clamp(15px, 1vw + 11px, 17px);
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .modal-card p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .field-group { margin-bottom: 12px; }
+
+    .field-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .field-group input,
+    .field-group select {
+      width: 100%;
+      background: #020617;
+      border: 1px solid var(--panel-border);
+      color: var(--text-primary);
+      padding: 9px 10px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 16px;
+    }
+
+    .endpoint-preview {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      background: #020617;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #7dd3fc;
+      padding: 9px 11px;
+      border-radius: var(--radius-sm);
+      word-break: break-all;
+      margin-bottom: 14px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    @media (min-width: 1600px) {
+      :root { --sidebar-w: 400px; --gap: 14px; }
+      .legend-card { max-width: 300px; }
+      .feature-table { font-size: 12.5px; }
+    }
+
+    @media (min-width: 769px) and (max-width: 1180px) {
+      :root { --sidebar-w: 300px; }
+      .brand-text h1 { font-size: 13px; }
+      .brand-text p { font-size: 11px; }
+      .btn-sm { padding: 6px 9px; font-size: 11.5px; }
+      .legend-card { max-width: 200px; padding: 10px 12px; }
+      .legend-row { font-size: 11px; }
+      .basemap-bar .btn-sm { font-size: 11px; padding: 6px 8px; }
+      .quota-pill { font-size: 10.5px; }
+      .cell-notes,
+      .feature-table thead th.col-notes { display: none; }
+    }
+
+    @media (max-width: 768px) {
+      .topbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+      }
+
+      .brand-card {
+        padding: 7px 10px;
+        gap: 8px;
+        border-radius: 12px;
+      }
+
+      .brand-badge {
+        width: 26px;
+        height: 26px;
+        font-size: 11px;
+        border-radius: 7px;
+      }
+
+      .brand-text h1 { font-size: 12.5px; }
+      .brand-text p { display: none; }
+
+      .status-cluster {
+        padding: 5px;
+        gap: 5px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        border-radius: 12px;
+        scroll-snap-type: x proximity;
+      }
+
+      .status-cluster::-webkit-scrollbar { display: none; }
+      .status-cluster > * { flex: 0 0 auto; scroll-snap-align: start; }
+
+      .quota-pill {
+        font-size: 10px;
+        padding: 6px 9px;
+        max-width: 52vw;
+      }
+
+      .status-cluster .btn-sm {
+        min-height: 34px;
+        padding: 7px 11px;
+        font-size: 11.5px;
+      }
+
+      .basemap-select-mobile {
+        display: inline-block;
+        background: rgba(30, 41, 59, 0.9);
+        color: var(--text-primary);
+        border: 1px solid var(--panel-border);
+        border-radius: var(--radius-sm);
+        padding: 7px 26px 7px 10px;
+        font-size: 11.5px;
+        font-family: inherit;
+        font-weight: 600;
+        line-height: 1.2;
+        min-height: 34px;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        cursor: pointer;
+        max-width: 46vw;
+        text-overflow: ellipsis;
+      }
+
+      .sidebar {
+        top: auto;
+        left: calc(var(--gap) + var(--safe-l));
+        right: calc(var(--gap) + var(--safe-r));
+        bottom: calc(var(--gap) + var(--safe-b));
+        width: auto;
+        max-width: none;
+        height: min(58dvh, 500px);
+        max-height: calc(100dvh - var(--topbar-h) - var(--gap) * 3 - var(--safe-t) - var(--safe-b));
+        border-radius: 18px 18px 14px 14px;
+        transform: translateY(calc(100% + var(--gap) + var(--safe-b) + 12px));
+      }
+
+      .sidebar.open { transform: translateY(0); }
+
+      .sheet-handle {
+        display: block;
+        position: relative;
+        width: 100%;
+        height: 20px;
+        flex-shrink: 0;
+        cursor: grab;
+        touch-action: none;
+      }
+
+      .sheet-handle::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 44px;
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(148, 163, 184, 0.38);
+      }
+
+      .sidebar-section { padding: 10px 12px; }
+      .search-box { padding: 8px 11px; font-size: 16px; }
+
+      .filter-chips {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        margin-top: 8px;
+        padding-bottom: 2px;
+      }
+
+      .filter-chips::-webkit-scrollbar { display: none; }
+
+      .chip {
+        flex: 0 0 auto;
+        padding: 7px 12px;
+        font-size: 11.5px;
+        min-height: 32px;
+      }
+
+      .layer-toggles { gap: 6px; margin-top: 8px; }
+      .toggle-item { padding: 7px 8px; font-size: 11.5px; min-height: 36px; }
+      .feature-list { padding: 8px 8px 14px; gap: 10px; }
+      .group-title { font-size: 10px; margin: 0 2px; }
+      .feature-table { font-size: 12px; }
+      .feature-table td { padding: 10px 6px; }
+      .feature-table thead th { padding: 3px 6px; font-size: 9px; }
+      .cell-km { width: 44px; font-size: 10.5px; }
+      .cell-notes,
+      .feature-table thead th.col-notes { display: none; }
+
+      .map-controls-br { display: none; }
+
+      .error-banner {
+        top: calc(var(--topbar-h) + var(--gap) * 2 + var(--safe-t));
+        font-size: 11.5px;
+        padding: 8px 12px;
+        width: calc(100vw - var(--gap) * 2 - var(--safe-l) - var(--safe-r));
+      }
+
+      .modal-card { padding: 16px; border-radius: 14px; }
+      .modal-actions .btn-sm { flex: 1 1 auto; min-height: 44px; }
+    }
+
+    @media (max-width: 768px) and (max-height: 640px) {
+      .sidebar { height: min(56dvh, 460px); }
+      .sheet-handle { height: 16px; }
+      .sidebar-section { padding: 8px 10px; }
+      .search-box { padding: 6px 10px; }
+      .chip { padding: 6px 10px; min-height: 30px; font-size: 11px; }
+      .layer-toggles { margin-top: 6px; gap: 5px; }
+      .toggle-item { padding: 5px 7px; min-height: 32px; font-size: 11px; }
+      .feature-table td { padding: 8px 5px; }
+      .feature-list { padding: 6px 6px 12px; gap: 8px; }
+    }
+
+    @media (max-width: 400px) {
+      .brand-text h1 { font-size: 11.5px; }
+      .status-cluster .btn-sm { font-size: 11px; padding: 6px 9px; }
+      .quota-pill { font-size: 9.5px; max-width: 48vw; }
+      .feature-table { font-size: 11.5px; }
+      .cell-km { width: 40px; }
+      .group-title { font-size: 9.5px; }
+    }
+
+    @media (orientation: landscape) and (max-height: 540px) {
+      .topbar {
+        flex-direction: row;
+        align-items: flex-start;
+        flex-wrap: nowrap;
+      }
+      .brand-card { display: none; }
+      .status-cluster {
+        width: 100%;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding: 4px;
+        gap: 4px;
+      }
+      .status-cluster .btn-sm { min-height: 32px; padding: 6px 9px; font-size: 11px; }
+      .quota-pill { font-size: 9.5px; padding: 5px 7px; max-width: none; }
+      .basemap-select-mobile { min-height: 32px; padding: 5px 24px 5px 8px; font-size: 11px; }
+
+      .sidebar {
+        height: auto;
+        top: calc(var(--topbar-h) + var(--gap) * 2 + var(--safe-t));
+        bottom: calc(var(--gap) + var(--safe-b));
+        max-height: none;
+        width: min(340px, 46vw);
+        left: calc(var(--gap) + var(--safe-l));
+        right: auto;
+        border-radius: var(--radius-lg);
+        transform: translateX(calc(-100% - 24px));
+      }
+      .sidebar.open { transform: translateX(0); }
+      .sheet-handle { display: none; }
+      .sidebar-section { padding: 8px 10px; }
+      .feature-list { padding: 6px; gap: 8px; }
+      .filter-chips { margin-top: 6px; }
+      .layer-toggles { margin-top: 6px; }
+
+      .error-banner { top: calc(var(--topbar-h) + var(--gap) * 2 + var(--safe-t)); }
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+      .feature-table tbody tr:hover { background: transparent; }
+      .feature-table tbody tr.selected { background: rgba(56, 189, 248, 0.18); }
+      .cell-name::after { display: none; }
+      .btn-sm:hover { background: rgba(30, 41, 59, 0.9); border-color: var(--panel-border); }
+      .btn-sm.primary:hover { background: rgba(14, 165, 233, 0.22); border-color: rgba(56, 189, 248, 0.45); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .skeleton-line { animation: none !important; }
+      .sidebar,
+      .leaflet-bottom.leaflet-left { transition: none !important; }
+      * { scroll-behavior: auto !important; }
+    }
+
+    @media print {
+      .topbar, .sidebar, .map-controls-br, .modal-backdrop, .error-banner { display: none !important; }
+      #map { position: static; height: 100vh; }
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <header class="topbar">
+    <div class="brand-card">
+      <div class="brand-badge">KE</div>
+      <div class="brand-text">
+        <h1>Nairobi Expressway</h1>
+        <p>Mlolongo &harr; Westlands &bull; 27.1 km</p>
+      </div>
+    </div>
+
+    <div class="status-cluster">
+      <div id="quotaBadge" class="quota-pill" role="status" aria-live="polite">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="quotaText">Starting up...</span>
+      </div>
+      <button class="btn-sm" id="toggleDrawerBtn" aria-expanded="false" aria-controls="sidebar">Features</button>
+      <button class="btn-sm" id="resetViewBtn">Reset View</button>
+      <button class="btn-sm primary" id="refreshUdfBtn">Reload UDF</button>
+      <button class="btn-sm" id="infoModalBtn">Endpoint</button>
+
+      <select id="basemapSelect" class="basemap-select-mobile" aria-label="Basemap">
+        <option value="osm_dark">OSM Dark</option>
+        <option value="osm_standard">OSM Standard</option>
+        <option value="opentopo" selected>OpenTopoMap</option>
+        <option value="none">No Tiles</option>
+      </select>
+    </div>
+  </header>
+
+  <div id="errorBanner" class="error-banner" role="alert" aria-live="assertive"></div>
+
+  <aside class="sidebar" id="sidebar" aria-label="Corridor features">
+    <div class="sheet-handle" aria-hidden="true"></div>
+
+    <div class="sidebar-section">
+      <input type="text" id="searchInput" class="search-box" placeholder="Filter by plaza, ramp, interchange..." aria-label="Search features" />
+      <div class="filter-chips" id="filterChips" role="group" aria-label="Category filters">
+        <button class="chip active" data-cat="all" aria-pressed="true">All</button>
+        <button class="chip" data-cat="route" aria-pressed="false">Routes</button>
+        <button class="chip" data-cat="toll_plaza" aria-pressed="false">Toll Plazas</button>
+        <button class="chip" data-cat="interchange" aria-pressed="false">Interchanges</button>
+        <button class="chip" data-cat="landmark" aria-pressed="false">Landmarks</button>
+      </div>
+      <div class="layer-toggles">
+        <label class="toggle-item"><input type="checkbox" id="chkRoute1" checked /><span class="swatch" style="background: var(--route1-color);"></span><span>Route 1 (N/W)</span></label>
+        <label class="toggle-item"><input type="checkbox" id="chkRoute2" checked /><span class="swatch" style="background: var(--route2-color);"></span><span>Route 2 (S/E)</span></label>
+        <label class="toggle-item"><input type="checkbox" id="chkPlazas" checked /><span class="swatch" style="background: var(--plaza-color);"></span><span>Toll Plazas</span></label>
+        <label class="toggle-item"><input type="checkbox" id="chkLandmarks" checked /><span class="swatch" style="background: var(--interchange-color);"></span><span>Interchanges</span></label>
+      </div>
+    </div>
+
+    <div class="feature-list" id="featureList" role="region" aria-label="Corridor feature tables"></div>
+  </aside>
+
+  <div class="map-controls-br">
+    <div class="legend-card">
+      <div class="legend-title">Legend</div>
+      <div class="legend-row"><span class="legend-line" style="background: var(--route1-color);"></span>Route 1: Mlolongo &rarr; Westlands</div>
+      <div class="legend-row"><span class="legend-line" style="background: var(--route2-color);"></span>Route 2: Westlands &rarr; Mlolongo</div>
+      <div class="legend-row"><span class="swatch" style="background: var(--plaza-color);"></span>Toll Plaza / Ramp</div>
+      <div class="legend-row"><span class="swatch" style="background: var(--interchange-color);"></span>Interchange</div>
+      <div class="legend-row"><span class="swatch" style="background: var(--landmark-color);"></span>Landmark</div>
+    </div>
+    <div class="basemap-bar" role="group" aria-label="Basemap switcher">
+      <button class="btn-sm" data-basemap="osm_dark">OSM Dark</button>
+      <button class="btn-sm" data-basemap="osm_standard">OSM Standard</button>
+      <button class="btn-sm primary" data-basemap="opentopo">OpenTopoMap</button>
+      <button class="btn-sm" data-basemap="none">No Tiles</button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="infoModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-card">
+      <h2 id="modalTitle">Fused UDF Endpoint</h2>
+      <p>
+        Set the share token, UDF name, and format. Saving stores them in <code>localStorage</code> and fetches fresh data once.
+      </p>
+      <div class="field-group">
+        <label for="cfgToken">Share Token</label>
+        <input type="text" id="cfgToken" autocomplete="off" spellcheck="false" />
+      </div>
+      <div class="field-group">
+        <label for="cfgUdfName">UDF Name</label>
+        <input type="text" id="cfgUdfName" autocomplete="off" spellcheck="false" />
+      </div>
+      <div class="field-group">
+        <label for="cfgExt">Format</label>
+        <select id="cfgExt">
+          <option value="geojson">.geojson</option>
+          <option value="json">.json</option>
+        </select>
+      </div>
+      <div class="endpoint-preview" id="endpointPreview"></div>
+      <div class="modal-actions">
+        <button class="btn-sm" id="closeModalBtn">Cancel</button>
+        <button class="btn-sm primary" id="saveConfigBtn">Save &amp; Fetch</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script>
+  (() => {
+    'use strict';
+
+    const DEFAULT_TOKEN = "fc_3M8dHYZCDO9sLOvzdM47sT";
+    const DEFAULT_UDF = "nairobi_expressway_udf";
+    const DEFAULT_EXT = "geojson";
+    const CFG_STORAGE_KEY = "nairobi_expressway_udf_cfg_v1";
+    const UI_STORAGE_KEY = "nairobi_expressway_ui_v1";
+    const BASEMAP_STORAGE_KEY = "nairobi_basemap_v2";
+    const DEFAULT_BASEMAP = "opentopo";
+    const FETCH_TIMEOUT_MS = 20000;
+
+    function readStorage(store, key) {
+      try { return store.getItem(key); } catch { return null; }
+    }
+    function writeStorage(store, key, val) {
+      try { store.setItem(key, val); } catch {}
+    }
+    function removeStorage(store, key) {
+      try { store.removeItem(key); } catch {}
+    }
+
+    const escapeHTML = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[c]));
+
+    function loadConfig() {
+      try {
+        const saved = JSON.parse(readStorage(localStorage, CFG_STORAGE_KEY) || "{}");
+        return {
+          token: saved.token || DEFAULT_TOKEN,
+          udfName: saved.udfName || DEFAULT_UDF,
+          ext: saved.ext || DEFAULT_EXT
+        };
+      } catch {
+        return { token: DEFAULT_TOKEN, udfName: DEFAULT_UDF, ext: DEFAULT_EXT };
+      }
+    }
+
+    let udfConfig = loadConfig();
+
+    const getUdfUrl = (cfg = udfConfig) =>
+      `https://udf.ai/${encodeURIComponent(cfg.token.trim())}/${encodeURIComponent(cfg.udfName.trim())}.${cfg.ext}`;
+
+    const getSessionCacheKey = (url) => `fused_exp_cache_${url}`;
+
+    function loadUiState() {
+      try { return JSON.parse(readStorage(localStorage, UI_STORAGE_KEY) || "{}") || {}; }
+      catch { return {}; }
+    }
+
+    function saveUiState(patch) {
+      writeStorage(localStorage, UI_STORAGE_KEY, JSON.stringify({ ...loadUiState(), ...patch }));
+    }
+
+    const mqlMobile = window.matchMedia('(max-width: 768px)');
+    const mqlShortLandscape = window.matchMedia('(orientation: landscape) and (max-height: 540px)');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const topbarEl = document.querySelector('.topbar');
+    if (topbarEl && 'ResizeObserver' in window) {
+      new ResizeObserver(([entry]) => {
+        document.documentElement.style.setProperty('--topbar-h', `${Math.round(entry.contentRect.height)}px`);
+      }).observe(topbarEl);
+    }
+
+    const map = L.map("map", {
+      zoomControl: false,
+      preferCanvas: true,
+      zoomSnap: 0.5,
+      center: [-1.325, 36.868],
+      zoom: 12
+    });
+
+    const zoomControl = L.control.zoom({ position: "bottomleft" }).addTo(map);
+    L.control.scale({ position: "bottomleft", imperial: false }).addTo(map);
+
+    function syncControlPositions() {
+      zoomControl.setPosition(mqlMobile.matches ? "topright" : "bottomleft");
+      if (map.attributionControl) map.attributionControl.setPosition("bottomleft");
+    }
+    syncControlPositions();
+
+    const fixMapSize = () => map.invalidateSize({ animate: false, pan: false });
+
+    let resizeRaf = null;
+    window.addEventListener('resize', () => {
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(() => {
+        syncControlPositions();
+        syncBodySidebarClass();
+        fixMapSize();
+      });
+    }, { passive: true });
+
+    window.addEventListener('orientationchange', () => setTimeout(fixMapSize, 300));
+    window.visualViewport?.addEventListener('resize', fixMapSize, { passive: true });
+
+    const basemaps = {
+      osm_dark: L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+        attribution: '&copy; OpenStreetMap &copy; CARTO',
+        subdomains: 'abcd',
+        maxZoom: 20
+      }),
+      osm_standard: L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+        attribution: '&copy; OpenStreetMap &copy; CARTO',
+        subdomains: 'abcd',
+        maxZoom: 20
+      }),
+      opentopo: L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap, SRTM | &copy; OpenTopoMap",
+        maxZoom: 17
+      }),
+      none: null
+    };
+
+    const savedBasemap = readStorage(localStorage, BASEMAP_STORAGE_KEY) || DEFAULT_BASEMAP;
+    let activeBasemap = (basemaps[savedBasemap] || basemaps[DEFAULT_BASEMAP]).addTo(map);
+
+    function switchBasemap(key) {
+      if (activeBasemap) {
+        map.removeLayer(activeBasemap);
+        activeBasemap = null;
+      }
+      if (basemaps[key]) activeBasemap = basemaps[key].addTo(map);
+
+      document.querySelectorAll("[data-basemap]").forEach((btn) =>
+        btn.classList.toggle("primary", btn.dataset.basemap === key)
+      );
+      const sel = document.getElementById('basemapSelect');
+      if (sel) sel.value = key;
+      writeStorage(localStorage, BASEMAP_STORAGE_KEY, key);
+    }
+
+    document.querySelectorAll("[data-basemap]").forEach((btn) =>
+      btn.addEventListener("click", () => switchBasemap(btn.dataset.basemap))
+    );
+
+    const basemapSelect = document.getElementById('basemapSelect');
+    if (basemapSelect) {
+      basemapSelect.value = savedBasemap;
+      basemapSelect.addEventListener('change', (e) => switchBasemap(e.target.value));
+    }
+
+    document.querySelectorAll("[data-basemap]").forEach((btn) =>
+      btn.classList.toggle("primary", btn.dataset.basemap === savedBasemap)
+    );
+
+    const layerGroups = {
+      route1: L.layerGroup().addTo(map),
+      route2: L.layerGroup().addTo(map),
+      toll_plaza: L.layerGroup().addTo(map),
+      interchange: L.layerGroup().addTo(map),
+      landmark: L.layerGroup().addTo(map)
+    };
+
+    let allFeatures = [];
+    let layerById = {};
+    let activeCategory = "all";
+    let searchQuery = "";
+    let hasFitted = false;
+
+    const readCssVar = (name, fallback) =>
+      getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+
+    const COLORS = {
+      route1: readCssVar('--route1-color', '#38bdf8'),
+      route2: readCssVar('--route2-color', '#f59e0b'),
+      plaza: readCssVar('--plaza-color', '#10b981'),
+      interchange: readCssVar('--interchange-color', '#a855f7'),
+      landmark: readCssVar('--landmark-color', '#f43f5e')
+    };
+
+    function setStatus(text, isError = false) {
+      document.getElementById("quotaText").textContent = text;
+      document.getElementById("quotaBadge").classList.toggle("error", isError);
+    }
+
+    function showError(message) {
+      const banner = document.getElementById("errorBanner");
+      banner.textContent = message || "";
+      banner.classList.toggle("visible", Boolean(message));
+    }
+
+    function normalizeToFeatureCollection(raw) {
+      if (!raw) throw new Error("Empty response from UDF.");
+      if (raw.type === "FeatureCollection" && Array.isArray(raw.features)) return raw;
+      if (Array.isArray(raw)) return { type: "FeatureCollection", features: raw.filter((f) => f && f.geometry) };
+      if (raw.type === "Feature" && raw.geometry) return { type: "FeatureCollection", features: [raw] };
+      throw new Error(`Unexpected response shape: keys=${Object.keys(raw).join(", ")}`);
+    }
+
+    async function fetchFromFused(forceRefresh = false) {
+      const url = getUdfUrl();
+      const cacheKey = getSessionCacheKey(url);
+      showError(null);
+
+      if (!forceRefresh) {
+        const cached = readStorage(sessionStorage, cacheKey);
+        if (cached) {
+          try {
+            const parsed = normalizeToFeatureCollection(JSON.parse(cached));
+            setStatus(`Cached (${parsed.features.length})`);
+            return parsed;
+          } catch {
+            removeStorage(sessionStorage, cacheKey);
+          }
+        }
+      }
+
+      setStatus("Loading UDF...");
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+      try {
+        const res = await fetch(url, {
+          cache: forceRefresh ? "reload" : "default",
+          signal: controller.signal
+        });
+        const bodyText = await res.text();
+
+        if (!res.ok) {
+          throw new Error(
+            `HTTP ${res.status} from ${url}. Check UDF "${udfConfig.udfName}" and token "${udfConfig.token}". ${bodyText.slice(0, 180)}`
+          );
+        }
+
+        let json;
+        try {
+          json = JSON.parse(bodyText);
+        } catch {
+          throw new Error(`Invalid JSON from ${url}: ${bodyText.slice(0, 180)}`);
+        }
+
+        const fc = normalizeToFeatureCollection(json);
+        writeStorage(sessionStorage, cacheKey, JSON.stringify(fc));
+        setStatus(`Live (${fc.features.length})`);
+        return fc;
+      } catch (err) {
+        const msg = err.name === 'AbortError'
+          ? `Request timed out after ${FETCH_TIMEOUT_MS / 1000}s.`
+          : (err.message || String(err));
+        setStatus("Fetch failed", true);
+        showError(msg);
+        return null;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    function getCategoryMeta(cat, id) {
+      if (cat === "route") {
+        const isR1 = id === "route-1";
+        return {
+          label: isR1 ? "Route 1" : "Route 2",
+          color: isR1 ? COLORS.route1 : COLORS.route2
+        };
+      }
+      if (cat === "toll_plaza") return { label: "Toll Plaza", color: COLORS.plaza };
+      if (cat === "interchange") return { label: "Interchange", color: COLORS.interchange };
+      return { label: "Landmark", color: COLORS.landmark };
+    }
+
+    function buildPopupHTML(props) {
+      return `
+        <div class="popup-body">
+          <h3>${escapeHTML(props.name || "Corridor Feature")}</h3>
+          <div class="popup-grid">
+            <span class="popup-label">Direction:</span><span>${escapeHTML(props.direction || "Corridor")}</span>
+            <span class="popup-label">Chainage:</span><span>${escapeHTML(props.length_km || "N/A")}</span>
+            <span class="popup-label">Toll / Access:</span><span>${escapeHTML(props.toll_kes || "N/A")}</span>
+          </div>
+          <div class="popup-desc">${escapeHTML(props.notes || "")}</div>
+        </div>
+      `;
+    }
+
+    function renderGeoJSON(geojson) {
+      Object.values(layerGroups).forEach((lg) => lg.clearLayers());
+      layerById = {};
+      allFeatures = geojson?.features || [];
+
+      const bounds = L.latLngBounds();
+
+      allFeatures.forEach((feat, idx) => {
+        if (!feat?.geometry) return;
+        const props = feat.properties || {};
+        const id = props.id || `feat-${idx}`;
+        props.id = id;
+        const cat = props.category || "landmark";
+
+        if (feat.geometry.type === "LineString" || feat.geometry.type === "MultiLineString") {
+          const isMulti = feat.geometry.type === "MultiLineString";
+          const latlngs = isMulti
+            ? feat.geometry.coordinates.map((line) => line.map((c) => [c[1], c[0]]))
+            : feat.geometry.coordinates.map((c) => [c[1], c[0]]);
+
+          (isMulti ? latlngs.flat() : latlngs).forEach((ll) => bounds.extend(ll));
+
+          const isR1 = id === "route-1";
+          const line = L.polyline(latlngs, {
+            color: isR1 ? COLORS.route1 : COLORS.route2,
+            weight: 6,
+            opacity: 0.9,
+            dashArray: isR1 ? null : "10, 6"
+          }).bindPopup(buildPopupHTML(props));
+
+          line.addTo(isR1 ? layerGroups.route1 : layerGroups.route2);
+          layerById[id] = line;
+        } else if (feat.geometry.type === "Point") {
+          const [lon, lat] = feat.geometry.coordinates;
+          const ll = [lat, lon];
+          bounds.extend(ll);
+
+          const meta = getCategoryMeta(cat, id);
+          const marker = L.circleMarker(ll, {
+            radius: cat === "toll_plaza" ? 8 : 7,
+            fillColor: meta.color,
+            color: "#0f172a",
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.95
+          }).bindPopup(buildPopupHTML(props));
+
+          marker.addTo(layerGroups[cat] || layerGroups.landmark);
+          layerById[id] = marker;
+        }
+      });
+
+      if (bounds.isValid() && !hasFitted) {
+        map.fitBounds(bounds.pad(0.08));
+        hasFitted = true;
+      }
+
+      renderSidebarList();
+    }
+
+    function renderSkeleton() {
+      const container = document.getElementById("featureList");
+      container.innerHTML = Array.from({ length: 4 }, () => `
+        <div class="feature-card skeleton" aria-hidden="true">
+          <div class="skeleton-line" style="width: 60%;"></div>
+          <div class="skeleton-line" style="width: 40%; margin-top: 8px;"></div>
+          <div class="skeleton-line" style="width: 85%; margin-top: 8px;"></div>
+        </div>
+      `).join('');
+    }
+
+    const TABLE_GROUPS = [
+      { key: "toll_plaza", label: "Toll Plazas & Ramps", color: COLORS.plaza },
+      { key: "interchange", label: "Interchanges", color: COLORS.interchange },
+      { key: "landmark", label: "Landmarks", color: COLORS.landmark },
+      { key: "route", label: "Routes", color: COLORS.route1 }
+    ];
+
+    function renderSidebarList() {
+      const container = document.getElementById("featureList");
+      container.innerHTML = "";
+
+      const q = searchQuery.trim().toLowerCase();
+      const filtered = allFeatures.filter((f) => {
+        const p = f.properties || {};
+        const matchesCat = activeCategory === "all" || p.category === activeCategory;
+        const matchesQuery = !q ||
+          (p.name || "").toLowerCase().includes(q) ||
+          (p.notes || "").toLowerCase().includes(q) ||
+          (p.direction || "").toLowerCase().includes(q);
+        return matchesCat && matchesQuery;
+      });
+
+      if (!filtered.length) {
+        const hasFilters = activeCategory !== "all" || Boolean(q);
+        container.innerHTML = `
+          <div class="empty-state">
+            <p>No matching features.</p>
+            ${hasFilters ? `<button class="btn-sm" id="clearFiltersBtn" type="button">Clear filters</button>` : ''}
+          </div>`;
+
+        document.getElementById('clearFiltersBtn')?.addEventListener('click', () => {
+          searchQuery = '';
+          document.getElementById('searchInput').value = '';
+          setActiveCategory('all');
+        });
+        return;
+      }
+
+      const frag = document.createDocumentFragment();
+
+      TABLE_GROUPS.forEach((group) => {
+        const rows = filtered.filter((f) => (f.properties?.category || "landmark") === group.key);
+        if (!rows.length) return;
+
+        const section = document.createElement("section");
+        section.className = "feature-group";
+
+        const title = document.createElement("h3");
+        title.className = "group-title";
+        title.innerHTML = `
+          <span class="swatch" style="background:${group.color};" aria-hidden="true"></span>
+          <span>${group.label}</span>
+          <span class="group-count">${rows.length}</span>
+        `;
+        section.appendChild(title);
+
+        const table = document.createElement("table");
+        table.className = "feature-table";
+        table.innerHTML = `
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">KM</th>
+              <th scope="col" class="col-notes">Notes</th>
+            </tr>
+          </thead>
+        `;
+
+        const tbody = document.createElement("tbody");
+
+        rows.forEach((f) => {
+          const p = f.properties || {};
+          const tr = document.createElement("tr");
+          tr.dataset.id = p.id;
+          tr.tabIndex = 0;
+          tr.setAttribute("role", "button");
+          tr.setAttribute("aria-label", `Focus ${p.name || "feature"}`);
+          tr.innerHTML = `
+            <td class="cell-name">${escapeHTML(p.name || "Feature")}</td>
+            <td class="cell-km">${escapeHTML(p.length_km || "—")}</td>
+            <td class="cell-notes">${escapeHTML(p.notes || "")}</td>
+          `;
+
+          tr.addEventListener("click", () => selectFeature(p.id));
+          tr.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              selectFeature(p.id);
+            }
+          });
+          tbody.appendChild(tr);
+        });
+
+        table.appendChild(tbody);
+        section.appendChild(table);
+        frag.appendChild(section);
+      });
+
+      container.appendChild(frag);
+    }
+
+    function getMapPaddingPx() {
+      const pad = { top: 0, right: 0, bottom: 0, left: 0 };
+      if (!sidebarEl) return pad;
+      if (mqlMobile.matches && sidebarEl.classList.contains('open')) {
+        pad.bottom = sidebarEl.offsetHeight || 0;
+      } else if (!mqlMobile.matches && !sidebarEl.classList.contains('collapsed')) {
+        pad.left = sidebarEl.offsetWidth || 0;
+      }
+      return pad;
+    }
+
+    function selectFeature(id, { fly = true } = {}) {
+      const target = layerById[id];
+      if (!target) return;
+
+      let selectedRow = null;
+      document.querySelectorAll(".feature-table tbody tr").forEach((r) => {
+        const on = r.dataset.id === id;
+        r.classList.toggle("selected", on);
+        if (on) selectedRow = r;
+      });
+
+      selectedRow?.scrollIntoView({
+        block: "nearest",
+        behavior: reduceMotion ? "auto" : "smooth"
+      });
+
+      if (mqlMobile.matches && !sidebarEl.classList.contains('open')) {
+        sidebarEl.classList.add('open');
+        saveUiState({ sidebarMobileOpen: true });
+        updateToggleAria();
+      }
+
+      const pad = getMapPaddingPx();
+
+      if (target.getBounds) {
+        if (fly) {
+          const maxBottom = map.getSize().y * 0.5;
+          map.fitBounds(target.getBounds().pad(0.15), {
+            animate: !reduceMotion,
+            paddingTopLeft: [pad.left, 0],
+            paddingBottomRight: [0, Math.min(pad.bottom, maxBottom)]
+          });
+        }
+        target.openPopup();
+      } else if (target.getLatLng) {
+        if (fly) {
+          const zoom = 15;
+          const dx = pad.left / 2;
+          const dy = pad.bottom / 2;
+          const center = (dx > 0 || dy > 0)
+            ? map.unproject(map.project(target.getLatLng(), zoom).add([-dx, dy]), zoom)
+            : target.getLatLng();
+          map.flyTo(center, zoom, { duration: reduceMotion ? 0 : 0.7 });
+        }
+        target.openPopup();
+      }
+
+      const params = new URLSearchParams({ id });
+      if (activeCategory !== 'all') params.set('cat', activeCategory);
+      history.replaceState(null, '', `#${params.toString()}`);
+    }
+
+    function applyDeepLink() {
+      const hash = location.hash.replace(/^#/, '');
+      if (!hash) return false;
+      const params = new URLSearchParams(hash);
+      const cat = params.get('cat');
+      if (cat && ['route', 'toll_plaza', 'interchange', 'landmark'].includes(cat)) {
+        setActiveCategory(cat, { rerender: false });
+      }
+      const id = params.get('id');
+      if (id && layerById[id]) {
+        setTimeout(() => selectFeature(id), 50);
+        return true;
+      }
+      return false;
+    }
+
+    function setActiveCategory(cat, { rerender = true } = {}) {
+      activeCategory = cat;
+      document.querySelectorAll('.chip').forEach((c) => {
+        const on = c.dataset.cat === cat;
+        c.classList.toggle('active', on);
+        c.setAttribute('aria-pressed', String(on));
+      });
+      saveUiState({ category: cat });
+      if (rerender) renderSidebarList();
+    }
+
+    document.getElementById("filterChips").addEventListener("click", (e) => {
+      const chip = e.target.closest(".chip");
+      if (chip) setActiveCategory(chip.dataset.cat);
+    });
+
+    let searchTimer;
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      const value = e.target.value;
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        searchQuery = value;
+        renderSidebarList();
+      }, 150);
+    });
+
+    function bindLayerToggle(checkboxId, groups, stateKey) {
+      document.getElementById(checkboxId).addEventListener("change", (e) => {
+        groups.forEach((g) => e.target.checked ? map.addLayer(layerGroups[g]) : map.removeLayer(layerGroups[g]));
+        saveUiState({ [stateKey]: e.target.checked });
+      });
+    }
+
+    bindLayerToggle("chkRoute1", ["route1"], "showRoute1");
+    bindLayerToggle("chkRoute2", ["route2"], "showRoute2");
+    bindLayerToggle("chkPlazas", ["toll_plaza"], "showPlazas");
+    bindLayerToggle("chkLandmarks", ["interchange", "landmark"], "showLandmarks");
+
+    function restoreUiState() {
+      const s = loadUiState();
+      if (s.category) setActiveCategory(s.category, { rerender: false });
+      if (s.showRoute1 === false) {
+        document.getElementById('chkRoute1').checked = false;
+        map.removeLayer(layerGroups.route1);
+      }
+      if (s.showRoute2 === false) {
+        document.getElementById('chkRoute2').checked = false;
+        map.removeLayer(layerGroups.route2);
+      }
+      if (s.showPlazas === false) {
+        document.getElementById('chkPlazas').checked = false;
+        map.removeLayer(layerGroups.toll_plaza);
+      }
+      if (s.showLandmarks === false) {
+        document.getElementById('chkLandmarks').checked = false;
+        map.removeLayer(layerGroups.interchange);
+        map.removeLayer(layerGroups.landmark);
+      }
+    }
+
+    const sidebarEl = document.getElementById("sidebar");
+    const toggleBtn = document.getElementById("toggleDrawerBtn");
+
+    function updateToggleAria() {
+      const isOpen = mqlMobile.matches
+        ? sidebarEl.classList.contains('open')
+        : !sidebarEl.classList.contains('collapsed');
+      toggleBtn.setAttribute('aria-expanded', String(isOpen));
+    }
+
+    function syncBodySidebarClass() {
+      document.body.classList.toggle(
+        'sidebar-collapsed',
+        !mqlMobile.matches && sidebarEl.classList.contains('collapsed')
+      );
+    }
+
+    toggleBtn.addEventListener("click", () => {
+      if (mqlMobile.matches) {
+        sidebarEl.classList.toggle("open");
+        saveUiState({ sidebarMobileOpen: sidebarEl.classList.contains("open") });
+      } else {
+        sidebarEl.classList.toggle("collapsed");
+      }
+      updateToggleAria();
+      syncBodySidebarClass();
+    });
+
+    const sheetHandle = document.querySelector('.sheet-handle');
+    if (sheetHandle) {
+      let dragStartY = null;
+      let dragDistance = 0;
+
+      sheetHandle.addEventListener('pointerdown', (e) => {
+        if (!mqlMobile.matches) return;
+        dragStartY = e.clientY;
+        dragDistance = 0;
+        sidebarEl.style.transition = 'none';
+        try { sheetHandle.setPointerCapture(e.pointerId); } catch {}
+      });
+
+      sheetHandle.addEventListener('pointermove', (e) => {
+        if (dragStartY === null) return;
+        dragDistance = Math.max(0, e.clientY - dragStartY);
+        sidebarEl.style.transform = `translateY(${dragDistance}px)`;
+      });
+
+      const endDrag = () => {
+        if (dragStartY === null) return;
+        dragStartY = null;
+        sidebarEl.style.transition = '';
+        sidebarEl.style.transform = '';
+        if (dragDistance > 90) {
+          sidebarEl.classList.remove('open');
+          saveUiState({ sidebarMobileOpen: false });
+          updateToggleAria();
+        }
+        dragDistance = 0;
+      };
+
+      sheetHandle.addEventListener('pointerup', endDrag);
+      sheetHandle.addEventListener('pointercancel', endDrag);
+      sheetHandle.addEventListener('lostpointercapture', endDrag);
+    }
+
+    const onBreakpointChange = () => {
+      if (mqlMobile.matches) {
+        sidebarEl.classList.remove('collapsed');
+        sidebarEl.classList.toggle('open', Boolean(loadUiState().sidebarMobileOpen));
+      } else {
+        sidebarEl.classList.remove('open');
+        sidebarEl.style.transform = '';
+      }
+      syncControlPositions();
+      syncBodySidebarClass();
+      updateToggleAria();
+      fixMapSize();
+    };
+
+    mqlMobile.addEventListener('change', onBreakpointChange);
+    mqlShortLandscape.addEventListener('change', fixMapSize);
+
+    document.getElementById("resetViewBtn").addEventListener("click", () => {
+      const bounds = L.latLngBounds();
+      Object.values(layerById).forEach((l) => {
+        if (l.getBounds) bounds.extend(l.getBounds());
+        else if (l.getLatLng) bounds.extend(l.getLatLng());
+      });
+      if (bounds.isValid()) {
+        const pad = getMapPaddingPx();
+        const maxBottom = map.getSize().y * 0.5;
+        map.fitBounds(bounds.pad(0.08), {
+          animate: !reduceMotion,
+          paddingTopLeft: [pad.left, 0],
+          paddingBottomRight: [0, Math.min(pad.bottom, maxBottom)]
+        });
+      }
+    });
+
+    document.getElementById("refreshUdfBtn").addEventListener("click", async () => {
+      removeStorage(sessionStorage, getSessionCacheKey(getUdfUrl()));
+      const data = await fetchFromFused(true);
+      renderGeoJSON(data);
+      applyDeepLink();
+    });
+
+    const modal = document.getElementById("infoModal");
+    const cfgToken = document.getElementById("cfgToken");
+    const cfgUdfName = document.getElementById("cfgUdfName");
+    const cfgExt = document.getElementById("cfgExt");
+    const endpointPreview = document.getElementById("endpointPreview");
+    let lastFocusedEl = null;
+
+    function updatePreview() {
+      endpointPreview.textContent = getUdfUrl({
+        token: cfgToken.value || DEFAULT_TOKEN,
+        udfName: cfgUdfName.value || DEFAULT_UDF,
+        ext: cfgExt.value || DEFAULT_EXT
+      });
+    }
+
+    function openModal() {
+      lastFocusedEl = document.activeElement;
+      cfgToken.value = udfConfig.token;
+      cfgUdfName.value = udfConfig.udfName;
+      cfgExt.value = udfConfig.ext;
+      updatePreview();
+      modal.classList.add("open");
+      setTimeout(() => cfgToken.focus(), 30);
+    }
+
+    function closeModal() {
+      modal.classList.remove("open");
+      lastFocusedEl?.focus?.();
+    }
+
+    document.getElementById("infoModalBtn").addEventListener("click", openModal);
+    [cfgToken, cfgUdfName, cfgExt].forEach((el) => el.addEventListener("input", updatePreview));
+    document.getElementById("closeModalBtn").addEventListener("click", closeModal);
+    modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && modal.classList.contains("open")) closeModal();
+    });
+
+    modal.addEventListener("keydown", (e) => {
+      if (e.key !== "Tab") return;
+      const focusables = modal.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusables.length) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    });
+
+    document.getElementById("saveConfigBtn").addEventListener("click", async () => {
+      udfConfig = {
+        token: cfgToken.value.trim() || DEFAULT_TOKEN,
+        udfName: cfgUdfName.value.trim() || DEFAULT_UDF,
+        ext: cfgExt.value || DEFAULT_EXT
+      };
+      writeStorage(localStorage, CFG_STORAGE_KEY, JSON.stringify(udfConfig));
+      closeModal();
+      hasFitted = false;
+      renderSkeleton();
+      const data = await fetchFromFused(true);
+      renderGeoJSON(data);
+    });
+
+    (async () => {
+      restoreUiState();
+      syncBodySidebarClass();
+
+      if (mqlMobile.matches) {
+        sidebarEl.classList.toggle('open', Boolean(loadUiState().sidebarMobileOpen));
+      }
+      updateToggleAria();
+
+      renderSkeleton();
+      const data = await fetchFromFused(false);
+      renderGeoJSON(data);
+
+      if (data) applyDeepLink();
+
+      setTimeout(fixMapSize, 250);
+      document.fonts?.ready?.then(fixMapSize);
+    })();
+  })();
+  </script>
+</body>
+</html>
